@@ -29,6 +29,6 @@ Our tests are run using pytest:
     pytest
 
 Related Information
------------------
+-------------------
 
 For more information relating to infrastructure, see `sds-data-manager <https://sds-data-manager.readthedocs.io/en/latest/>`_.
