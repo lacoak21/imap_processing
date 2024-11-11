@@ -412,7 +412,7 @@ class RawDustEvent:
         Will process the low sample waveform.
 
         Parse a binary string representing a low sample waveform
-        Data arrives in 32 bit chunks, divided up into:
+        Data arrives in 32-bit chunks, divided up into:
             * 8 bits of padding
             * 2x12 bits of integer data.
 
@@ -496,7 +496,7 @@ class RawDustEvent:
         ----------
         packet : space_packet_parser.packets.CCSDSPacket
             A single science data packet for one of the 6.
-            IDEX observables.
+            IDEX observable.
         """
         scitype = packet["IDX__SCI0TYPE"]
         raw_science_bits = convert_to_binary_string(packet["IDX__SCI0RAW"])
