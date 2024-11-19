@@ -154,7 +154,7 @@ sensor_voltage:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: Sensor Voltage
-  CATDESC: Last measurement in raw dN for processor board signal - "Sensor Voltage "
+  CATDESC: Last measurement in raw dN for processor board signal - "Sensor Voltage"
   LABLAXIS: Voltage
   UNITS: dN
 
@@ -194,7 +194,7 @@ current_1v_pol:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: 1V POL Current
-  CATDESC: Last measurement in raw DN for Processor Board signal - “1V POL Current”
+  CATDESC: Last measurement in raw DN for Processor Board signal - "1V POL Current"
   LABLAXIS: Current
   UNITS: dN
 
@@ -202,7 +202,7 @@ current_1p9v_pol:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: 1.9V POL Current
-  CATDESC: Last measurement in raw DN for Processor Board signal - “1.9V POL Current”
+  CATDESC: Last measurement in raw DN for Processor Board signal - "1.9V POL Current"
   LABLAXIS: Current
   UNITS: dN
 
@@ -210,7 +210,7 @@ proc_bd_temp1:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: ProcBd Temp1
-  CATDESC: Last measurement in raw DN for Processor Board signal - “ProcBd Temp1”
+  CATDESC: Last measurement in raw DN for Processor Board signal - "ProcBd Temp1"
   LABLAXIS: Temperature
   UNITS: dN
 
@@ -218,7 +218,7 @@ proc_bd_temp2:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: ProcBd Temp2
-  CATDESC: Last measurement in raw DN for Processor Board signal - “ProcBd Temp2”
+  CATDESC: Last measurement in raw DN for Processor Board signal - "ProcBd Temp2"
   LABLAXIS: Temperature
   UNITS: dN
 
@@ -226,7 +226,7 @@ voltage_1v:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: 1V Voltage
-  CATDESC: Last measurement in raw DN for Processor Board signal - “1V Voltage”
+  CATDESC: Last measurement in raw DN for Processor Board signal - "1V Voltage"
   LABLAXIS: Voltage
   UNITS: dN
 
@@ -234,7 +234,7 @@ fpga_temp:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: FPGA Temp
-  CATDESC: Last measurement in raw DN for Processor Board signal - “FPGA Temp”
+  CATDESC: Last measurement in raw DN for Processor Board signal - "FPGA Temp"
   LABLAXIS: Temperature
   UNITS: dN
 
@@ -242,7 +242,7 @@ voltage_1p9v:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: 1.9V Voltage
-  CATDESC: Last measurement in raw DN for Processor Board signal - “1.9V Voltage”
+  CATDESC: Last measurement in raw DN for Processor Board signal - "1.9V Voltage"
   LABLAXIS: Voltage
   UNITS: dN
 
@@ -250,7 +250,7 @@ voltage_3p3v:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: 3.3V Voltage
-  CATDESC: Last measurement in raw DN for Processor Board signal - “3.3V Voltage”
+  CATDESC: Last measurement in raw DN for Processor Board signal - "3.3V Voltage"
   LABLAXIS: Voltage
   UNITS: dN
 
@@ -258,7 +258,7 @@ sensor_ip:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: Sensor IP
-  CATDESC: Last measurement in raw DN for HVPS Board signal - “Sensor IP”
+  CATDESC: Last measurement in raw DN for HVPS Board signal - "Sensor IP"
   LABLAXIS: Current
   UNITS: dN
 
@@ -266,7 +266,7 @@ sensor_in:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: Sensor IN
-  CATDESC: Last measurement in raw DN for HVPS Board signal - “Sensor IN”
+  CATDESC: Last measurement in raw DN for HVPS Board signal - "Sensor IN"
   LABLAXIS: Current
   UNITS: dN
 
@@ -274,7 +274,7 @@ pos3p3ref_hk:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: P3.3VREF_HK
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “P3.3VREF_HK”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "P3.3VREF_HK"
   LABLAXIS: Voltage
   UNITS: dN
 
@@ -282,7 +282,7 @@ pos3ref_op:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: P3.3VREF_OP
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “P3.3VREF_OP”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "P3.3VREF_OP"
   LABLAXIS: Voltage
   UNITS: dN
 
@@ -290,7 +290,7 @@ neg6v:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: N6V
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “N6V”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "N6V"
   LABLAXIS: Voltage
   UNITS: dN
 
@@ -298,7 +298,7 @@ pos6v:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: P6V
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “P6V”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "P6V"
   LABLAXIS: Voltage
   UNITS: dN
 
@@ -306,7 +306,7 @@ pos16v:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: P16V
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “P16V”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "P16V"
   LABLAXIS: Voltage
   UNITS: dN
 
@@ -314,7 +314,7 @@ pos3p3v:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: P3.3V
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “P3.3V”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "P3.3V"
   LABLAXIS: Voltage
   UNITS: dN
 
@@ -322,7 +322,7 @@ neg5v:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: N5V
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “N5V”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "N5V"
   LABLAXIS: Voltage
   UNITS: dN
 
@@ -330,7 +330,7 @@ pos5v:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: P5V
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “P5V”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "P5V"
   LABLAXIS: Voltage
   UNITS: dN
 
@@ -338,7 +338,7 @@ pos3p3_imon:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: P3.3_IMON
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “P3.3_IMON”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "P3.3_IMON"
   LABLAXIS: Current
   UNITS: dN
 
@@ -346,7 +346,7 @@ pos16v_imon:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: P16V_IMON
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “P16V_IMON”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "P16V_IMON"
   LABLAXIS: Current
   UNITS: dN
 
@@ -354,7 +354,7 @@ pos6v_imon:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: P6V_IMON
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “P6V_IMON”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "P6V_IMON"
   LABLAXIS: Current
   UNITS: dN
 
@@ -362,7 +362,7 @@ neg6v_imon:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: N6V_IMON
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “N6V_IMON”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "N6V_IMON"
   LABLAXIS: Current
   UNITS: dN
 
@@ -370,7 +370,7 @@ pos5v_imon:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: P5V_IMON
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “P5V_IMON”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "P5V_IMON"
   LABLAXIS: Current
   UNITS: dN
 
@@ -378,7 +378,7 @@ neg5v_imon:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: N5V_IMON
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “N5V_IMON”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "N5V_IMON"
   LABLAXIS: Current
   UNITS: dN
 
@@ -386,7 +386,7 @@ pos2p5v_imon:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: P2.5V_IMON
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “P2.5V_IMON”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "P2.5V_IMON"
   LABLAXIS: Current
   UNITS: dN
 
@@ -394,7 +394,7 @@ neg2p5v_imon:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: N2.5V_IMON
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “N2.5V_IMON”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "N2.5V_IMON"
   LABLAXIS: Current
   UNITS: dN
 
@@ -402,7 +402,7 @@ therm_decon0:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: THERM_DECON0
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “THERM_DECON0”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "THERM_DECON0"
   LABLAXIS: Temperature
   UNITS: dN
 
@@ -410,7 +410,7 @@ therm_decon1:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: THERM_DECON1
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “THERM_DECON1”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "THERM_DECON1"
   LABLAXIS: Temperature
   UNITS: dN
 
@@ -418,7 +418,7 @@ therm_dab:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: THERM_DAB
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “THERM_DAB”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "THERM_DAB"
   LABLAXIS: Temperature
   UNITS: dN
 
@@ -426,7 +426,7 @@ therm_lvps:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: THERM_LVPS
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “THERM_LVPS”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "THERM_LVPS"
   LABLAXIS: Temperature
   UNITS: dN
 
@@ -434,7 +434,7 @@ therm_hvps:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: THERM_HVPS
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “THERM_HVPS”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "THERM_HVPS"
   LABLAXIS: Temperature
   UNITS: dN
 
@@ -442,7 +442,7 @@ pos2p5v:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: P2.5V
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “P2.5V”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "P2.5V"
   LABLAXIS: Voltage
   UNITS: dN
 
@@ -450,6 +450,6 @@ neg2p5v:
   <<: *trigger_base
   VALIDMAX: 4095
   FIELDNAM: N2.5V
-  CATDESC: Last measurement in raw DN for LVPS Board signal - “N2.5V”
+  CATDESC: Last measurement in raw DN for LVPS Board signal - "N2.5V"
   LABLAXIS: Voltage
   UNITS: dN
