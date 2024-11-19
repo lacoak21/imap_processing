@@ -47,41 +47,45 @@ TRIGGER_DESCRIPTION_DICT = {
     trigger.name: trigger
     for trigger in [
         TRIGGER_DESCRIPTION("event_number", "IDX__TXHDREVTNUM"),
-        TRIGGER_DESCRIPTION("tof_high_trigger_level", "IDX__TXHDRHGTRIGLVL"),
-        TRIGGER_DESCRIPTION("tof_high_trigger_num_max_1_2", "IDX__TXHDRHGTRIGNMAX12"),
-        TRIGGER_DESCRIPTION("tof_high_trigger_num_min_1_2", "IDX__TXHDRHGTRIGNMIN12"),
-        TRIGGER_DESCRIPTION("tof_high_trigger_num_min_1", "IDX__TXHDRHGTRIGNMIN1"),
-        TRIGGER_DESCRIPTION("tof_high_trigger_num_max_1", "IDX__TXHDRHGTRIGNMAX1"),
-        TRIGGER_DESCRIPTION("tof_high_trigger_num_min_2", "IDX__TXHDRHGTRIGNMIN2"),
-        TRIGGER_DESCRIPTION("tof_high_trigger_num_max_2", "IDX__TXHDRHGTRIGNMAX2"),
-        TRIGGER_DESCRIPTION("tof_low_trigger_level", "IDX__TXHDRLGTRIGLVL"),
-        TRIGGER_DESCRIPTION("tof_low_trigger_num_max_1_2", "IDX__TXHDRLGTRIGNMAX12"),
-        TRIGGER_DESCRIPTION("tof_low_trigger_num_min_1_2", "IDX__TXHDRLGTRIGNMIN12"),
-        TRIGGER_DESCRIPTION("tof_low_trigger_num_min_1", "IDX__TXHDRLGTRIGNMIN1"),
-        TRIGGER_DESCRIPTION("tof_low_trigger_num_max_1", "IDX__TXHDRLGTRIGNMAX1"),
-        TRIGGER_DESCRIPTION("tof_low_trigger_num_min_2", "IDX__TXHDRLGTRIGNMIN2"),
-        TRIGGER_DESCRIPTION("tof_low_trigger_num_max_2", "IDX__TXHDRLGTRIGNMAX2"),
-        TRIGGER_DESCRIPTION("tof_mid_trigger_level", "IDX__TXHDRMGTRIGLVL"),
-        TRIGGER_DESCRIPTION("tof_mid_trigger_num_max_1_2", "IDX__TXHDRMGTRIGNMAX12"),
-        TRIGGER_DESCRIPTION("tof_mid_trigger_num_min_1_2", "IDX__TXHDRMGTRIGNMIN12"),
-        TRIGGER_DESCRIPTION("tof_mid_trigger_num_min_1", "IDX__TXHDRMGTRIGNMIN1"),
-        TRIGGER_DESCRIPTION("tof_mid_trigger_num_max_1", "IDX__TXHDRMGTRIGNMAX1"),
-        TRIGGER_DESCRIPTION("tof_mid_trigger_num_min_2", "IDX__TXHDRMGTRIGNMIN2"),
-        TRIGGER_DESCRIPTION("tof_mid_trigger_num_max_2", "IDX__TXHDRMGTRIGNMAX2"),
-        TRIGGER_DESCRIPTION("low_sample_coincidence_mode_blocks", "IDX__TXHDRLSTRIGCMBLOCKS"), # noqa
-        TRIGGER_DESCRIPTION("low_sample_trigger_polarity", "IDX__TXHDRLSTRIGPOL"),
-        TRIGGER_DESCRIPTION("low_sample_trigger_level", "IDX__TXHDRLSTRIGLVL"),
-        TRIGGER_DESCRIPTION("low_sample_trigger_num_min", "IDX__TXHDRLSTRIGNMIN"),
-        TRIGGER_DESCRIPTION("low_sample_trigger_mode", "IDX__TXHDRLSTRIGMODE"),
-        TRIGGER_DESCRIPTION("tof_low_trigger_mode", "IDX__TXHDRLSTRIGMODE"),
-        TRIGGER_DESCRIPTION("tof_mid_trigger_mode", "IDX__TXHDRMGTRIGMODE"),
-        TRIGGER_DESCRIPTION("tof_high_trigger_mode", "IDX__TXHDRHGTRIGMODE"),
+        TRIGGER_DESCRIPTION("current_1v_pol", "IDX__TXHDRPROCHKCH0"),
+        TRIGGER_DESCRIPTION("current_1p9v_pol", "IDX__TXHDRPROCHKCH1"),
+        TRIGGER_DESCRIPTION("proc_bd_temp1", "IDX__TXHDRPROCHKCH2"),
+        TRIGGER_DESCRIPTION("proc_bd_temp2", "IDX__TXHDRPROCHKCH3"),
+        TRIGGER_DESCRIPTION("voltage_1v", "IDX__TXHDRPROCHKCH4"),
+        TRIGGER_DESCRIPTION("fpga_temp", "IDX__TXHDRPROCHKCH5"),
+        TRIGGER_DESCRIPTION("voltage_1p9v", "IDX__TXHDRPROCHKCH6"),
+        TRIGGER_DESCRIPTION("voltage_3p3v", "IDX__TXHDRPROCHKCH7"),
         TRIGGER_DESCRIPTION("detector_voltage", "IDX__TXHDRHVPSHKCH0"),
         TRIGGER_DESCRIPTION("sensor_voltage", "IDX__TXHDRHVPSHKCH1"),
         TRIGGER_DESCRIPTION("target_voltage", "IDX__TXHDRHVPSHKCH2"),
         TRIGGER_DESCRIPTION("reflectron_voltage", "IDX__TXHDRHVPSHKCH3"),
         TRIGGER_DESCRIPTION("rejection_voltage", "IDX__TXHDRHVPSHKCH4"),
         TRIGGER_DESCRIPTION("detector_current", "IDX__TXHDRHVPSHKCH5"),
+        TRIGGER_DESCRIPTION("sensor_ip", "IDX__TXHDRHVPSHKCH6"),
+        TRIGGER_DESCRIPTION("sensor_in", "IDX__TXHDRHVPSHKCH7"),
+        TRIGGER_DESCRIPTION("pos3p3ref_hk", "IDX__TXHDRLVHK0CH0"),
+        TRIGGER_DESCRIPTION("pos3ref_op", "IDX__TXHDRLVHK0CH1"),
+        TRIGGER_DESCRIPTION("neg6v", "IDX__TXHDRLVHK0CH2"),
+        TRIGGER_DESCRIPTION("pos6v", "IDX__TXHDRLVHK0CH3"),
+        TRIGGER_DESCRIPTION("pos16v", "IDX__TXHDRLVHK0CH4"),
+        TRIGGER_DESCRIPTION("pos3p3v", "IDX__TXHDRLVHK0CH5"),
+        TRIGGER_DESCRIPTION("neg5v", "IDX__TXHDRLVHK0CH6"),
+        TRIGGER_DESCRIPTION("pos5v", "IDX__TXHDRLVHK0CH7"),
+        TRIGGER_DESCRIPTION("pos3p3_imon", "IDX__TXHDRLVHK1CH0"),
+        TRIGGER_DESCRIPTION("pos16v_imon", "IDX__TXHDRLVHK1CH1"),
+        TRIGGER_DESCRIPTION("pos6v_imon", "IDX__TXHDRLVHK1CH2"),
+        TRIGGER_DESCRIPTION("neg6v_imon", "IDX__TXHDRLVHK1CH3"),
+        TRIGGER_DESCRIPTION("pos5v_imon", "IDX__TXHDRLVHK1CH4"),
+        TRIGGER_DESCRIPTION("neg5v_imon", "IDX__TXHDRLVHK1CH5"),
+        TRIGGER_DESCRIPTION("pos2p5v_imon", "IDX__TXHDRLVHK1CH6"),
+        TRIGGER_DESCRIPTION("neg2p5v_imon", "IDX__TXHDRLVHK1CH7"),
+        TRIGGER_DESCRIPTION("therm_decon0", "IDX__TXHDRLVHK2CH0"),
+        TRIGGER_DESCRIPTION("therm_decon1", "IDX__TXHDRLVHK2CH1"),
+        TRIGGER_DESCRIPTION("therm_dab", "IDX__TXHDRLVHK2CH2"),
+        TRIGGER_DESCRIPTION("therm_lvps", "IDX__TXHDRLVHK2CH3"),
+        TRIGGER_DESCRIPTION("therm_hvps", "IDX__TXHDRLVHK2CH4"),
+        TRIGGER_DESCRIPTION("pos2p5v", "IDX__TXHDRLVHK2CH5"),
+        TRIGGER_DESCRIPTION("neg2p5v", "IDX__TXHDRLVHK2CH6")
     ]
 }  # fmt: skip
 
@@ -355,11 +359,11 @@ class RawDustEvent:
         rather than the number of samples before triggering.
         """
         # Retrieve the number of samples of high gain delay
-        high_gain_delay = packet["IDX__TXHDRADC0IDELAY"]
-
+        high_gain_delay = (packet["IDX__TXHDRSAMPDELAY"] >> 20) & 0b1111111111
+        n_blocks = packet["IDX__TXHDRBLOCKS"]
         # Retrieve number of low/high sample pre-trigger blocks
-        num_low_sample_pretrigger_blocks = packet["IDX__TXHDRLSPREBLOCKS"]
-        num_high_sample_pretrigger_blocks = packet["IDX__TXHDRHSPREBLOCKS"]
+        num_low_sample_pretrigger_blocks = (n_blocks >> 6) & 0b111111
+        num_high_sample_pretrigger_blocks = (n_blocks >> 16) & 0b1111
 
         # Calculate the low and high sample trigger times based on the high gain delay
         # and the number of high sample/low sample pretrigger blocks

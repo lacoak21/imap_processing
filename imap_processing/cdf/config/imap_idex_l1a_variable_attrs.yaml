@@ -134,246 +134,12 @@ ion_grid_attrs:
         Sampled at 3.75 Msps with 12-bit resolution.
         Data is used to quantify dust charge.
 
-# Trigger Stuff
-
 event_number:
   <<: *trigger_base
   CATDESC: The unique number assigned to the impact by the FPGA
   FIELDNAM: Event Number
   VALIDMAX: 65535
   LABLAXIS: Event Number
-  UNITS: " "
-
-tof_high_trigger_level:
-  <<: *trigger_base
-  VALIDMAX: 1023
-  FIELDNAM: TOF High Trigger Level
-  CATDESC: Trigger level for the TOF High Channel
-  LABLAXIS: Level
-  UNITS: " "
-
-tof_high_trigger_num_max_1_2:
-  <<: *trigger_base
-  VALIDMAX: 2047
-  FIELDNAM: TOF High Double Pulse Max Samples
-  CATDESC: Maximum number of samples between pulse 1 and 2 for TOF. High double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_high_trigger_num_min_1_2:
-  <<: *trigger_base
-  VALIDMAX: 2047
-  FIELDNAM: TOF High Double Pulse Min Samples
-  CATDESC: Minimum number of samples between pulse 1 and 2 for TOF High. Double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_high_trigger_num_min_1:
-  <<: *trigger_base
-  VALIDMAX: 255
-  FIELDNAM: TOF High Pulse 1 Min Samples
-  CATDESC: Minimum number of samples for pulse 1 for TOF High single and double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_high_trigger_num_max_1:
-  <<: *trigger_base
-  VALIDMAX: 255
-  FIELDNAM: TOF High Pulse 1 Max Samples
-  CATDESC: Maximum number of samples for pulse 1 for TOF High single and double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_high_trigger_num_min_2:
-  <<: *trigger_base
-  VALIDMAX: 255
-  FIELDNAM: TOF High Pulse 2 Min Samples
-  CATDESC: Minimum number of samples for pulse 2 for TOF High single and double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_high_trigger_num_max_2:
-  <<: *trigger_base
-  VALIDMAX: 255
-  FIELDNAM: TOF High Pulse 2 Max Samples
-  CATDESC: Maximum number of samples for pulse 2 for TOF High single and double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_low_trigger_level:
-  <<: *trigger_base
-  VALIDMAX: 1023
-  FIELDNAM: TOF Low Trigger Level
-  CATDESC: Trigger level for the TOF Low Channel
-  LABLAXIS: Level
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_low_trigger_num_max_1_2:
-  <<: *trigger_base
-  VALIDMAX: 2047
-  FIELDNAM: TOF Low Double Pulse Max Samples
-  CATDESC: Maximum number of samples between pulse 1 and 2 for TOF Low double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_low_trigger_num_min_1_2:
-  <<: *trigger_base
-  VALIDMAX: 2047
-  FIELDNAM: TOF Low Double Pulse Min Samples
-  CATDESC: Minimum number of samples between pulse 1 and 2 for TOF Low double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_low_trigger_num_min_1:
-  <<: *trigger_base
-  VALIDMAX: 255
-  FIELDNAM: TOF Low Pulse 1 Min Samples
-  CATDESC: Minimum number of samples for pulse 1 for TOF Low single and double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_low_trigger_num_max_1:
-  <<: *trigger_base
-  VALIDMAX: 255
-  FIELDNAM: TOF Low Pulse 1 Max Samples
-  CATDESC: Maximum number of samples for pulse 1 for TOF Low single and double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_low_trigger_num_min_2 :
-  <<: *trigger_base
-  VALIDMAX: 255
-  FIELDNAM: TOF Low Pulse 2 Min Samples
-  CATDESC: Minimum number of samples for pulse 2 for TOF Low single and double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_low_trigger_num_max_2:
-  <<: *trigger_base
-  VALIDMAX: 65535
-  FIELDNAM: TOF Low Pulse 2 Max Samples
-  CATDESC: Maximum number of samples for pulse 2 for TOF Low single and double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_mid_trigger_level:
-  <<: *trigger_base
-  VALIDMAX: 1023
-  FIELDNAM: TOF Mid Trigger Level
-  CATDESC: Trigger level for the TOF Mid Channel
-  LABLAXIS: Level
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_mid_trigger_num_max_1_2:
-  <<: *trigger_base
-  VALIDMAX: 2047
-  FIELDNAM: TOF Mid Double Pulse Max Samples
-  CATDESC: Maximum number of samples between pulse 1 and 2 for TOF Mid double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_mid_trigger_num_min_1_2:
-  <<: *trigger_base
-  VALIDMAX: 2047
-  FIELDNAM: TOF Mid Double Pulse Min Samples
-  CATDESC: Minimum number of samples between pulse 1 and 2 for TOF Mid double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_mid_trigger_num_min_1:
-  <<: *trigger_base
-  VALIDMAX: 255
-  FIELDNAM: TOF Mid Pulse 1 Min Samples
-  CATDESC: Minimum number of samples for pulse 1 for TOF Mid single and double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_mid_trigger_num_max_1:
-  <<: *trigger_base
-  VALIDMAX: 255
-  FIELDNAM: TOF Mid Pulse 1 Max Samples
-  CATDESC: Maximum number of samples for pulse 1 for TOF Mid single and double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_mid_trigger_num_min_2:
-  <<: *trigger_base
-  VALIDMAX: 255
-  FIELDNAM: TOF Mid Pulse 2 Min Samples
-  CATDESC: Minimum number of samples for pulse 2 for TOF Mid single and double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-tof_mid_trigger_num_max_2:
-  <<: *trigger_base
-  VALIDMAX: 255
-  FIELDNAM: TOF Mid Pulse 2 Max Samples
-  CATDESC: Maximum number of samples for pulse 2 for TOF Mid single and double pulse triggering.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-low_sample_coincidence_mode_blocks:
-  <<: *trigger_base
-  VALIDMAX: 7
-  FIELDNAM: LS Coincidence Mode Blocks
-  CATDESC: Number of blocks coincidence window is enabled after low sample trigger.
-  LABLAXIS: Blocks Number
-  UNITS: " "
-
-low_sample_trigger_polarity:
-  <<: *trigger_base
-  VALIDMAX: 1
-  FIELDNAM: LS Trigger Polarity
-  CATDESC: The trigger polarity for low sample (0 = normal, 1 = inverted)
-  LABLAXIS: Polarity
-  UNITS: " "
-
-low_sample_trigger_level:
-  <<: *trigger_base
-  VALIDMAX: 4095
-  FIELDNAM: LS Trigger Level
-  CATDESC: Trigger level for the low sample
-  LABLAXIS: Level
-  UNITS: " "
-
-low_sample_trigger_num_min:
-  <<: *trigger_base
-  VALIDMAX: 255
-  FIELDNAM: LS Trigger Min Num Samples
-  CATDESC: The minimum number of samples above/below the trigger level for triggering the low sample.
-  LABLAXIS: Samples Number
-  UNITS: " " # "samples" in idex_packet_parser...?
-
-low_sample_trigger_mode:
-  <<: *trigger_base
-  VALIDMAX: 1
-  FIELDNAM: LS Trigger Mode Enabled
-  CATDESC: Low sample trigger mode (0=disabled, 1=enabled)
-  LABLAXIS: Mode
-  UNITS: " "
-
-tof_low_trigger_mode:
-  <<: *trigger_base
-  VALIDMAX: 1
-  FIELDNAM: TOF Low Trigger Mode Enabled
-  CATDESC: TOF Low trigger mode (0=disabled, 1=enabled)
-  LABLAXIS: Mode
-  UNITS: " "
-
-tof_mid_trigger_mode:
-  <<: *trigger_base
-  VALIDMAX: 1
-  FIELDNAM: TOF Mid Trigger Mode Enabled
-  CATDESC: TOF Mid trigger mode (0=disabled, 1=enabled)
-  LABLAXIS: Mode
-  UNITS: " "
-
-tof_high_trigger_mode:
-  <<: *trigger_base
-  VALIDMAX: 3
-  FIELDNAM: TOF High Trigger Mode Enabled
-  CATDESC: TOF High trigger mode (0=disabled, 1=threshold mode, 2=single pulse mode, 3=double pulse mode).
-  LABLAXIS: Mode
   UNITS: " "
 
 detector_voltage:
@@ -422,4 +188,268 @@ detector_current:
   FIELDNAM: Detector Current
   CATDESC: Last measurement in raw dN for processor board signal - "Detector Current "
   LABLAXIS: Current
+  UNITS: dN
+
+current_1v_pol:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: 1V POL Current
+  CATDESC: Last measurement in raw DN for Processor Board signal - “1V POL Current”
+  LABLAXIS: Current
+  UNITS: dN
+
+current_1p9v_pol:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: 1.9V POL Current
+  CATDESC: Last measurement in raw DN for Processor Board signal - “1.9V POL Current”
+  LABLAXIS: Current
+  UNITS: dN
+
+proc_bd_temp1:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: ProcBd Temp1
+  CATDESC: Last measurement in raw DN for Processor Board signal - “ProcBd Temp1”
+  LABLAXIS: Temperature
+  UNITS: dN
+
+proc_bd_temp2:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: ProcBd Temp2
+  CATDESC: Last measurement in raw DN for Processor Board signal - “ProcBd Temp2”
+  LABLAXIS: Temperature
+  UNITS: dN
+
+voltage_1v:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: 1V Voltage
+  CATDESC: Last measurement in raw DN for Processor Board signal - “1V Voltage”
+  LABLAXIS: Voltage
+  UNITS: dN
+
+fpga_temp:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: FPGA Temp
+  CATDESC: Last measurement in raw DN for Processor Board signal - “FPGA Temp”
+  LABLAXIS: Temperature
+  UNITS: dN
+
+voltage_1p9v:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: 1.9V Voltage
+  CATDESC: Last measurement in raw DN for Processor Board signal - “1.9V Voltage”
+  LABLAXIS: Voltage
+  UNITS: dN
+
+voltage_3p3v:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: 3.3V Voltage
+  CATDESC: Last measurement in raw DN for Processor Board signal - “3.3V Voltage”
+  LABLAXIS: Voltage
+  UNITS: dN
+
+sensor_ip:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: Sensor IP
+  CATDESC: Last measurement in raw DN for HVPS Board signal - “Sensor IP”
+  LABLAXIS: Current
+  UNITS: dN
+
+sensor_in:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: Sensor IN
+  CATDESC: Last measurement in raw DN for HVPS Board signal - “Sensor IN”
+  LABLAXIS: Current
+  UNITS: dN
+
+pos3p3ref_hk:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: P3.3VREF_HK
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “P3.3VREF_HK”
+  LABLAXIS: Voltage
+  UNITS: dN
+
+pos3ref_op:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: P3.3VREF_OP
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “P3.3VREF_OP”
+  LABLAXIS: Voltage
+  UNITS: dN
+
+neg6v:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: N6V
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “N6V”
+  LABLAXIS: Voltage
+  UNITS: dN
+
+pos6v:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: P6V
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “P6V”
+  LABLAXIS: Voltage
+  UNITS: dN
+
+pos16v:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: P16V
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “P16V”
+  LABLAXIS: Voltage
+  UNITS: dN
+
+pos3p3v:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: P3.3V
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “P3.3V”
+  LABLAXIS: Voltage
+  UNITS: dN
+
+neg5v:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: N5V
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “N5V”
+  LABLAXIS: Voltage
+  UNITS: dN
+
+pos5v:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: P5V
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “P5V”
+  LABLAXIS: Voltage
+  UNITS: dN
+
+pos3p3_imon:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: P3.3_IMON
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “P3.3_IMON”
+  LABLAXIS: Current
+  UNITS: dN
+
+pos16v_imon:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: P16V_IMON
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “P16V_IMON”
+  LABLAXIS: Current
+  UNITS: dN
+
+pos6v_imon:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: P6V_IMON
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “P6V_IMON”
+  LABLAXIS: Current
+  UNITS: dN
+
+neg6v_imon:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: N6V_IMON
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “N6V_IMON”
+  LABLAXIS: Current
+  UNITS: dN
+
+pos5v_imon:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: P5V_IMON
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “P5V_IMON”
+  LABLAXIS: Current
+  UNITS: dN
+
+neg5v_imon:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: N5V_IMON
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “N5V_IMON”
+  LABLAXIS: Current
+  UNITS: dN
+
+pos2p5v_imon:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: P2.5V_IMON
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “P2.5V_IMON”
+  LABLAXIS: Current
+  UNITS: dN
+
+neg2p5v_imon:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: N2.5V_IMON
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “N2.5V_IMON”
+  LABLAXIS: Current
+  UNITS: dN
+
+therm_decon0:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: THERM_DECON0
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “THERM_DECON0”
+  LABLAXIS: Temperature
+  UNITS: dN
+
+therm_decon1:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: THERM_DECON1
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “THERM_DECON1”
+  LABLAXIS: Temperature
+  UNITS: dN
+
+therm_dab:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: THERM_DAB
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “THERM_DAB”
+  LABLAXIS: Temperature
+  UNITS: dN
+
+therm_lvps:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: THERM_LVPS
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “THERM_LVPS”
+  LABLAXIS: Temperature
+  UNITS: dN
+
+therm_hvps:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: THERM_HVPS
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “THERM_HVPS”
+  LABLAXIS: Temperature
+  UNITS: dN
+
+pos2p5v:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: P2.5V
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “P2.5V”
+  LABLAXIS: Voltage
+  UNITS: dN
+
+neg2p5v:
+  <<: *trigger_base
+  VALIDMAX: 4095
+  FIELDNAM: N2.5V
+  CATDESC: Last measurement in raw DN for LVPS Board signal - “N2.5V”
+  LABLAXIS: Voltage
   UNITS: dN
