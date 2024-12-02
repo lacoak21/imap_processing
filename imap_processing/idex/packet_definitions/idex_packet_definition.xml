@@ -297,331 +297,91 @@
         <xtce:UnitSet/>
         <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
       </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP09_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRPROCHKCH0_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP10_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRPROCHKCH1_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP11_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRPROCHKCH2_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP12_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRPROCHKCH3_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP13_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRPROCHKCH4_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP14_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRPROCHKCH5_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP15_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRPROCHKCH6_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP16_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRPROCHKCH7_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP17_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRHVPSHKCH0_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP18_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRHVPSHKCH1_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP19_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRHVPSHKCH2_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP20_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRHVPSHKCH3_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP21_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRHVPSHKCH4_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP22_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRHVPSHKCH5_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP23_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRHVPSHKCH6_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP24_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRHVPSHKCH7_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP25_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK0CH0_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP26_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK0CH1_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP27_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK0CH2_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP28_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK0CH3_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP29_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK0CH4_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP30_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK0CH5_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP31_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK0CH6_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP32_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK0CH7_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP33_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK1CH0_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP34_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK1CH1_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP35_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK1CH2_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP36_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK1CH3_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP37_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK1CH4_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP38_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK1CH5_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP39_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK1CH6_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP40_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK1CH7_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP41_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK2CH0_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP42_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK2CH1_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP43_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK2CH2_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP44_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK2CH3_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP45_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK2CH4_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP46_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK2CH5_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP47_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK2CH6_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP48_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="4"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRLVHK2CH7_Type">
-        <xtce:UnitSet/>
-        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="12"/>
-      </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP50_Type">
+      <xtce:IntegerParameterType name="IDX__TXHDRPROCHKCH01_Type">
         <xtce:UnitSet/>
         <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
       </xtce:IntegerParameterType>
-      <xtce:IntegerParameterType name="IDX__TXHDRSP51_Type">
+      <xtce:IntegerParameterType name="IDX__TXHDRPROCHKCH23_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRPROCHKCH45_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRPROCHKCH67_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRHVPSHKCH01_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRHVPSHKCH23_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRHVPSHKCH45_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRHVPSHKCH67_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRLVHK0CH01_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRLVHK0CH23_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRLVHK0CH45_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRLVHK0CH67_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRLVHK1CH01_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRLVHK1CH23_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRLVHK1CH45_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRLVHK1CH67_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRLVHK2CH01_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRLVHK2CH23_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRLVHK2CH45_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRLVHK2CH67_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRSP09_Type">
+        <xtce:UnitSet/>
+        <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
+      </xtce:IntegerParameterType>
+      <xtce:IntegerParameterType name="IDX__TXHDRSP10_Type">
         <xtce:UnitSet/>
         <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="32"/>
       </xtce:IntegerParameterType>
@@ -1562,6 +1322,146 @@
         </xtce:AliasSet>
         <xtce:ParameterProperties dataSource="telemetered"/>
       </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRPROCHKCH01" parameterTypeRef="IDX__TXHDRPROCHKCH01_Type" shortDescription="Measurements from channels 0 and 1 from Processor ADC">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRPROCHKCH01" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRPROCHKCH23" parameterTypeRef="IDX__TXHDRPROCHKCH23_Type" shortDescription="Measurements from channels 2 and 3 from Processor ADC">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRPROCHKCH23" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRPROCHKCH45" parameterTypeRef="IDX__TXHDRPROCHKCH45_Type" shortDescription="Measurements from channels 4 and 5 from Processor ADC">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRPROCHKCH45" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRPROCHKCH67" parameterTypeRef="IDX__TXHDRPROCHKCH67_Type" shortDescription="Measurements from channels 6 and 7 from Processor ADC">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRPROCHKCH67" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRHVPSHKCH01" parameterTypeRef="IDX__TXHDRHVPSHKCH01_Type" shortDescription="Measurements from channels 0 and 1 from HVPS ADC">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRHVPSHKCH01" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRHVPSHKCH23" parameterTypeRef="IDX__TXHDRHVPSHKCH23_Type" shortDescription="Measurements from channels 2 and 3 from HVPS ADC">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRHVPSHKCH23" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRHVPSHKCH45" parameterTypeRef="IDX__TXHDRHVPSHKCH45_Type" shortDescription="Measurements from channels 4 and 5 from HVPS ADC">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRHVPSHKCH45" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRHVPSHKCH67" parameterTypeRef="IDX__TXHDRHVPSHKCH67_Type" shortDescription="Measurements from channels 6 and 7 from HVPS ADC">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRHVPSHKCH67" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRLVHK0CH01" parameterTypeRef="IDX__TXHDRLVHK0CH01_Type" shortDescription="Measurements from channels 0 and 1 from LVPS ADC #2">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRLVHK0CH01" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRLVHK0CH23" parameterTypeRef="IDX__TXHDRLVHK0CH23_Type" shortDescription="Measurements from channels 2 and 3 from LVPS ADC #2">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRLVHK0CH23" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRLVHK0CH45" parameterTypeRef="IDX__TXHDRLVHK0CH45_Type" shortDescription="Measurements from channels 4 and 5 from LVPS ADC #2">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRLVHK0CH45" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRLVHK0CH67" parameterTypeRef="IDX__TXHDRLVHK0CH67_Type" shortDescription="Measurements from channels 6 and 7 from LVPS ADC #2">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRLVHK0CH67" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRLVHK1CH01" parameterTypeRef="IDX__TXHDRLVHK1CH01_Type" shortDescription="Measurements from channels 0 and 1 from LVPS ADC #2">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRLVHK1CH01" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRLVHK1CH23" parameterTypeRef="IDX__TXHDRLVHK1CH23_Type" shortDescription="Measurements from channels 2 and 3 from LVPS ADC #2">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRLVHK1CH23" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRLVHK1CH45" parameterTypeRef="IDX__TXHDRLVHK1CH45_Type" shortDescription="Measurements from channels 4 and 5 from LVPS ADC #2">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRLVHK1CH45" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRLVHK1CH67" parameterTypeRef="IDX__TXHDRLVHK1CH67_Type" shortDescription="Measurements from channels 6 and 7 from LVPS ADC #2">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRLVHK1CH67" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRLVHK2CH01" parameterTypeRef="IDX__TXHDRLVHK2CH01_Type" shortDescription="Measurements from channels 0 and 1 from LVPS ADC #2">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRLVHK2CH01" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRLVHK2CH23" parameterTypeRef="IDX__TXHDRLVHK2CH23_Type" shortDescription="Measurements from channels 2 and 3 from LVPS ADC #2">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRLVHK2CH23" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRLVHK2CH45" parameterTypeRef="IDX__TXHDRLVHK2CH45_Type" shortDescription="Measurements from channels 4 and 5 from LVPS ADC #2">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRLVHK2CH45" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
+      <xtce:Parameter name="IDX__TXHDRLVHK2CH67" parameterTypeRef="IDX__TXHDRLVHK2CH67_Type" shortDescription="Measurements from channels 6 and 7 from LVPS ADC #2">
+        <xtce:AliasSet>
+          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
+          <xtce:Alias alias="TXHDRLVHK2CH67" nameSpace="itemName"/>
+        </xtce:AliasSet>
+        <xtce:ParameterProperties dataSource="telemetered"/>
+      </xtce:Parameter>
       <xtce:Parameter name="IDX__TXHDRSP09" parameterTypeRef="IDX__TXHDRSP09_Type" shortDescription="Spare">
         <xtce:AliasSet>
           <xtce:Alias alias="IDX" nameSpace="externalElement"/>
@@ -1569,570 +1469,10 @@
         </xtce:AliasSet>
         <xtce:ParameterProperties dataSource="telemetered"/>
       </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRPROCHKCH0" parameterTypeRef="IDX__TXHDRPROCHKCH0_Type" shortDescription="Measurements from channel 0 from Processor ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRPROCHKCH0" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
       <xtce:Parameter name="IDX__TXHDRSP10" parameterTypeRef="IDX__TXHDRSP10_Type" shortDescription="Spare">
         <xtce:AliasSet>
           <xtce:Alias alias="IDX" nameSpace="externalElement"/>
           <xtce:Alias alias="TXHDRSP10" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRPROCHKCH1" parameterTypeRef="IDX__TXHDRPROCHKCH1_Type" shortDescription="Measurements from channel 1 from Processor ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRPROCHKCH1" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP11" parameterTypeRef="IDX__TXHDRSP11_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP11" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRPROCHKCH2" parameterTypeRef="IDX__TXHDRPROCHKCH2_Type" shortDescription="Measurements from channel 2 from Processor ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRPROCHKCH2" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP12" parameterTypeRef="IDX__TXHDRSP12_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP12" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRPROCHKCH3" parameterTypeRef="IDX__TXHDRPROCHKCH3_Type" shortDescription="Measurements from channel 3 from Processor ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRPROCHKCH3" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP13" parameterTypeRef="IDX__TXHDRSP13_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP13" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRPROCHKCH4" parameterTypeRef="IDX__TXHDRPROCHKCH4_Type" shortDescription="Measurements from channel 4 from Processor ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRPROCHKCH4" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP14" parameterTypeRef="IDX__TXHDRSP14_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP14" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRPROCHKCH5" parameterTypeRef="IDX__TXHDRPROCHKCH5_Type" shortDescription="Measurements from channel 5 from Processor ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRPROCHKCH5" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP15" parameterTypeRef="IDX__TXHDRSP15_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP15" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRPROCHKCH6" parameterTypeRef="IDX__TXHDRPROCHKCH6_Type" shortDescription="Measurements from channel 6 from Processor ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRPROCHKCH6" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP16" parameterTypeRef="IDX__TXHDRSP16_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP16" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRPROCHKCH7" parameterTypeRef="IDX__TXHDRPROCHKCH7_Type" shortDescription="Measurements from channel 7 from Processor ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRPROCHKCH7" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP17" parameterTypeRef="IDX__TXHDRSP17_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP17" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRHVPSHKCH0" parameterTypeRef="IDX__TXHDRHVPSHKCH0_Type" shortDescription="Measurements from channel 0 from HVPS ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRHVPSHKCH0" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP18" parameterTypeRef="IDX__TXHDRSP18_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP18" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRHVPSHKCH1" parameterTypeRef="IDX__TXHDRHVPSHKCH1_Type" shortDescription="Measurements from channel 1 from HVPS ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRHVPSHKCH1" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP19" parameterTypeRef="IDX__TXHDRSP19_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP19" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRHVPSHKCH2" parameterTypeRef="IDX__TXHDRHVPSHKCH2_Type" shortDescription="Measurements from channel 2 from HVPS ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRHVPSHKCH2" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP20" parameterTypeRef="IDX__TXHDRSP20_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP20" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRHVPSHKCH3" parameterTypeRef="IDX__TXHDRHVPSHKCH3_Type" shortDescription="Measurements from channel 3 from HVPS ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRHVPSHKCH3" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-       <xtce:Parameter name="IDX__TXHDRSP21" parameterTypeRef="IDX__TXHDRSP21_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP21" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRHVPSHKCH4" parameterTypeRef="IDX__TXHDRHVPSHKCH4_Type" shortDescription="Measurements from channel 4 from HVPS ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRHVPSHKCH4" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-       <xtce:Parameter name="IDX__TXHDRSP22" parameterTypeRef="IDX__TXHDRSP22_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP22" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRHVPSHKCH5" parameterTypeRef="IDX__TXHDRHVPSHKCH5_Type" shortDescription="Measurements from channel 5 from HVPS ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRHVPSHKCH5" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-       <xtce:Parameter name="IDX__TXHDRSP23" parameterTypeRef="IDX__TXHDRSP23_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP23" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRHVPSHKCH6" parameterTypeRef="IDX__TXHDRHVPSHKCH6_Type" shortDescription="Measurements from channel 6 from HVPS ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRHVPSHKCH6" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-       <xtce:Parameter name="IDX__TXHDRSP24" parameterTypeRef="IDX__TXHDRSP24_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP24" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRHVPSHKCH7" parameterTypeRef="IDX__TXHDRHVPSHKCH7_Type" shortDescription="Measurements from channel 7 from HVPS ADC">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRHVPSHKCH7" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-       <xtce:Parameter name="IDX__TXHDRSP25" parameterTypeRef="IDX__TXHDRSP25_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP25" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK0CH0" parameterTypeRef="IDX__TXHDRLVHK0CH0_Type" shortDescription="Measurements from channel 0 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK0CH0" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-       <xtce:Parameter name="IDX__TXHDRSP26" parameterTypeRef="IDX__TXHDRSP26_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP26" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK0CH1" parameterTypeRef="IDX__TXHDRLVHK0CH1_Type" shortDescription="Measurements from channel 1 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK0CH1" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-       <xtce:Parameter name="IDX__TXHDRSP27" parameterTypeRef="IDX__TXHDRSP27_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP27" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK0CH2" parameterTypeRef="IDX__TXHDRLVHK0CH2_Type" shortDescription="Measurements from channel 2 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK0CH2" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP28" parameterTypeRef="IDX__TXHDRSP28_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP28" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK0CH3" parameterTypeRef="IDX__TXHDRLVHK0CH3_Type" shortDescription="Measurements from channel 3 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK0CH3" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP29" parameterTypeRef="IDX__TXHDRSP29_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP29" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-     <xtce:Parameter name="IDX__TXHDRLVHK0CH4" parameterTypeRef="IDX__TXHDRLVHK0CH4_Type" shortDescription="Measurements from channel 4 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK0CH4" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP30" parameterTypeRef="IDX__TXHDRSP30_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP30" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK0CH5" parameterTypeRef="IDX__TXHDRLVHK0CH5_Type" shortDescription="Measurements from channel 5 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK0CH5" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP31" parameterTypeRef="IDX__TXHDRSP31_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP31" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK0CH6" parameterTypeRef="IDX__TXHDRLVHK0CH6_Type" shortDescription="Measurements from channel 6 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK0CH6" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP32" parameterTypeRef="IDX__TXHDRSP32_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP32" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK0CH7" parameterTypeRef="IDX__TXHDRLVHK0CH7_Type" shortDescription="Measurements from channel 7 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK0CH7" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP33" parameterTypeRef="IDX__TXHDRSP33_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP33" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK1CH0" parameterTypeRef="IDX__TXHDRLVHK1CH0_Type" shortDescription="Measurements from channel 0 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK1CH0" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP34" parameterTypeRef="IDX__TXHDRSP34_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP34" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK1CH1" parameterTypeRef="IDX__TXHDRLVHK1CH1_Type" shortDescription="Measurements from channel 1 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK1CH1" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP35" parameterTypeRef="IDX__TXHDRSP35_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP35" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK1CH2" parameterTypeRef="IDX__TXHDRLVHK1CH2_Type" shortDescription="Measurements from channel 2 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK1CH2" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP36" parameterTypeRef="IDX__TXHDRSP36_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP36" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-       <xtce:Parameter name="IDX__TXHDRLVHK1CH3" parameterTypeRef="IDX__TXHDRLVHK1CH3_Type" shortDescription="Measurements from channel 3 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK1CH3" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP37" parameterTypeRef="IDX__TXHDRSP37_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP37" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK1CH4" parameterTypeRef="IDX__TXHDRLVHK1CH4_Type" shortDescription="Measurements from channel 4 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK1CH4" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP38" parameterTypeRef="IDX__TXHDRSP38_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP38" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK1CH5" parameterTypeRef="IDX__TXHDRLVHK1CH5_Type" shortDescription="Measurements from channel 5 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK1CH5" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP39" parameterTypeRef="IDX__TXHDRSP39_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP39" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK1CH6" parameterTypeRef="IDX__TXHDRLVHK1CH6_Type" shortDescription="Measurements from channel 6 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK1CH6" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP40" parameterTypeRef="IDX__TXHDRSP40_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP40" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK1CH7" parameterTypeRef="IDX__TXHDRLVHK1CH7_Type" shortDescription="Measurements from channel 7 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK1CH7" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP41" parameterTypeRef="IDX__TXHDRSP41_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP41" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK2CH0" parameterTypeRef="IDX__TXHDRLVHK2CH0_Type" shortDescription="Measurements from channel 0 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK2CH0" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP42" parameterTypeRef="IDX__TXHDRSP42_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP42" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK2CH1" parameterTypeRef="IDX__TXHDRLVHK2CH1_Type" shortDescription="Measurements from channel 1 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK2CH1" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP43" parameterTypeRef="IDX__TXHDRSP43_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP43" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK2CH2" parameterTypeRef="IDX__TXHDRLVHK2CH2_Type" shortDescription="Measurements from channel 2 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK2CH23" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP44" parameterTypeRef="IDX__TXHDRSP44_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP44" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK2CH3" parameterTypeRef="IDX__TXHDRLVHK2CH3_Type" shortDescription="Measurements from channel 3 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK2CH3" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP45" parameterTypeRef="IDX__TXHDRSP45_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP45" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK2CH4" parameterTypeRef="IDX__TXHDRLVHK2CH4_Type" shortDescription="Measurements from channel 4 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK2CH4" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP46" parameterTypeRef="IDX__TXHDRSP46_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP46" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK2CH5" parameterTypeRef="IDX__TXHDRLVHK2CH5_Type" shortDescription="Measurements from channel 5 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK2CH5" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP47" parameterTypeRef="IDX__TXHDRSP47_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP47" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK2CH6" parameterTypeRef="IDX__TXHDRLVHK2CH6_Type" shortDescription="Measurements from channel 6 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK2CH6" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP48" parameterTypeRef="IDX__TXHDRSP48_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP48" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRLVHK2CH7" parameterTypeRef="IDX__TXHDRLVHK2CH7_Type" shortDescription="Measurements from channel 7 from LVPS ADC #2">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRLVHK2CH7" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP50" parameterTypeRef="IDX__TXHDRSP50_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP50" nameSpace="itemName"/>
-        </xtce:AliasSet>
-        <xtce:ParameterProperties dataSource="telemetered"/>
-      </xtce:Parameter>
-      <xtce:Parameter name="IDX__TXHDRSP51" parameterTypeRef="IDX__TXHDRSP51_Type" shortDescription="Spare">
-        <xtce:AliasSet>
-          <xtce:Alias alias="IDX" nameSpace="externalElement"/>
-          <xtce:Alias alias="TXHDRSP51" nameSpace="itemName"/>
         </xtce:AliasSet>
         <xtce:ParameterProperties dataSource="telemetered"/>
       </xtce:Parameter>
@@ -3102,88 +2442,28 @@
           <xtce:ParameterRefEntry parameterRef="IDX__TXHDRFIFODELAY"/>
           <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSAMPDELAY"/>
           <xtce:ParameterRefEntry parameterRef="IDX__TXHDRTRANSCNT"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRPROCHKCH01"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRPROCHKCH23"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRPROCHKCH45"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRPROCHKCH67"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRHVPSHKCH01"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRHVPSHKCH23"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRHVPSHKCH45"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRHVPSHKCH67"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK0CH01"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK0CH23"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK0CH45"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK0CH67"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK1CH01"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK1CH23"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK1CH45"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK1CH67"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK2CH01"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK2CH23"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK2CH45"/>
+          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK2CH67"/>
           <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP09"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRPROCHKCH0"/>
           <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP10"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRPROCHKCH1"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP11"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRPROCHKCH2"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP12"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRPROCHKCH3"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP13"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRPROCHKCH4"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP14"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRPROCHKCH5"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP15"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRPROCHKCH6"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP16"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRPROCHKCH7"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP17"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRHVPSHKCH0"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP18"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRHVPSHKCH1"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP19"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRHVPSHKCH2"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP20"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRHVPSHKCH3"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP21"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRHVPSHKCH4"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP22"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRHVPSHKCH5"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP23"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRHVPSHKCH6"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP24"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRHVPSHKCH7"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP25"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK0CH0"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP26"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK0CH1"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP27"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK0CH2"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP28"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK0CH3"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP29"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK0CH4"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP30"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK0CH5"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP31"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK0CH6"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP32"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK0CH7"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP33"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK1CH0"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP34"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK1CH1"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP35"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK1CH2"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP36"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK1CH3"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP37"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK1CH4"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP38"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK1CH5"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP39"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK1CH6"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP40"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK1CH7"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP41"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK2CH0"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP42"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK2CH1"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP43"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK2CH2"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP44"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK2CH3"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP45"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK2CH4"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP46"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK2CH5"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP47"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK2CH6"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP48"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRLVHK2CH7"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP50"/>
-          <xtce:ParameterRefEntry parameterRef="IDX__TXHDRSP51"/>
           <xtce:ParameterRefEntry parameterRef="IDX__TXHDRFSWAIDCOPY"/>
           <xtce:ParameterRefEntry parameterRef="IDX__TXHDRFSWBINCOPY"/>
           <xtce:ParameterRefEntry parameterRef="IDX__TXHDRFSWMAJOR"/>

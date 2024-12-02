@@ -14,7 +14,7 @@ def test_idex_decom_length(decom_test_data: xr.Dataset):
     decom_test_data : xarray.Dataset
         The dataset to test with
     """
-    assert len(decom_test_data) == 46
+    assert len(decom_test_data) == 106
 
 
 def test_idex_decom_event_num(decom_test_data: xr.Dataset):

@@ -11,7 +11,7 @@ instrument_base: &instrument_base
 
 imap_idex_l1a_sci:
   <<: *instrument_base
-  Data_level: 1A
+  Data_level: L1A
   Data_type: L1A_SCI>Level-1A Science Data
   Logical_source: imap_idex_l1a_sci
   Logical_source_description: IMAP Mission IDEX Instrument Level-1A Data.

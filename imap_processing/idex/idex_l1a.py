@@ -15,7 +15,6 @@ Examples
 """
 
 import logging
-from collections import namedtuple
 from enum import IntEnum
 from pathlib import Path
 from typing import Union
@@ -32,62 +31,8 @@ from imap_processing.utils import convert_to_binary_string
 
 logger = logging.getLogger(__name__)
 
-# TODO: Generate quicklook plots
 
-# Create a large dictionary of values from the FPGA header that need to be
-# captured into the CDF file.  They are lumped together because they share
-# similar attributes.
-# Notes about the variables are set here, acting as comments and will also be
-# placed into the CDF in the VAR_NOTES attribute.
-TRIGGER_DESCRIPTION = namedtuple(
-    "TRIGGER_DESCRIPTION",
-    ["name", "packet_name"],
-)
-TRIGGER_DESCRIPTION_DICT = {
-    trigger.name: trigger
-    for trigger in [
-        TRIGGER_DESCRIPTION("event_number", "IDX__TXHDREVTNUM"),
-        TRIGGER_DESCRIPTION("current_1v_pol", "IDX__TXHDRPROCHKCH0"),
-        TRIGGER_DESCRIPTION("current_1p9v_pol", "IDX__TXHDRPROCHKCH1"),
-        TRIGGER_DESCRIPTION("proc_bd_temp1", "IDX__TXHDRPROCHKCH2"),
-        TRIGGER_DESCRIPTION("proc_bd_temp2", "IDX__TXHDRPROCHKCH3"),
-        TRIGGER_DESCRIPTION("voltage_1v", "IDX__TXHDRPROCHKCH4"),
-        TRIGGER_DESCRIPTION("fpga_temp", "IDX__TXHDRPROCHKCH5"),
-        TRIGGER_DESCRIPTION("voltage_1p9v", "IDX__TXHDRPROCHKCH6"),
-        TRIGGER_DESCRIPTION("voltage_3p3v", "IDX__TXHDRPROCHKCH7"),
-        TRIGGER_DESCRIPTION("detector_voltage", "IDX__TXHDRHVPSHKCH0"),
-        TRIGGER_DESCRIPTION("sensor_voltage", "IDX__TXHDRHVPSHKCH1"),
-        TRIGGER_DESCRIPTION("target_voltage", "IDX__TXHDRHVPSHKCH2"),
-        TRIGGER_DESCRIPTION("reflectron_voltage", "IDX__TXHDRHVPSHKCH3"),
-        TRIGGER_DESCRIPTION("rejection_voltage", "IDX__TXHDRHVPSHKCH4"),
-        TRIGGER_DESCRIPTION("detector_current", "IDX__TXHDRHVPSHKCH5"),
-        TRIGGER_DESCRIPTION("sensor_ip", "IDX__TXHDRHVPSHKCH6"),
-        TRIGGER_DESCRIPTION("sensor_in", "IDX__TXHDRHVPSHKCH7"),
-        TRIGGER_DESCRIPTION("pos3p3ref_hk", "IDX__TXHDRLVHK0CH0"),
-        TRIGGER_DESCRIPTION("pos3ref_op", "IDX__TXHDRLVHK0CH1"),
-        TRIGGER_DESCRIPTION("neg6v", "IDX__TXHDRLVHK0CH2"),
-        TRIGGER_DESCRIPTION("pos6v", "IDX__TXHDRLVHK0CH3"),
-        TRIGGER_DESCRIPTION("pos16v", "IDX__TXHDRLVHK0CH4"),
-        TRIGGER_DESCRIPTION("pos3p3v", "IDX__TXHDRLVHK0CH5"),
-        TRIGGER_DESCRIPTION("neg5v", "IDX__TXHDRLVHK0CH6"),
-        TRIGGER_DESCRIPTION("pos5v", "IDX__TXHDRLVHK0CH7"),
-        TRIGGER_DESCRIPTION("pos3p3_imon", "IDX__TXHDRLVHK1CH0"),
-        TRIGGER_DESCRIPTION("pos16v_imon", "IDX__TXHDRLVHK1CH1"),
-        TRIGGER_DESCRIPTION("pos6v_imon", "IDX__TXHDRLVHK1CH2"),
-        TRIGGER_DESCRIPTION("neg6v_imon", "IDX__TXHDRLVHK1CH3"),
-        TRIGGER_DESCRIPTION("pos5v_imon", "IDX__TXHDRLVHK1CH4"),
-        TRIGGER_DESCRIPTION("neg5v_imon", "IDX__TXHDRLVHK1CH5"),
-        TRIGGER_DESCRIPTION("pos2p5v_imon", "IDX__TXHDRLVHK1CH6"),
-        TRIGGER_DESCRIPTION("neg2p5v_imon", "IDX__TXHDRLVHK1CH7"),
-        TRIGGER_DESCRIPTION("therm_decon0", "IDX__TXHDRLVHK2CH0"),
-        TRIGGER_DESCRIPTION("therm_decon1", "IDX__TXHDRLVHK2CH1"),
-        TRIGGER_DESCRIPTION("therm_dab", "IDX__TXHDRLVHK2CH2"),
-        TRIGGER_DESCRIPTION("therm_lvps", "IDX__TXHDRLVHK2CH3"),
-        TRIGGER_DESCRIPTION("therm_hvps", "IDX__TXHDRLVHK2CH4"),
-        TRIGGER_DESCRIPTION("pos2p5v", "IDX__TXHDRLVHK2CH5"),
-        TRIGGER_DESCRIPTION("neg2p5v", "IDX__TXHDRLVHK2CH6")
-    ]
-}  # fmt: skip
+# TODO: Generate quicklook plots
 
 
 class Scitype(IntEnum):
@@ -131,6 +76,7 @@ class PacketParser:
 
         Notes
         -----
+            # TODO should this be assumed?
             Currently assumes one L0 file will generate exactly one L1a file.
         """
         decom_packet_list = decom_packets(packet_file)
@@ -251,13 +197,15 @@ class RawDustEvent:
         self.high_sample_trigger_time = 0
         self._set_sample_trigger_times(header_packet)
 
-        # Iterate through the trigger description dictionary and pull out the values
-        self.trigger_values = {
-            trigger.name: header_packet[trigger.packet_name].raw_value
-            for trigger in TRIGGER_DESCRIPTION_DICT.values()
+        # Iterate through every telemetry item not in the header and pull out the values
+        self.telemetry_items = {
+            key.lower(): val.raw_value
+            for key, val in header_packet.items()
+            if key not in header_packet.header.keys()
         }
+
         logger.debug(
-            f"trigger_values:\n{self.trigger_values}"
+            f"telemetry_items:\n{self.telemetry_items}"
         )  # Log values here in case of error
 
         # Initialize the binary data received from future packets
@@ -519,18 +467,17 @@ class RawDustEvent:
         dataset : xarray.Dataset
             A Dataset object containing the data from a single impact.
         """
-        # Create object for CDF attrs
+        # Create an object for CDF attrs
         idex_attrs = self.cdf_attrs
 
-        # Gather the huge number of trigger info metadata
+        # Gather the huge amount of metadata info
         trigger_vars = {}
-        for var, value in self.trigger_values.items():
-            trigger_desc = TRIGGER_DESCRIPTION_DICT[var]
+        for var, value in self.telemetry_items.items():
             trigger_vars[var] = xr.DataArray(
                 name=var,
                 data=[value],
                 dims=("epoch"),
-                attrs=idex_attrs.get_variable_attributes(trigger_desc.name),
+                attrs=idex_attrs.get_variable_attributes(var),
             )
 
         # Process the 6 primary data variables
