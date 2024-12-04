@@ -448,7 +448,7 @@ class RawDustEvent:
         ----------
         packet : space_packet_parser.packets.CCSDSPacket
             A single science data packet for one of the 6.
-            IDEX observable.
+            IDEX observables.
         """
         scitype = packet["IDX__SCI0TYPE"]
         raw_science_bits = convert_to_binary_string(packet["IDX__SCI0RAW"])
