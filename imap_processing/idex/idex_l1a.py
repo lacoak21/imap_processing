@@ -32,9 +32,6 @@ from imap_processing.utils import convert_to_binary_string
 logger = logging.getLogger(__name__)
 
 
-# TODO: Generate quicklook plots
-
-
 class Scitype(IntEnum):
     """Define parameters for IDEX Science Type."""
 
@@ -76,7 +73,6 @@ class PacketParser:
 
         Notes
         -----
-            # TODO should this be assumed?
             Currently assumes one L0 file will generate exactly one L1a file.
         """
         decom_packet_list = decom_packets(packet_file)
@@ -306,10 +302,26 @@ class RawDustEvent:
         The header has information about the number of blocks before triggering,
         rather than the number of samples before triggering.
         """
-        # Retrieve the number of samples of high gain delay
+        # Retrieve the number of samples for high gain delay
+
+        # packet['IDX__TXHDRSAMPDELAY'] is a 32-bit value, with the last 10 bits
+        # representing the high gain sample delay and the first 2 bits used for padding.
+        # To extract the high gain bits, the bitwise right shift (>> 20) moves the bits
+        # 20 positions to the right, and the mask (0b1111111111) keeps only the least
+        # significant 10 bits.
         high_gain_delay = (packet["IDX__TXHDRSAMPDELAY"] >> 20) & 0b1111111111
         n_blocks = packet["IDX__TXHDRBLOCKS"]
+
         # Retrieve number of low/high sample pre-trigger blocks
+
+        # packet['IDX__TXHDRBLOCKS'] is a 32-bit value:
+        # Bits 21-26 represent the number of low sampling pre-trigger blocks.
+        #   We can extract this by shifting right by 6 bits and applying a mask to keep
+        #   the last 6 bits.
+        # Bits 13-16 represent the number of high sampling pre-trigger blocks.
+        #   We can extract this by shifting right by 16 bits and applying a mask to keep
+        #   the last 4 bits.
+
         num_low_sample_pretrigger_blocks = (n_blocks >> 6) & 0b111111
         num_high_sample_pretrigger_blocks = (n_blocks >> 16) & 0b1111
 

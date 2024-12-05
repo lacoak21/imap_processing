@@ -8,8 +8,8 @@ data_min: &data_min 0
 data_max: &data_max 4096
 
 string_base_attrs: &string_base
-  CATDESC: string metadata
-  FIELDNAM: string_metadata
+  CATDESC: " "
+  FIELDNAM: " "
   FORMAT: A3
   LABLAXIS: "none"
   VAR_TYPE: metadata
@@ -69,7 +69,7 @@ trigger_base: &trigger_base
   VAR_TYPE: support_data
   FILLVAL: *int_fillval
   LABLAXIS: ""
-  FORMAT: I10 # TODO: revisit
+  FORMAT: I10
   UNITS: " "
 
 low_sr_attrs:
@@ -157,13 +157,13 @@ shfine:
   FIELDNAM: Secondary header fine time
   VALIDMAX: *max_uint16
   LABLAXIS: Packet Generation Time (Fine)
-  UNITS: dN
+  UNITS: seconds
 
 checksum:
   <<: *trigger_base
   CATDESC: CRC 16 Checksum
   FIELDNAM: Checksum
-  UNITS: dN
+  UNITS: " "
 
 idx__sci0aid:
   <<: *trigger_base
