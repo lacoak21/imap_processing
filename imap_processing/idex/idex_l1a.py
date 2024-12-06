@@ -309,7 +309,7 @@ class RawDustEvent:
         # To extract the high gain bits, the bitwise right shift (>> 20) moves the bits
         # 20 positions to the right, and the mask (0b1111111111) keeps only the least
         # significant 10 bits.
-        high_gain_delay = (packet["IDX__TXHDRSAMPDELAY"] >> 20) & 0b1111111111
+        high_gain_delay = (packet["IDX__TXHDRSAMPDELAY"] >> 22) & 0b1111111111
         n_blocks = packet["IDX__TXHDRBLOCKS"]
 
         # Retrieve number of low/high sample pre-trigger blocks
