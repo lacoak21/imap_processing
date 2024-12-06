@@ -309,7 +309,7 @@ class RawDustEvent:
         # To extract the high gain bits, the bitwise right shift (>> 20) moves the bits
         # 20 positions to the right, and the mask (0b1111111111) keeps only the least
         # significant 10 bits.
-        high_gain_delay = (packet["IDX__TXHDRSAMPDELAY"] >> 20) & 0b1111111111
+        # high_gain_delay = (packet["IDX__TXHDRSAMPDELAY"] >> 22) & 0b1111111111
         n_blocks = packet["IDX__TXHDRBLOCKS"]
 
         # Retrieve number of low/high sample pre-trigger blocks
@@ -327,16 +327,17 @@ class RawDustEvent:
 
         # Calculate the low and high sample trigger times based on the high gain delay
         # and the number of high sample/low sample pretrigger blocks
+        # TODO: ENG is always using the last high gain. Rest is mixed up as well
         self.low_sample_trigger_time = (
-            self.LOW_SAMPLE_RATE
+            self.HIGH_SAMPLE_RATE
             * (num_low_sample_pretrigger_blocks + 1)
-            * self.NUMBER_SAMPLES_PER_LOW_SAMPLE_BLOCK
-            - self.HIGH_SAMPLE_RATE * high_gain_delay
+            * self.NUMBER_SAMPLES_PER_HIGH_SAMPLE_BLOCK
         )
         self.high_sample_trigger_time = (
-            self.HIGH_SAMPLE_RATE
+            self.LOW_SAMPLE_RATE
             * (num_high_sample_pretrigger_blocks + 1)
-            * self.NUMBER_SAMPLES_PER_HIGH_SAMPLE_BLOCK
+            * self.NUMBER_SAMPLES_PER_LOW_SAMPLE_BLOCK
+            - self.HIGH_SAMPLE_RATE * 9  # high_gain_delay
         )
 
     def _parse_high_sample_waveform(self, waveform_raw: str) -> list[int]:
