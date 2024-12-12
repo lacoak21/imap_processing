@@ -502,31 +502,31 @@ class RawDustEvent:
         tof_low_xr = xr.DataArray(
             name="TOF_Low",
             data=[self._parse_high_sample_waveform(self.TOF_Low_bits)],
-            dims=("epoch", "time_high_sr_dim"),
+            dims=("epoch", "time_high_sr"),
             attrs=idex_attrs.get_variable_attributes("tof_low_attrs"),
         )
         tof_mid_xr = xr.DataArray(
             name="TOF_Mid",
             data=[self._parse_high_sample_waveform(self.TOF_Mid_bits)],
-            dims=("epoch", "time_high_sr_dim"),
+            dims=("epoch", "time_high_sr"),
             attrs=idex_attrs.get_variable_attributes("tof_mid_attrs"),
         )
         target_high_xr = xr.DataArray(
             name="Target_High",
             data=[self._parse_low_sample_waveform(self.Target_High_bits)],
-            dims=("epoch", "time_low_sr_dim"),
+            dims=("epoch", "time_low_sr"),
             attrs=idex_attrs.get_variable_attributes("target_high_attrs"),
         )
         target_low_xr = xr.DataArray(
             name="Target_Low",
             data=[self._parse_low_sample_waveform(self.Target_Low_bits)],
-            dims=("epoch", "time_low_sr_dim"),
+            dims=("epoch", "time_low_sr"),
             attrs=idex_attrs.get_variable_attributes("target_low_attrs"),
         )
         ion_grid_xr = xr.DataArray(
             name="Ion_Grid",
             data=[self._parse_low_sample_waveform(self.Ion_Grid_bits)],
-            dims=("epoch", "time_low_sr_dim"),
+            dims=("epoch", "time_low_sr"),
             attrs=idex_attrs.get_variable_attributes("ion_grid_attrs"),
         )
 
@@ -541,14 +541,14 @@ class RawDustEvent:
         time_low_sr_xr = xr.DataArray(
             name="time_low_sr",
             data=[self._calc_low_sample_resolution(len(target_low_xr[0]))],
-            dims=("epoch", "time_low_sr_dim"),
+            dims=("epoch", "time_low_sr"),
             attrs=idex_attrs.get_variable_attributes("low_sr_attrs"),
         )
 
         time_high_sr_xr = xr.DataArray(
             name="time_high_sr",
             data=[self._calc_high_sample_resolution(len(tof_low_xr[0]))],
-            dims=("epoch", "time_high_sr_dim"),
+            dims=("epoch", "time_high_sr"),
             attrs=idex_attrs.get_variable_attributes("high_sr_attrs"),
         )
 
