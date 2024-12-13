@@ -80,6 +80,12 @@ def idex_l1b(l1a_dataset: xr.Dataset, data_version: str) -> xr.Dataset:
         conversion_table_path=cdf_var_defs_path,
         packet_name=cdf_var_defs["packetName"].to_list(),
     )
+    # Copy 'shcoarse' and 'shfine' arrays from the l1a_dataset
+    l1b_dataset["shcoarse"] = l1a_dataset["shcoarse"]
+    l1b_dataset["shfine"] = l1a_dataset["shfine"]
+    # Copy high sampling and low sampling time coords from the l1a_dataset
+    l1b_dataset["time_high_sr"] = l1a_dataset["time_high_sr"]
+    l1b_dataset["time_low_sr"] = l1a_dataset["time_low_sr"]
 
     return l1b_dataset
 
@@ -150,3 +156,36 @@ def convert_waveforms(l1a_dataset: xr.Dataset) -> dict[str, xr.DataArray]:
         waveforms_converted[var.name] = l1a_dataset[var.name] * var.value
 
     return waveforms_converted
+
+
+# def get_trigger_mode_and_level(l1a_dataset):
+#     lg_mode = l1a_dataset['IDX__TXHDRLGTRIGMODE']
+#     mg_mode = l1a_dataset['IDX__TXHDRMGTRIGMODE']
+#     hg_mode = l1a_dataset['IDX__TXHDRHGTRIGMODE']
+#     if lg_mode != 0:
+#         trigger_level = (l1a_dataset['IDX__TXHDRLGTRIGCTRL1'] >> 22) & mask_10_bit
+#         if hg_mode == 1:
+#             trigger_mode = "LGThreshold"
+#         elif hg_mode == 2:
+#             trigger_mode = "LGSinglePulse"
+#         else:
+#             trigger_mode = "LGDoublePulse"
+#     if mg_mode != 0:
+#         trigger_level = (l1a_dataset['IDX__TXHDRMGTRIGCTRL1'] >> 22) & mask_10_bit
+#         if mg_mode == 1:
+#             trigger_mode = "MGThreshold"
+#         elif mg_mode == 2:
+#             trigger_mode = "MGSinglePulse"
+#         else:
+#             trigger_mode = "MGDoublePulse"
+#     if hg_mode != 0:
+#         trigger_level = 2.89e-4 * (
+#         (l1a_dataset['IDX__TXHDRHGTRIGCTRL1'] >> 22) & mask_10_bit)
+#         if hg_mode == 1:
+#             trigger_mode = "HGThreshold"
+#         elif hg_mode == 2:
+#             trigger_mode = "HGSinglePulse"
+#         else:
+#             trigger_mode = "HGDoublePulse"
+#
+#     return trigger_level, trigger_mode
