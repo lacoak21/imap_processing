@@ -541,14 +541,14 @@ class RawDustEvent:
         time_low_sr_xr = xr.DataArray(
             name="time_low_sr",
             data=[self._calc_low_sample_resolution(len(target_low_xr[0]))],
-            dims=("epoch", "time_low_sr_dim"),
+            dims=("epoch", "time_low_sr"),
             attrs=idex_attrs.get_variable_attributes("low_sr_attrs"),
         )
 
         time_high_sr_xr = xr.DataArray(
             name="time_high_sr",
             data=[self._calc_high_sample_resolution(len(tof_low_xr[0]))],
-            dims=("epoch", "time_high_sr_dim"),
+            dims=("epoch", "time_high_sr"),
             attrs=idex_attrs.get_variable_attributes("high_sr_attrs"),
         )
 

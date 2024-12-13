@@ -204,6 +204,19 @@ def test_get_spacecraft_to_instrument_spin_phase_offset(instrument, expected_off
             SpiceFrame.IMAP_SPACECRAFT,
             SpiceFrame.IMAP_DPS,
         ),
+        # single et, multiple position vectors
+        (
+            ["2025-04-30T12:00:00.000"],
+            np.array(
+                [
+                    [1, 0, 0],
+                    [0, 1, 0],
+                    [0, 0, 1],
+                ]
+            ),
+            SpiceFrame.IMAP_SPACECRAFT,
+            SpiceFrame.IMAP_DPS,
+        ),
     ],
 )
 def test_frame_transform(et_strings, position, from_frame, to_frame, furnish_kernels):
@@ -223,11 +236,24 @@ def test_frame_transform(et_strings, position, from_frame, to_frame, furnish_ker
         et = np.array([spice.utc2et(et_str) for et_str in et_strings])
         et_arg = et[0] if len(et) == 1 else et
         result = frame_transform(et_arg, position, from_frame, to_frame)
-        # check the result shape before modifying for value checking
-        assert result.shape == (3,) if len(et) == 1 else (len(et), 3)
-        # compare against pure SPICE calculation
-        position = np.broadcast_to(position, (len(et), 3))
-        result = np.broadcast_to(result, (len(et), 3))
+        # check the result shape before modifying for value checking.
+        # There are 3 cases to consider:
+
+        # 1 event time, multiple position vectors:
+        if len(et) == 1 and position.ndim > 1:
+            assert result.shape == position.shape
+        # multiple event times, single position vector:
+        elif len(et) > 1 and position.ndim == 1:
+            assert result.shape == (len(et), 3)
+        # multiple event times, multiple position vectors (same number of each)
+        elif len(et) > 1 and position.ndim > 1:
+            assert result.shape == (len(et), 3)
+
+        # compare against pure SPICE calculation.
+        # If the result is a single position vector, broadcast it to first.
+        if position.ndim == 1:
+            position = np.broadcast_to(position, (len(et), 3))
+            result = np.broadcast_to(result, (len(et), 3))
         for spice_et, spice_position, test_result in zip(et, position, result):
             rotation_matrix = spice.pxform(from_frame.name, to_frame.name, spice_et)
             spice_result = spice.mxv(rotation_matrix, spice_position)
@@ -254,7 +280,7 @@ def test_frame_transform_exceptions():
         match="Mismatch in number of position vectors and Ephemeris times provided.",
     ):
         frame_transform(
-            1,
+            [1, 2],
             np.arange(9).reshape((3, 3)),
             SpiceFrame.ECLIPJ2000,
             SpiceFrame.IMAP_HIT,

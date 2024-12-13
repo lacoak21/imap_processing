@@ -32,7 +32,7 @@ def test_bad_cdf_attributes(decom_test_data: xr.Dataset):
     decom_test_data : xarray.Dataset
         The dataset to test with
     """
-    del decom_test_data["TOF_High"].attrs["DEPEND_1"]
+    del decom_test_data["TOF_High"].attrs["CATDESC"]
 
     with pytest.raises(ISTPError):
         write_cdf(decom_test_data)

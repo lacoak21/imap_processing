@@ -13,6 +13,7 @@ from imap_processing.spice.geometry import (
     spherical_to_cartesian,
 )
 from imap_processing.ultra.constants import UltraConstants
+from imap_processing.ultra.utils.spatial_utils import build_spatial_bins
 
 # TODO: add species binning.
 
@@ -45,42 +46,6 @@ def build_energy_bins() -> tuple[list[tuple[float, float]], np.ndarray]:
     ]
 
     return intervals, energy_midpoints
-
-
-def build_spatial_bins(
-    az_spacing: float = 0.5,
-    el_spacing: float = 0.5,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Build spatial bin boundaries for azimuth and elevation.
-
-    Parameters
-    ----------
-    az_spacing : float, optional
-        The azimuth bin spacing in degrees (default is 0.5 degrees).
-    el_spacing : float, optional
-        The elevation bin spacing in degrees (default is 0.5 degrees).
-
-    Returns
-    -------
-    az_bin_edges : np.ndarray
-        Array of azimuth bin boundary values.
-    el_bin_edges : np.ndarray
-        Array of elevation bin boundary values.
-    az_bin_midpoints : np.ndarray
-        Array of azimuth bin midpoint values.
-    el_bin_midpoints : np.ndarray
-        Array of elevation bin midpoint values.
-    """
-    # Azimuth bins from 0 to 360 degrees.
-    az_bin_edges = np.arange(0, 360 + az_spacing, az_spacing)
-    az_bin_midpoints = az_bin_edges[:-1] + az_spacing / 2  # Midpoints between edges
-
-    # Elevation bins from -90 to 90 degrees.
-    el_bin_edges = np.arange(-90, 90 + el_spacing, el_spacing)
-    el_bin_midpoints = el_bin_edges[:-1] + el_spacing / 2  # Midpoints between edges
-
-    return az_bin_edges, el_bin_edges, az_bin_midpoints, el_bin_midpoints
 
 
 def get_histogram(

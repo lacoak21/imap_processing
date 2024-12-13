@@ -8,12 +8,12 @@ from cdflib import CDF
 from imap_processing import imap_module_directory
 from imap_processing.ultra.l1c.ultra_l1c_pset_bins import (
     build_energy_bins,
-    build_spatial_bins,
     get_helio_exposure_times,
     get_histogram,
     get_pointing_frame_exposure_times,
     get_pointing_frame_sensitivity,
 )
+from imap_processing.ultra.utils.spatial_utils import build_spatial_bins
 
 BASE_PATH = imap_module_directory / "ultra" / "lookup_tables"
 
@@ -45,29 +45,6 @@ def test_build_energy_bins():
     np.testing.assert_allclose(energy_bin_end[1], 4.137, atol=1e-4)
     np.testing.assert_allclose(energy_bin_start[-1], 279.810, atol=1e-4)
     np.testing.assert_allclose(energy_bin_end[-1], 341.989, atol=1e-4)
-
-
-def test_build_spatial_bins():
-    """Tests build_spatial_bins function."""
-    az_bin_edges, el_bin_edges, az_bin_midpoints, el_bin_midpoints = (
-        build_spatial_bins()
-    )
-
-    assert az_bin_edges[0] == 0
-    assert az_bin_edges[-1] == 360
-    assert len(az_bin_edges) == 721
-
-    assert el_bin_edges[0] == -90
-    assert el_bin_edges[-1] == 90
-    assert len(el_bin_edges) == 361
-
-    assert len(az_bin_midpoints) == 720
-    np.testing.assert_allclose(az_bin_midpoints[0], 0.25, atol=1e-4)
-    np.testing.assert_allclose(az_bin_midpoints[-1], 359.75, atol=1e-4)
-
-    assert len(el_bin_midpoints) == 360
-    np.testing.assert_allclose(el_bin_midpoints[0], -89.75, atol=1e-4)
-    np.testing.assert_allclose(el_bin_midpoints[-1], 89.75, atol=1e-4)
 
 
 def test_get_histogram(test_data):
@@ -109,7 +86,7 @@ def test_get_pointing_frame_exposure_times():
 
 @pytest.mark.external_kernel()
 @pytest.mark.use_test_metakernel("imap_ena_sim_metakernel.template")
-def test_et_helio_exposure_times():
+def test_get_helio_exposure_times():
     """Tests get_helio_exposure_times function."""
 
     constant_exposure = BASE_PATH / "dps_grid45_compressed.cdf"
