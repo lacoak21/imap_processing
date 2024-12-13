@@ -1,15 +1,19 @@
 int_fillval: &int_fillval -9223372036854775808
-min_epoch: &min_epoch -315575942816000000
-max_epoch: &max_epoch 3155630469184000000
-max_uint16: &max_uint16 65535
+
+max_uint16: &max_uint12 4095
 
 data_min: &data_min 0
 data_max: &data_max 4096
 
-sample_rate_min: &sample_rate_min -130
-sample_rate_max: &sample_rate_max 130
-
-int_maxval: &int_maxval 9223372036854775807
+string_base_attrs: &string_base
+  CATDESC: " "
+  FIELDNAM: " "
+  FORMAT: A3
+  LABLAXIS: "none"
+  VAR_TYPE: metadata
+  DISPLAY_TYPE: no_plot
+  DEPEND_0: epoch
+  UNITS: " "
 
 l1b_data_base: &l1b_data_base
   VALIDMIN: *data_min
@@ -17,9 +21,8 @@ l1b_data_base: &l1b_data_base
   DISPLAY_TYPE: spectrogram
   DEPEND_0: epoch
   FORMAT: I12
-  UNITS: dN
+  UNITS: pC
   VAR_TYPE: data
-  # VAR_PURPOSE: PRIMARY
   CATDESC: ""
   FIELDNAM: ""
   FILLVAL: *int_fillval
@@ -33,52 +36,21 @@ l1b_target_base: &l1b_target_base
   <<: *l1b_data_base
   DEPEND_1: time_low_sr
 
-sample_rate_base: &sample_rate_base
-  DISPLAY_TYPE: no_plot
-  CATDESC: ""
-  FIELDNAM: ""
-  FILLVAL: -1.0e+31
-  VALIDMIN: *sample_rate_min
-  VALIDMAX: *sample_rate_max
-  DEPEND_0: epoch
-  FORMAT: F64.5
-  LABLAXIS: Time
-  UNITS: microseconds
-  VAR_TYPE: support_data # Not in attrs file
-  VAR_NOTES:  The number of microseconds since the event.
-              0 is the start of data collection, negative
-              numbers represent data collected prior to a dust event
-
 trigger_base: &trigger_base
   VALIDMIN: 0
-  VALIDMAX: *int_maxval
-  DISPLAY_0: epoch
+  VALIDMAX: *max_uint12
+  DEPEND_0: epoch
   DISPLAY_TYPE: no_plot
   CATDESC: ""
   FIELDNAM: ""
   VAR_TYPE: support_data
   FILLVAL: *int_fillval
   LABLAXIS: ""
-  FORMAT: I12
-  UNITS: ""
+  FORMAT: I10
+  UNITS: " "
 
-low_sr_attrs:
-  <<:  *sample_rate_base
-  CATDESC: Low sample rate time steps for a dust event.
-  FIELDNAM: Low Sample Rate Time
-  VAR_NOTES: The low sample rate in microseconds. Steps are approximately 1/4.025
-             microseconds in duration. Used by the Ion_Grid, Target_Low, and
-             Target_High variables.
 
-high_sr_attrs:
-  <<:  *sample_rate_base
-  CATDESC: High sample rate time steps for a dust event.
-  FIELDNAM: High Sample Rate Time
-  VAR_NOTES: The high sample rate in microseconds. Steps are approximately 1/260
-    microseconds in duration. Used by the TOF_High, TOF_Mid, and
-    TOF_Low variables.
-
-tof_high_attrs:
+tof_high:
   <<: *l1b_tof_base
   CATDESC: Time of flight waveform on the high-gain channel
   FIELDNAM: High Gain Time of Flight
@@ -87,7 +59,7 @@ tof_high_attrs:
         Sampled at 260 Megasamples per second, with a 10-bit resolution.
         Data is used to quantify dust composition.
 
-tof_mid_attrs:
+tof_mid:
   <<: *l1b_tof_base
   CATDESC: Time of flight waveform on the mid-gain channel
   FIELDNAM: Mid Gain Time of Flight
@@ -96,9 +68,8 @@ tof_mid_attrs:
         Sampled at 260 Megasamples per second, with a 10-bit resolution.
         Data is used to quantify dust composition.
 
-tof_low_attrs:
+tof_low:
   <<: *l1b_tof_base
-  FILLVAL: *int_fillval
   CATDESC: Time of flight waveform on the low-gain channel
   FIELDNAM: Low Gain Time of Flight
   LABLAXIS: TOF Low Ampl.
@@ -107,7 +78,7 @@ tof_low_attrs:
         Data is used to quantify dust composition.
 
 
-target_low_attrs:
+target_low:
   <<: *l1b_target_base
   CATDESC: Target low charge sensitive amplifier waveform
   FIELDNAM: Low Target Signal
@@ -116,7 +87,7 @@ target_low_attrs:
         Sampled at 3.75 Msps with 12-bit resolution.
         Data is used to quantify dust charge.
 
-target_high_attrs:
+target_high:
   <<: *l1b_target_base
   CATDESC: Ion grid charge sensitive amplifier waveform
   FIELDNAM: High Target Signal
@@ -125,7 +96,7 @@ target_high_attrs:
         Sampled at 3.75 Msps with 12-bit resolution.
         Data is used to quantify dust charge.
 
-ion_grid_attrs:
+ion_grid:
   <<: *l1b_target_base
   CATDESC: Ion grid charge sensitive amplifier waveform data
   FIELDNAM: Ion Grid Signal
@@ -134,24 +105,8 @@ ion_grid_attrs:
         Sampled at 3.75 Msps with 12-bit resolution.
         Data is used to quantify dust charge.
 
-shcoarse:
-  <<: *trigger_base
-  CATDESC: Time of packet generation (not data acquisition), as integer seconds since epoch
-  FIELDNAM: Secondary header coarse time
-  LABLAXIS: Packet Generation Time (Coarse)
-  UNITS: seconds
-
-shfine:
-  <<: *trigger_base
-  CATDESC: Time of packet generation, each DN represents 20usec within current second
-  FIELDNAM: Secondary header fine time
-  VALIDMAX: *max_uint16
-  LABLAXIS: Packet Generation Time (Fine)
-  UNITS: seconds
-
 detector_voltage:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: Detector Voltage
   CATDESC: Last measurement in raw dN for processor board signal - "Detector Voltage"
   LABLAXIS: Voltage
@@ -159,7 +114,6 @@ detector_voltage:
 
 sensor_voltage:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: Sensor Voltage
   CATDESC: Last measurement in raw dN for processor board signal - "Sensor Voltage"
   LABLAXIS: Voltage
@@ -167,7 +121,6 @@ sensor_voltage:
 
 target_voltage:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: Target Voltage
   CATDESC: Last measurement in raw dN for processor board signal - "Target Voltage"
   LABLAXIS: Voltage
@@ -175,7 +128,6 @@ target_voltage:
 
 reflectron_voltage:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: Reflectron Voltage
   CATDESC: Last measurement in raw dN for processor board signal - "Reflectron Voltage"
   LABLAXIS: Voltage
@@ -183,7 +135,6 @@ reflectron_voltage:
 
 rejection_voltage:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: Rejection Voltage
   CATDESC: Last measurement in raw dN for processor board signal - "Rejection Voltage"
   LABLAXIS: Voltage
@@ -191,7 +142,6 @@ rejection_voltage:
 
 current_hvps_sensor:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: Detector Current
   CATDESC: Last measurement in raw dN for processor board signal - "Detector Current "
   LABLAXIS: Current
@@ -199,7 +149,6 @@ current_hvps_sensor:
 
 current_1v_pol:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: 1V POL Current
   CATDESC: Last measurement in raw DN for Processor Board signal - "1V POL Current"
   LABLAXIS: Current
@@ -207,7 +156,6 @@ current_1v_pol:
 
 current_1p9v_pol:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: 1.9V POL Current
   CATDESC: Last measurement in raw DN for Processor Board signal - "1.9V POL Current"
   LABLAXIS: Current
@@ -215,7 +163,6 @@ current_1p9v_pol:
 
 temperature_1:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: ProcBd Temp1
   CATDESC: Last measurement in raw DN for Processor Board signal - "ProcBd Temp1"
   LABLAXIS: Temperature
@@ -223,7 +170,6 @@ temperature_1:
 
 temperature_2:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: ProcBd Temp2
   CATDESC: Last measurement in raw DN for Processor Board signal - "ProcBd Temp2"
   LABLAXIS: Temperature
@@ -231,7 +177,6 @@ temperature_2:
 
 voltage_1v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: 1V Voltage
   CATDESC: Last measurement in raw DN for Processor Board signal - "1V Voltage"
   LABLAXIS: Voltage
@@ -239,7 +184,6 @@ voltage_1v_bus:
 
 fpga_temperature:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: FPGA Temp
   CATDESC: Last measurement in raw DN for Processor Board signal - "FPGA Temp"
   LABLAXIS: Temperature
@@ -247,7 +191,6 @@ fpga_temperature:
 
 voltage_1p9v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: 1.9V Voltage
   CATDESC: Last measurement in raw DN for Processor Board signal - "1.9V Voltage"
   LABLAXIS: Voltage
@@ -255,7 +198,6 @@ voltage_1p9v_bus:
 
 voltage_3p3v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: 3.3V Voltage
   CATDESC: Last measurement in raw DN for Processor Board signal - "3.3V Voltage"
   LABLAXIS: Voltage
@@ -263,7 +205,6 @@ voltage_3p3v_bus:
 
 positive_current_hvps:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: Sensor IP
   CATDESC: Last measurement in raw DN for HVPS Board signal - "Sensor IP"
   LABLAXIS: Current
@@ -271,7 +212,6 @@ positive_current_hvps:
 
 negative_current_hvps:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: Sensor IN
   CATDESC: Last measurement in raw DN for HVPS Board signal - "Sensor IN"
   LABLAXIS: Current
@@ -279,7 +219,6 @@ negative_current_hvps:
 
 voltage_3p3_ref:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: P3.3VREF_HK
   CATDESC: Last measurement in raw DN for LVPS Board signal - "P3.3VREF_HK"
   LABLAXIS: Voltage
@@ -287,7 +226,6 @@ voltage_3p3_ref:
 
 voltage_3p3_op_ref:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: P3.3VREF_OP
   CATDESC: Last measurement in raw DN for LVPS Board signal - "P3.3VREF_OP"
   LABLAXIS: Voltage
@@ -295,7 +233,6 @@ voltage_3p3_op_ref:
 
 voltage_neg6v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: N6V
   CATDESC: Last measurement in raw DN for LVPS Board signal - "N6V"
   LABLAXIS: Voltage
@@ -303,7 +240,6 @@ voltage_neg6v_bus:
 
 voltage_pos6v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: P6V
   CATDESC: Last measurement in raw DN for LVPS Board signal - "P6V"
   LABLAXIS: Voltage
@@ -311,7 +247,6 @@ voltage_pos6v_bus:
 
 voltage_pos16v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: P16V
   CATDESC: Last measurement in raw DN for LVPS Board signal - "P16V"
   LABLAXIS: Voltage
@@ -319,7 +254,6 @@ voltage_pos16v_bus:
 
 voltage_pos3p3v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: P3.3V
   CATDESC: Last measurement in raw DN for LVPS Board signal - "P3.3V"
   LABLAXIS: Voltage
@@ -327,7 +261,6 @@ voltage_pos3p3v_bus:
 
 voltage_neg5v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: N5V
   CATDESC: Last measurement in raw DN for LVPS Board signal - "N5V"
   LABLAXIS: Voltage
@@ -335,7 +268,6 @@ voltage_neg5v_bus:
 
 voltage_pos5v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: P5V
   CATDESC: Last measurement in raw DN for LVPS Board signal - "P5V"
   LABLAXIS: Voltage
@@ -343,7 +275,6 @@ voltage_pos5v_bus:
 
 current_3p3_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: P3.3_IMON
   CATDESC: Last measurement in raw DN for LVPS Board signal - "P3.3_IMON"
   LABLAXIS: Current
@@ -351,7 +282,6 @@ current_3p3_bus:
 
 current_16v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: P16V_IMON
   CATDESC: Last measurement in raw DN for LVPS Board signal - "P16V_IMON"
   LABLAXIS: Current
@@ -359,7 +289,6 @@ current_16v_bus:
 
 current_6v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: P6V_IMON
   CATDESC: Last measurement in raw DN for LVPS Board signal - "P6V_IMON"
   LABLAXIS: Current
@@ -367,7 +296,6 @@ current_6v_bus:
 
 current_neg6v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: N6V_IMON
   CATDESC: Last measurement in raw DN for LVPS Board signal - "N6V_IMON"
   LABLAXIS: Current
@@ -375,7 +303,6 @@ current_neg6v_bus:
 
 current_5v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: P5V_IMON
   CATDESC: Last measurement in raw DN for LVPS Board signal - "P5V_IMON"
   LABLAXIS: Current
@@ -383,7 +310,6 @@ current_5v_bus:
 
 current_neg5v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: N5V_IMON
   CATDESC: Last measurement in raw DN for LVPS Board signal - "N5V_IMON"
   LABLAXIS: Current
@@ -391,7 +317,6 @@ current_neg5v_bus:
 
 current_2p5v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: P2.5V_IMON
   CATDESC: Last measurement in raw DN for LVPS Board signal - "P2.5V_IMON"
   LABLAXIS: Current
@@ -399,7 +324,6 @@ current_2p5v_bus:
 
 current_neg2p5v_bus:
   <<: *trigger_base
-  VALIDMAX: 4095
   FIELDNAM: N2.5V_IMON
   CATDESC: Last measurement in raw DN for LVPS Board signal - "N2.5V_IMON"
   LABLAXIS: Current
