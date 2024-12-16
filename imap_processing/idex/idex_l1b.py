@@ -50,13 +50,16 @@ def idex_l1b(l1a_dataset: xr.Dataset, data_version: str) -> xr.Dataset:
     idex_attrs.add_instrument_variable_attrs(instrument="idex", level="l1b")
     idex_attrs.add_global_attribute("Data_version", data_version)
 
-    cdf_var_defs_path = (
-        f"{imap_module_directory}/idex/idex_cdf_variable_definitions.csv"
+    var_information_path = (
+        f"{imap_module_directory}/idex/idex_variable_unpacking_and_eu_conversion.csv"
     )
-    # Unpack each variable and create data array
-    cdf_var_defs = pd.read_csv(cdf_var_defs_path)
+    # Read in csv that contains instrument variable setting information
+    var_information_df = pd.read_csv(var_information_path)
 
-    processed_vars = unpack_instrument_settings(l1a_dataset, cdf_var_defs, idex_attrs)
+    processed_vars = unpack_instrument_settings(
+        l1a_dataset, var_information_df, idex_attrs
+    )
+
     waveforms_converted = convert_waveforms(l1a_dataset, idex_attrs)
 
     epoch_da = xr.DataArray(
@@ -73,22 +76,26 @@ def idex_l1b(l1a_dataset: xr.Dataset, data_version: str) -> xr.Dataset:
     # Convert variables
     l1b_dataset = convert_raw_to_eu(
         l1b_dataset,
-        conversion_table_path=cdf_var_defs_path,
-        packet_name=cdf_var_defs["packetName"].to_list(),
+        conversion_table_path=var_information_path,
+        packet_name=var_information_df["packetName"].to_list(),
     )
     vars_to_copy = ["shcoarse", "shfine", "time_high_sr", "time_low_sr"]
-    # Copy arrays that do not need updating from the l1a_dataset
+    # Copy arrays from the l1a_dataset that do not need l1b processing
     for var in vars_to_copy:
         l1b_dataset[var] = l1a_dataset[var].copy()
 
     l1b_dataset["epoch"] = epoch_da
+
+    # TODO: Add TriggerMode and TriggerLevel attr
+
+    logger.info("IDEX L1B science data processing completed.")
 
     return l1b_dataset
 
 
 def unpack_instrument_settings(
     l1a_dataset: xr.Dataset,
-    cdf_var_defs: pd.DataFrame,
+    var_information_df: pd.DataFrame,
     idex_attrs: ImapCdfAttributes = None,
 ) -> dict[str, xr.DataArray]:
     """
@@ -98,7 +105,7 @@ def unpack_instrument_settings(
     ----------
     l1a_dataset : xarray.Dataset
         IDEX L1a dataset containing the 6 waveform arrays.
-    cdf_var_defs : pd.DataFrame
+    var_information_df : pd.DataFrame
         Pandas data frame that contains information about each variable
         (e.g., bit-size, starting bit, and padding). This is used to unpack raw
         telemetry data from the input dataset (`l1a_dataset`).
@@ -113,14 +120,15 @@ def unpack_instrument_settings(
     """
     telemetry_das = {}
 
-    for _, row in cdf_var_defs.iterrows():
+    for _, row in var_information_df.iterrows():
         var_name = row["mnemonic"]
 
         # Create binary mask of the size of the variable in bits
         mask = (1 << row["unsigned_nbits"]) - 1
         # Determine the number of bits to shift
         shift = row["starting_bit"] - row["nbits_padding_before"]
-
+        # Get the unpacked value by shifting the data to align the desired bits with
+        # the least significant bits and applying the mask to isolate the target bits
         unpacked_val = (l1a_dataset[row["packetName"]].data >> shift) & mask
 
         attrs = idex_attrs.get_variable_attributes(var_name) if idex_attrs else None
@@ -139,12 +147,12 @@ def convert_waveforms(
     l1a_dataset: xr.Dataset, idex_attrs: ImapCdfAttributes
 ) -> dict[str, xr.DataArray]:
     """
-    Apply transformation from raw dn to picocoulombs (pC) for each of the 6 waveforms.
+    Apply transformation from raw dn to picocoulombs (pC) for each of the six waveforms.
 
     Parameters
     ----------
     l1a_dataset : xarray.Dataset
-        IDEX L1a dataset containing the 6 waveform arrays.
+        IDEX L1a dataset containing the six waveform arrays.
     idex_attrs : ImapCdfAttributes
         CDF attribute manager object.
 
@@ -163,36 +171,3 @@ def convert_waveforms(
         )
 
     return waveforms_pc
-
-
-# def get_trigger_mode_and_level(l1a_dataset):
-#     lg_mode = l1a_dataset['IDX__TXHDRLGTRIGMODE']
-#     mg_mode = l1a_dataset['IDX__TXHDRMGTRIGMODE']
-#     hg_mode = l1a_dataset['IDX__TXHDRHGTRIGMODE']
-#     if lg_mode != 0:
-#         trigger_level = (l1a_dataset['IDX__TXHDRLGTRIGCTRL1'] >> 22) & mask_10_bit
-#         if hg_mode == 1:
-#             trigger_mode = "LGThreshold"
-#         elif hg_mode == 2:
-#             trigger_mode = "LGSinglePulse"
-#         else:
-#             trigger_mode = "LGDoublePulse"
-#     if mg_mode != 0:
-#         trigger_level = (l1a_dataset['IDX__TXHDRMGTRIGCTRL1'] >> 22) & mask_10_bit
-#         if mg_mode == 1:
-#             trigger_mode = "MGThreshold"
-#         elif mg_mode == 2:
-#             trigger_mode = "MGSinglePulse"
-#         else:
-#             trigger_mode = "MGDoublePulse"
-#     if hg_mode != 0:
-#         trigger_level = 2.89e-4 * (
-#         (l1a_dataset['IDX__TXHDRHGTRIGCTRL1'] >> 22) & mask_10_bit)
-#         if hg_mode == 1:
-#             trigger_mode = "HGThreshold"
-#         elif hg_mode == 2:
-#             trigger_mode = "HGSinglePulse"
-#         else:
-#             trigger_mode = "HGDoublePulse"
-#
-#     return trigger_level, trigger_mode

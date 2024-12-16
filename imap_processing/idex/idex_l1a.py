@@ -105,6 +105,8 @@ class PacketParser:
         idex_attrs = get_idex_attrs(data_version)
         self.data.attrs = idex_attrs.get_global_attributes("imap_idex_l1a_sci")
 
+        logger.info("IDEX L1A science data processing completed.")
+
 
 class RawDustEvent:
     """

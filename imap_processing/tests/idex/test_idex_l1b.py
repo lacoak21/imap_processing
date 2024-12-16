@@ -60,7 +60,7 @@ def test_idex_waveform_units(l1b_dataset: xr.Dataset):
         The dataset to test with
     """
     cdf_var_defs_path = (
-        f"{imap_module_directory}/idex/idex_cdf_variable_definitions.csv"
+        f"{imap_module_directory}/idex/idex_variable_unpacking_and_eu_conversion.csv"
     )
     cdf_var_defs = pd.read_csv(cdf_var_defs_path)
 
@@ -88,7 +88,7 @@ def test_unpack_instrument_settings():
     Check that the instrument setting variables are being unpacked correctly
 
     Example
-    _______
+    -------
     In this example, we are using a test variable that has five bits
     Idx__test_var01 = 0b10010
 
