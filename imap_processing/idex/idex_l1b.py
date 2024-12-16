@@ -2,6 +2,7 @@
 
 import logging
 from enum import Enum
+from typing import Optional
 
 import pandas as pd
 import xarray as xr
@@ -87,6 +88,7 @@ def idex_l1b(l1a_dataset: xr.Dataset, data_version: str) -> xr.Dataset:
     l1b_dataset["epoch"] = epoch_da
 
     # TODO: Add TriggerMode and TriggerLevel attr
+    # TODO: Spice data?
 
     logger.info("IDEX L1B science data processing completed.")
 
@@ -96,7 +98,7 @@ def idex_l1b(l1a_dataset: xr.Dataset, data_version: str) -> xr.Dataset:
 def unpack_instrument_settings(
     l1a_dataset: xr.Dataset,
     var_information_df: pd.DataFrame,
-    idex_attrs: ImapCdfAttributes = None,
+    idex_attrs: Optional[ImapCdfAttributes] = None,
 ) -> dict[str, xr.DataArray]:
     """
     Unpack raw telemetry data from the l1a dataset into individual variables.
