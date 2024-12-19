@@ -32,10 +32,14 @@ def test_bad_cdf_attributes(decom_test_data: xr.Dataset):
     decom_test_data : xarray.Dataset
         The dataset to test with
     """
+    tof_catdesc = decom_test_data["TOF_High"].attrs["CATDESC"]
     del decom_test_data["TOF_High"].attrs["CATDESC"]
 
     with pytest.raises(ISTPError):
         write_cdf(decom_test_data)
+
+    # Add attributes back so future tests do not fail
+    decom_test_data["TOF_High"].attrs["CATDESC"] = tof_catdesc
 
 
 def test_bad_cdf_file_data(decom_test_data: xr.Dataset):
@@ -71,6 +75,8 @@ def test_bad_cdf_file_data(decom_test_data: xr.Dataset):
 
     with pytest.raises(ISTPError):
         write_cdf(decom_test_data)
+
+    del decom_test_data["Bad_data"]
 
 
 def test_idex_tof_high_data_from_cdf(decom_test_data: xr.Dataset):

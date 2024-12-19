@@ -7,6 +7,12 @@ max_uint8: &max_uint8 255
 data_min: &data_min 0
 data_max: &data_max 4096
 
+sample_rate_min: &sample_rate_min -130
+sample_rate_max: &sample_rate_max 130
+
+int_maxval: &int_maxval 9223372036854775807
+
+# <=== Base Attributes ===>
 string_base_attrs: &string_base
   CATDESC: " "
   FIELDNAM: " "
@@ -16,11 +22,6 @@ string_base_attrs: &string_base
   DISPLAY_TYPE: no_plot
   DEPEND_0: epoch
   UNITS: " "
-
-sample_rate_min: &sample_rate_min -130
-sample_rate_max: &sample_rate_max 130
-
-int_maxval: &int_maxval 9223372036854775807
 
 l1a_data_base: &l1a_data_base
   VALIDMIN: *data_min
@@ -38,10 +39,12 @@ l1a_data_base: &l1a_data_base
 l1a_tof_base: &l1a_tof_base
   <<: *l1a_data_base
   DEPEND_1: time_high_sr
+  LABL_PTR_1: time_high_sr_label
 
 l1a_target_base: &l1a_target_base
   <<: *l1a_data_base
   DEPEND_1: time_low_sr
+  LABL_PTR_1: time_low_sr_label
 
 sample_rate_base: &sample_rate_base
   DISPLAY_TYPE: no_plot
@@ -72,6 +75,20 @@ trigger_base: &trigger_base
   FORMAT: I10
   UNITS: " "
 
+# <=== LABL_PTR_i Attributes ===>
+time_high_sr_label:
+  CATDESC: High sample rate time steps for a dust event.
+  FIELDNAM: High Sample Rate Time
+  FORMAT: A5
+  VAR_TYPE: metadata
+
+time_low_sr_label:
+  CATDESC: Low sample rate time steps for a dust event.
+  FIELDNAM: Low Sample Rate Time
+  FORMAT: A5
+  VAR_TYPE: metadata
+
+# <=== Instrument Setting Attributes ===>
 low_sr_attrs:
   <<:  *sample_rate_base
   CATDESC: Low sample rate time steps for a dust event.

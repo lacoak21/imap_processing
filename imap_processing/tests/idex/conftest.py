@@ -7,7 +7,7 @@ from imap_processing import imap_module_directory
 from imap_processing.idex.idex_l1a import PacketParser
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def decom_test_data() -> xr.Dataset:
     """Return a ``xarray`` dataset containing test data.
 

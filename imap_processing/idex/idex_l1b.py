@@ -1,8 +1,21 @@
-"""IMAP-IDEX L1B processing module."""
+"""
+Perform IDEX L1b Processing.
+
+Examples
+--------
+.. code-block:: python
+
+    from imap_processing.idex.idex_l1a import PacketParser
+    from imap_processing.idex.idex_l1b import idex_l1b
+
+    l0_file = "imap_processing/tests/idex/imap_idex_l0_sci_20231214_v001.pkts"
+    l1a_data = PacketParser(l0_file, data_version)
+    l1b_data = idex_l1b(l1a_data, data_version)
+    write_cdf(l1b_data)
+"""
 
 import logging
 from enum import Enum
-from typing import Optional
 
 import pandas as pd
 import xarray as xr
@@ -14,7 +27,7 @@ from imap_processing.utils import convert_raw_to_eu
 logger = logging.getLogger(__name__)
 
 
-class ConvFactors(float, Enum):
+class ConversionFactors(float, Enum):
     """Enum class for conversion factor values."""
 
     TOF_High = 2.89e-4
@@ -71,6 +84,7 @@ def idex_l1b(l1a_dataset: xr.Dataset, data_version: str) -> xr.Dataset:
     )
     # Create l1b Dataset
     l1b_dataset = xr.Dataset(
+        coords={"epoch": epoch_da},
         data_vars=processed_vars | waveforms_converted,
         attrs=idex_attrs.get_global_attributes("imap_idex_l1b_sci"),
     )
@@ -78,14 +92,19 @@ def idex_l1b(l1a_dataset: xr.Dataset, data_version: str) -> xr.Dataset:
     l1b_dataset = convert_raw_to_eu(
         l1b_dataset,
         conversion_table_path=var_information_path,
-        packet_name=var_information_df["packetName"].to_list(),
+        packet_name="IDEX_SCI",
     )
-    vars_to_copy = ["shcoarse", "shfine", "time_high_sr", "time_low_sr"]
+    vars_to_copy = [
+        "shcoarse",
+        "shfine",
+        "time_high_sr",
+        "time_low_sr",
+        "time_high_sr_label",
+        "time_low_sr_label",
+    ]
     # Copy arrays from the l1a_dataset that do not need l1b processing
     for var in vars_to_copy:
         l1b_dataset[var] = l1a_dataset[var].copy()
-
-    l1b_dataset["epoch"] = epoch_da
 
     # TODO: Add TriggerMode and TriggerLevel attr
     # TODO: Spice data?
@@ -98,7 +117,7 @@ def idex_l1b(l1a_dataset: xr.Dataset, data_version: str) -> xr.Dataset:
 def unpack_instrument_settings(
     l1a_dataset: xr.Dataset,
     var_information_df: pd.DataFrame,
-    idex_attrs: Optional[ImapCdfAttributes] = None,
+    idex_attrs: ImapCdfAttributes,
 ) -> dict[str, xr.DataArray]:
     """
     Unpack raw telemetry data from the l1a dataset into individual variables.
@@ -116,14 +135,14 @@ def unpack_instrument_settings(
 
     Returns
     -------
-    telemetry_das : dict
+    telemetry_data : dict
         A dictionary where the keys are the instrument setting array names and the
         values are the unpacked xr.DataArrays.
     """
-    telemetry_das = {}
+    telemetry_data = {}
 
     for _, row in var_information_df.iterrows():
-        var_name = row["mnemonic"]
+        unpacked_name = row["mnemonic"]
 
         # Create binary mask of the size of the variable in bits
         mask = (1 << row["unsigned_nbits"]) - 1
@@ -131,25 +150,23 @@ def unpack_instrument_settings(
         shift = row["starting_bit"] - row["nbits_padding_before"]
         # Get the unpacked value by shifting the data to align the desired bits with
         # the least significant bits and applying the mask to isolate the target bits
-        unpacked_val = (l1a_dataset[row["packetName"]].data >> shift) & mask
+        unpacked_val = (l1a_dataset[row["var_name"]].data >> shift) & mask
 
-        attrs = idex_attrs.get_variable_attributes(var_name) if idex_attrs else None
-
-        telemetry_das[var_name] = xr.DataArray(
-            name=var_name,
+        telemetry_data[unpacked_name] = xr.DataArray(
+            name=unpacked_name,
             data=unpacked_val,
             dims=("epoch"),
-            attrs=attrs,
+            attrs=idex_attrs.get_variable_attributes(unpacked_name),
         )
 
-    return telemetry_das
+    return telemetry_data
 
 
 def convert_waveforms(
     l1a_dataset: xr.Dataset, idex_attrs: ImapCdfAttributes
 ) -> dict[str, xr.DataArray]:
     """
-    Apply transformation from raw dn to picocoulombs (pC) for each of the six waveforms.
+    Apply transformation from raw DN to picocoulombs (pC) for each of the six waveforms.
 
     Parameters
     ----------
@@ -166,7 +183,7 @@ def convert_waveforms(
     """
     waveforms_pc = {}
 
-    for var in ConvFactors:
+    for var in ConversionFactors:
         waveforms_pc[var.name] = l1a_dataset[var.name] * var.value
         waveforms_pc[var.name].attrs = idex_attrs.get_variable_attributes(
             var.name.lower()
