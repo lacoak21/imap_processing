@@ -110,7 +110,7 @@ def idex_l1b(l1a_dataset: xr.Dataset, data_version: str) -> xr.Dataset:
         attrs=idex_attrs.get_variable_attributes("epoch"),
     )
 
-    trigger_settings = get_trigger_mode_and_level(l1a_dataset.copy(deep=True))
+    trigger_settings = get_trigger_mode_and_level(l1a_dataset)
     if trigger_settings:
         trigger_settings["triggerlevel"].attrs = idex_attrs.get_variable_attributes(
             "trigger_level"
