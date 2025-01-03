@@ -10,7 +10,11 @@ import xarray as xr
 from imap_processing import imap_module_directory
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
 from imap_processing.cdf.utils import write_cdf
-from imap_processing.idex.idex_l1b import idex_l1b, unpack_instrument_settings
+from imap_processing.idex.idex_l1b import (
+    get_trigger_mode_and_level,
+    idex_l1b,
+    unpack_instrument_settings,
+)
 
 
 @pytest.fixture(scope="module")
@@ -124,3 +128,27 @@ def test_unpack_instrument_settings():
 
     assert np.all(unpacked_dict["test_var0"] == 2)
     assert np.all(unpacked_dict["test_var1"] == 4)
+
+
+def test_get_trigger_settings(decom_test_data):
+    """
+    Check that an error is thrown when there are more than one valid trigger for an
+    event
+
+    Parameters
+    ----------
+    decom_test_data : xarray.Dataset
+        L1a dataset
+    """
+    decom_test_data["idx__txhdrhgtrigmode"][0] = 1
+    decom_test_data["idx__txhdrmgtrigmode"][0] = 2
+
+    error_ms = (
+        "Only one channel can trigger a dust event. Please make sure there is "
+        "only one valid trigger value per event. This caused Merge Error: "
+        "conflicting values for variable 'trigger_mode' on objects to be "
+        "combined. You can skip this check by specifying compat='override'."
+    )
+
+    with pytest.raises(ValueError, match=error_ms):
+        get_trigger_mode_and_level(decom_test_data)

@@ -302,7 +302,6 @@ def get_trigger_mode_and_level(
             output_core_dims=([], []),
             vectorize=True,
         )
-
         trigger_modes.append(mode_array.rename("trigger_mode"))
         trigger_levels.append(level_array.rename("trigger_level"))
 
@@ -311,8 +310,8 @@ def get_trigger_mode_and_level(
         # At each index (event) only one of the three arrays should have a value that is
         # not 'None' because each event can only be triggered by one channel.
         # By merging the three arrays, we get value for each event.
-        merged_modes = xr.merge(trigger_modes, combine_attrs="drop")
-        merged_levels = xr.merge(trigger_levels, combine_attrs="drop")
+        merged_modes = xr.merge([trigger_modes[0], xr.merge(trigger_modes[1:])])
+        merged_levels = xr.merge([trigger_levels[0], xr.merge(trigger_levels[1:])])
 
         return {
             "triggermode": merged_modes.trigger_mode,
@@ -320,7 +319,8 @@ def get_trigger_mode_and_level(
         }
 
     except xr.MergeError as e:
-        logger.error(
-            f"MergeError occurred: {e}. Only one channel can trigger dust " f"event."
-        )
-        return {}
+        raise ValueError(
+            f"Only one channel can trigger a dust event. Please make sure "
+            f"there is only one valid trigger value per event. This "
+            f"caused Merge Error: {e}"
+        ) from e
