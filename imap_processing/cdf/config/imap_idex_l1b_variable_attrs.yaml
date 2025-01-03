@@ -49,12 +49,12 @@ trigger_base: &trigger_base
 trigger_mode:
   <<: *string_base
   FIELDNAM: Trigger Mode
-  CATDESC: What mode caused caused the trigger to occur
+  CATDESC: Channel and mode that triggered the event
 
 trigger_level:
   <<: *string_base
   FIELDNAM: Trigger Level
-  CATDESC: Threshold signal level that will trigger an event
+  CATDESC: Threshold signal level triggered the event
 
 tof_high:
   <<: *l1b_tof_base
