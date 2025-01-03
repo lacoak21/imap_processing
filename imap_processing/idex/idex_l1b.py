@@ -135,10 +135,10 @@ def idex_l1b(l1a_dataset: xr.Dataset, data_version: str) -> xr.Dataset:
     vars_to_copy = [
         "shcoarse",
         "shfine",
-        "time_high_sr",
-        "time_low_sr",
-        "time_high_sr_label",
-        "time_low_sr_label",
+        "time_high_sample_res",
+        "time_low_sample_res",
+        "time_high_sample_res_label",
+        "time_low_sample_res_label",
     ]
     # Copy arrays from the l1a_dataset that do not need l1b processing
     for var in vars_to_copy:
