@@ -302,6 +302,7 @@ def get_trigger_mode_and_level(
             channel,
             output_core_dims=([], []),
             vectorize=True,
+            output_dtypes=[object, float],
         )
         trigger_modes.append(mode_array.rename("trigger_mode"))
         trigger_levels.append(level_array.rename("trigger_level"))

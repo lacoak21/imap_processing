@@ -130,7 +130,40 @@ def test_unpack_instrument_settings():
     assert np.all(unpacked_dict["test_var1"] == 4)
 
 
-def test_get_trigger_settings(decom_test_data):
+def test_get_trigger_settings_success(decom_test_data):
+    """
+    Check that the output to 'get_trigger_mode_and_level' matches expected arrays.
+
+    Parameters
+    ----------
+    decom_test_data : xarray.Dataset
+        L1a dataset
+    """
+    # Change the trigger mode and level for the first event to check that output is
+    # correct when the modes and levels vary from event to event
+    decom_test_data["idx__txhdrmgtrigmode"][0] = 1
+    decom_test_data["idx__txhdrhgtrigmode"][0] = 0
+
+    n_epochs = len(decom_test_data["epoch"])
+    trigger_settings = get_trigger_mode_and_level(decom_test_data)
+
+    expected_modes = np.full(n_epochs, "HGThreshold")
+    expected_modes[0] = "MGThreshold"
+    expected_levels = np.full(n_epochs, 0.16762)
+    expected_levels[0] = 1023.0
+
+    assert (trigger_settings["triggermode"].data == expected_modes).all(), (
+        f"The dict entry 'triggermode' values did not match the expected values: "
+        f"{expected_modes}. Found: {trigger_settings['triggermode'].data}"
+    )
+
+    assert (trigger_settings["triggerlevel"].data == expected_levels).all(), (
+        f"The dict entry 'triggerlevel' values did not match the expected values: "
+        f"{expected_levels}. Found: {trigger_settings['triggerlevels'].data}"
+    )
+
+
+def test_get_trigger_settings_failure(decom_test_data):
     """
     Check that an error is thrown when there are more than one valid trigger for an
     event
