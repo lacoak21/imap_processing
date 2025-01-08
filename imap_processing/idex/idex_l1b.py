@@ -132,13 +132,11 @@ def idex_l1b(l1a_dataset: xr.Dataset, data_version: str) -> xr.Dataset:
         conversion_table_path=var_information_path,
         packet_name="IDEX_SCI",
     )
+    prefixes = ["shcoarse", "shfine", "time_high_sample", "time_low_sample"]
     vars_to_copy = [
-        "shcoarse",
-        "shfine",
-        "time_high_sample_res",
-        "time_low_sample_res",
-        "time_high_sample_res_label",
-        "time_low_sample_res_label",
+        var
+        for var in l1a_dataset.variables
+        if any(prefix in var for prefix in prefixes)
     ]
     # Copy arrays from the l1a_dataset that do not need l1b processing
     for var in vars_to_copy:
