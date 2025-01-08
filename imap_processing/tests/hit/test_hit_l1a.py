@@ -29,6 +29,84 @@ def sci_packet_filepath():
     return imap_module_directory / "tests/hit/test_data/sci_sample1.ccsds"
 
 
+def test_validate_l1a_housekeeping_data(hk_packet_filepath):
+    """Validate the housekeeping dataset created by the L1A processing.
+
+    Compares the processed housekeeping data with expected values from
+    a validation csv file.
+
+    Parameters
+    ----------
+    hk_packet_filepath : str
+        File path to housekeeping ccsds file
+    """
+    datasets = hit_l1a(hk_packet_filepath, "001")
+    hk_dataset = None
+    for dataset in datasets:
+        if dataset.attrs["Logical_source"] == "imap_hit_l1a_hk":
+            hk_dataset = dataset
+
+    # Load the validation data
+    validation_file = (
+        imap_module_directory / "tests/hit/validation_data/hskp_sample_raw.csv"
+    )
+    validation_data = pd.read_csv(validation_file)
+    validation_data.columns = validation_data.columns.str.lower()
+
+    # Get a list of leak columns in ascending order
+    # (LEAK_I_00, LEAK_I_01, ..., LEAK_I_63)
+    # and group values into a single column
+    leak_columns = [col for col in validation_data.columns if col.startswith("leak")][
+        ::-1
+    ]
+    validation_data["leak_i"] = validation_data[leak_columns].apply(
+        lambda row: row.values, axis=1
+    )
+    validation_data.drop(columns=leak_columns, inplace=True)
+
+    # Define the keys that should have dropped from the housekeeping dataset
+    dropped_fields = {
+        "pkt_apid",
+        "sc_tick",
+        "version",
+        "type",
+        "sec_hdr_flg",
+        "seq_flgs",
+        "src_seq_ctr",
+        "pkt_len",
+        "hskp_spare1",
+        "hskp_spare2",
+        "hskp_spare3",
+        "hskp_spare4",
+        "hskp_spare5",
+    }
+
+    # Define the keys that should be ignored in the validation
+    # like ccsds headers
+    ignore_validation_fields = {
+        "ccsds_version",
+        "ccsds_type",
+        "ccsds_sec_hdr_flag",
+        "ccsds_appid",
+        "ccsds_grp_flag",
+        "ccsds_seq_cnt",
+        "ccsds_length",
+        "shcoarse",
+    }
+
+    # Check that dropped variables are not in the dataset
+    assert set(dropped_fields).isdisjoint(set(hk_dataset.data_vars.keys()))
+
+    # Compare the housekeeping dataset with the expected validation data
+    for field in validation_data.columns:
+        if field not in ignore_validation_fields:
+            assert field in hk_dataset.data_vars.keys()
+            for pkt in range(validation_data.shape[0]):
+                assert np.array_equal(
+                    hk_dataset[field][pkt].data, validation_data[field][pkt]
+                )
+
+
 def test_subcom_sectorates(sci_packet_filepath):
     """Test the subcom_sectorates function.
 
@@ -69,7 +147,7 @@ def test_subcom_sectorates(sci_packet_filepath):
         )
 
 
-def test_compare_validation_data(sci_packet_filepath):
+def test_validate_l1a_counts_data(sci_packet_filepath):
     """Compare the output of the L1A processing to the validation data.
 
     This test compares the counts data product with the validation data.

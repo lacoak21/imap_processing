@@ -91,7 +91,7 @@ def test_packet_file_to_datasets(use_derived_value, expected_mode):
         packet_files, packet_definition, use_derived_value=use_derived_value
     )
     # 3 apids in the test data
-    assert len(datasets_by_apid) == 4
+    assert len(datasets_by_apid) == 2
     data = datasets_by_apid[1188]
     assert data["sec_hdr_flg"].dtype == np.uint8
     assert data["pkt_apid"].dtype == np.uint16

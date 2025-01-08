@@ -648,9 +648,11 @@ def get_energy_ssd(de_dataset: xarray.Dataset, ssd: np.ndarray) -> NDArray[np.fl
     return energy_norm
 
 
-def get_ctof(tof: np.ndarray, path_length: np.ndarray, type: str) -> NDArray:
+def get_ctof(
+    tof: np.ndarray, path_length: np.ndarray, type: str
+) -> tuple[NDArray, NDArray]:
     """
-    Calculate the corrected TOF.
+    Calculate the corrected TOF and the magnitude of the particle velocity.
 
     The corrected TOF (ctof) is the TOF normalized with respect
     to a fixed distance dmin between the front and back detectors.
@@ -666,33 +668,35 @@ def get_ctof(tof: np.ndarray, path_length: np.ndarray, type: str) -> NDArray:
     path_length : np.ndarray
         Path length (r) (hundredths of a millimeter).
     type : str
-        Type of event, either "ph" or "ssd".
+        Type of event, either "PH" or "SSD".
 
     Returns
     -------
     ctof : np.ndarray
         Corrected TOF (tenths of a ns).
+    magnitude_v : np.ndarray
+        Magnitude of the particle velocity (km/s).
     """
     dmin_ctof = getattr(UltraConstants, f"DMIN_{type}_CTOF")
 
     # Multiply times 100 to convert to hundredths of a millimeter.
     ctof = tof * dmin_ctof * 100 / path_length
 
-    return ctof
+    # Convert from mm/0.1ns to km/s.
+    magnitude_v = dmin_ctof / ctof * 1e4
+
+    return ctof, magnitude_v
 
 
-def determine_species_pulse_height(
-    energy: np.ndarray, tof: np.ndarray, path_length: np.ndarray
-) -> NDArray:
+def determine_species(tof: np.ndarray, path_length: np.ndarray, type: str) -> NDArray:
     """
     Determine the species for pulse-height events.
 
-    Species is determined from the particle energy and velocity.
+    Species is determined from the particle velocity.
     For velocity, the particle TOF is normalized with respect
     to a fixed distance dmin between the front and back detectors.
     The normalized TOF is termed the corrected TOF (ctof).
-    Particle species are determined from
-    the energy and ctof using a lookup table.
+    Particle species are determined from ctof using thresholds.
 
     Further description is available on pages 42-44 of
     IMAP-Ultra Flight Software Specification document
@@ -700,72 +704,27 @@ def determine_species_pulse_height(
 
     Parameters
     ----------
-    energy : np.ndarray
-        Energy from the SSD event (keV).
     tof : np.ndarray
         Time of flight of the SSD event (tenths of a nanosecond).
     path_length : np.ndarray
         Path length (r) (hundredths of a millimeter).
+    type : str
+        Type of data (PH or SSD).
 
     Returns
     -------
-    bin : np.array
+    species_bin : np.array
         Species bin.
     """
-    # PH event TOF normalization to Z axis
-    ctof = get_ctof(tof, path_length, "PH")
-    # TODO: need lookup tables
-    # placeholder
-    bin = np.zeros(len(ctof))
-    # bin = PHxTOFSpecies[ctof, energy]
+    # Event TOF normalization to Z axis
+    ctof, _ = get_ctof(tof, path_length, type)
+    # Initialize bin array
+    species_bin = np.full(len(ctof), "UNKNOWN", dtype="U10")
 
-    return bin
+    # Assign "H" to bins where cTOF is within the specified range
+    species_bin[
+        (ctof > UltraConstants.CTOF_SPECIES_MIN)
+        & (ctof < UltraConstants.CTOF_SPECIES_MAX)
+    ] = "H"
 
-
-def determine_species_ssd(
-    energy: np.ndarray, tof: np.ndarray, path_length: np.ndarray
-) -> NDArray:
-    """
-    Determine the species for SSD events.
-
-    Species is determined from the particle's energy and velocity.
-    For velocity, the particle's TOF is normalized with respect
-    to a fixed distance dmin between the front and back detectors.
-    For SSD events, an adjustment is also made to the path length
-    to account for the shorter distances that such events
-    travel to reach the detector. The normalized TOF is termed
-    the corrected tof (ctof). Particle species are determined from
-    the energy and cTOF using a lookup table.
-
-    Further description is available on pages 42-44 of
-    IMAP-Ultra Flight Software Specification document
-    (7523-9009_Rev_-.pdf).
-
-    Parameters
-    ----------
-    energy : np.ndarray
-        Energy from the SSD event (keV).
-    tof : np.ndarray
-        Time of flight of the SSD event (tenths of a nanosecond).
-    path_length : np.ndarray
-        Path length (r) (hundredths of a millimeter).
-
-    Returns
-    -------
-    bin : np.ndarray
-        Species bin.
-    """
-    # SSD event TOF normalization to Z axis
-    ctof = get_ctof(tof, path_length, "SSD")
-
-    bin = np.zeros(len(ctof))  # placeholder
-
-    # TODO: get these lookup tables
-    # if r < get_image_params("PathSteepThresh"):
-    #     # bin = ExTOFSpeciesSteep[energy, ctof]
-    # elif r < get_image_params("PathMediumThresh"):
-    #     # bin = ExTOFSpeciesMedium[energy, ctof]
-    # else:
-    #     # bin = ExTOFSpeciesFlat[energy, ctof]
-
-    return bin
+    return species_bin
