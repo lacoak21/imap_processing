@@ -125,7 +125,7 @@ time_high_sample_rate_index:
   LABLAXIS: Sample Rate
   SCALE_TYP: linear
   UNITS: " "
-  VALIDMAX: 511
+  VALIDMAX: 8188
   VALIDMIN: 0
   VAR_TYPE: support_data
 
