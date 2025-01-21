@@ -42,8 +42,15 @@ l1b_target_base: &l1b_target_base
 trigger_base: &trigger_base
   <<: *l1b_data_base
   DISPLAY_TYPE: no_plot
-  CATDESC: ""
   UNITS: " "
+
+spice_base: &spice_base
+  <<: *l1b_data_base
+  VAR_TYPE: data
+  VALIDMIN: -9223372036854775808 # TODO: Find actual validmin
+  VALIDMAX: 9223372036854775807 # TODO: Find actual validmax
+  DISPLAY_TYPE: time_series
+  UNITS: Radians
 
 # <=== Instrument Setting Attributes ===>
 trigger_mode:
@@ -334,3 +341,86 @@ current_neg2p5v_bus:
   CATDESC: Negative current reading on -2.5V bus on LVPS Board (ADC 1 channel 7)
   LABLAXIS: Current
   UNITS: A
+
+# <=== Spice Data Attributes ===>
+ephemeris_position_x:
+  <<: *spice_base
+  FIELDNAM: Position X
+  CATDESC: Cartesian coordinate X positions for the IMAP spacecraft in the ECLIPJ2000 frame.
+  LABLAXIS: Position X
+  UNITS: km
+
+ephemeris_position_y:
+  <<: *spice_base
+  FIELDNAM: Position Y
+  CATDESC: Cartesian coordinate Y positions for the IMAP spacecraft in the ECLIPJ2000 frame.
+  LABLAXIS: Position Y
+  UNITS: km
+
+ephemeris_position_z:
+  <<: *spice_base
+  FIELDNAM: Position Z
+  CATDESC: Cartesian coordinate Z positions for the IMAP spacecraft in the ECLIPJ2000 frame.
+  LABLAXIS: Position Z
+  UNITS: km
+
+ephemeris_velocity_x:
+  <<: *spice_base
+  FIELDNAM: Velocity X
+  CATDESC: Velocity X positions for the IMAP spacecraft in the ECLIPJ2000 frame.
+  LABLAXIS: Velocity X
+  UNITS: km/s
+
+ephemeris_velocity_y:
+  <<: *spice_base
+  FIELDNAM: Velocity Y
+  CATDESC: Velocity Y positions for the IMAP spacecraft in the ECLIPJ2000 frame.
+  LABLAXIS: Velocity Y
+  UNITS: km/s
+
+ephemeris_velocity_z:
+  <<: *spice_base
+  FIELDNAM: Velocity Z
+  CATDESC: Velocity Z positions for the IMAP spacecraft in the ECLIPJ2000 frame.
+  LABLAXIS: Velocity Z
+  UNITS: km/s
+
+right_ascension:
+  <<: *spice_base
+  VALIDMIN: 0
+  VALIDMAX: 6.283185307179586
+  FIELDNAM: Right Ascension
+  CATDESC: Right ascension of the IMAP spacecraft position as observed from Earth in the ECLIPJ2000 reference frame.
+  LABLAXIS: Right Ascension
+
+declination:
+  <<: *spice_base
+  VALIDMIN: -1.5707963267948966
+  VALIDMAX: 1.5707963267948966
+  FIELDNAM: Declination
+  CATDESC: Declination of the IMAP spacecraft position as observed from Earth in the ECLIPJ2000 reference frame.
+  LABLAXIS: Current
+
+attitude_roll:
+  <<: *spice_base
+  VALIDMIN: -3.141592653589793
+  VALIDMAX: 3.141592653589793
+  FIELDNAM: Roll
+  CATDESC: Roll angle (rotation around the X-axis) of the IMAP spacecraft in the ECLIPJ2000 reference frame.
+  LABLAXIS: Roll
+
+attitude_pitch:
+  <<: *spice_base
+  VALIDMIN: -1.5707963267948966
+  VALIDMAX: 3.141592653589793
+  FIELDNAM: Pitch
+  CATDESC: Pitch angle (rotation around the Y-axis) of the IMAP spacecraft in the ECLIPJ2000 reference frame.
+  LABLAXIS: Pitch
+
+attitude_yaw:
+  <<: *spice_base
+  VALIDMIN: -3.141592653589793
+  VALIDMAX: 3.141592653589793
+  FIELDNAM: Yaw
+  CATDESC: Yaw angle (rotation around the Z-axis) of the IMAP spacecraft in the ECLIPJ2000 reference frame.
+  LABLAXIS: Yaw

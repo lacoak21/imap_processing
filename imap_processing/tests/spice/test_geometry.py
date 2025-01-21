@@ -15,12 +15,14 @@ from imap_processing.spice.geometry import (
     frame_transform,
     frame_transform_az_el,
     get_instrument_spin_phase,
+    get_right_ascension_and_declination,
     get_rotation_matrix,
     get_spacecraft_spin_phase,
     get_spacecraft_to_instrument_spin_phase_offset,
     get_spin_data,
     imap_state,
     instrument_pointing,
+    rotation_matrix_to_euler_angles,
     spherical_to_cartesian,
 )
 from imap_processing.spice.kernels import ensure_spice
@@ -349,12 +351,35 @@ def test_get_rotation_matrix(furnish_kernels):
         rotation = get_rotation_matrix(
             et, SpiceFrame.IMAP_IDEX, SpiceFrame.IMAP_SPACECRAFT
         )
+
         assert rotation.shape == (3, 3)
         # test array of et input
         rotation = get_rotation_matrix(
             np.arange(10) + et, SpiceFrame.IMAP_IDEX, SpiceFrame.IMAP_SPACECRAFT
         )
         assert rotation.shape == (10, 3, 3)
+
+
+def test_rotation_matrix_to_euler_angles(furnish_kernels):
+    """rotation_matrix_to_euler_angles()."""
+    kernels = [
+        "naif0012.tls",
+        "imap_wkcp.tf",
+        "imap_science_0001.tf",
+        "sim_1yr_imap_attitude.bc",
+        "sim_1yr_imap_pointing_frame.bc",
+    ]
+    # example rotation matrix
+    rotation = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+
+    with furnish_kernels(kernels):
+        # test with one rotation matrix
+        euler_angles = rotation_matrix_to_euler_angles(rotation, axes=[3, 2, 1])
+        assert euler_angles.shape == (3,)
+        # Test with multiple rotation matrices
+        rotation = np.tile(rotation, (10, 1, 1))
+        euler_angles = rotation_matrix_to_euler_angles(rotation, axes=[3, 2, 1])
+        assert euler_angles.shape == (10, 3)
 
 
 def test_instrument_pointing(furnish_kernels):
@@ -472,3 +497,17 @@ def test_spherical_to_cartesian():
 
         np.testing.assert_allclose(cartesian_coords[0], spice_coords, atol=1e-5)
         np.testing.assert_allclose(cartesian_from_degrees[i], spice_coords, atol=1e-5)
+
+
+def test_get_right_ascension_and_declination():
+    """Tests get_right_ascension_and_declination()."""
+    # example coordinates
+    coords = np.linspace(0, 1, 3)
+
+    # test with one rotation matrix
+    ra_and_dec = get_right_ascension_and_declination(coords)
+    assert ra_and_dec.shape == (3,)
+    # Test with multiple sets of coords
+    coords = np.tile(coords, (10, 1))
+    euler_angles = get_right_ascension_and_declination(coords)
+    assert euler_angles.shape == (10, 3)

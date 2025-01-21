@@ -15,10 +15,13 @@ from imap_processing.idex.idex_l1b import (
     idex_l1b,
     unpack_instrument_settings,
 )
+from imap_processing.tests.idex import conftest
+from imap_processing.tests.idex.conftest import get_spice_data_side_effect_func
 
 
 @pytest.fixture(scope="module")
-def l1b_dataset(decom_test_data: xr.Dataset) -> xr.Dataset:
+@mock.patch("imap_processing.idex.idex_l1b.get_spice_data")
+def l1b_dataset(mock_get_spice_data, decom_test_data: xr.Dataset) -> xr.Dataset:
     """Return a ``xarray`` dataset containing test data.
 
     Returns
@@ -26,6 +29,9 @@ def l1b_dataset(decom_test_data: xr.Dataset) -> xr.Dataset:
     dataset : xr.Dataset
         A ``xarray`` dataset containing the test data
     """
+
+    mock_get_spice_data.side_effect = get_spice_data_side_effect_func
+
     dataset = idex_l1b(decom_test_data, data_version="001")
     return dataset
 
@@ -185,3 +191,18 @@ def test_get_trigger_settings_failure(decom_test_data):
 
     with pytest.raises(ValueError, match=error_ms):
         get_trigger_mode_and_level(decom_test_data)
+
+
+def test_spice_data(l1b_dataset):
+    """
+    Check that the expected spice arrays are in the output l1b cdf
+
+    Parameters
+    ----------
+    l1b_dataset : xarray.Dataset
+        L1b dataset
+    """
+
+    for array in conftest.SPICE_ARRAYS:
+        assert array in l1b_dataset
+        assert len(l1b_dataset[array]) == len(l1b_dataset["epoch"])

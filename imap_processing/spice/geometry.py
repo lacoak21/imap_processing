@@ -466,6 +466,46 @@ def get_rotation_matrix(
     return vec_pxform(from_frame.name, to_frame.name, et)
 
 
+def rotation_matrix_to_euler_angles(
+    rotation_matrix: npt.NDArray, axes: Union[list | None] = None
+) -> npt.NDArray:
+    """
+    Get the Euler angles from a rotation matrix.
+
+    This is a vectorized wrapper around `spiceypy.m2eul`
+    "Factor a rotation matrix as a product of three rotations about
+        specified coordinate axes."
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/m2eul.html
+
+    Parameters
+    ----------
+    rotation_matrix : np.ndarray
+        Either single 2d rotation matrix of shape, `(3,3)` or 3d array
+        of rotation matrices of shape `(n, 3, 3)`.
+    axes : SpiceFrame
+        Indices of third, second, and first rotation axes.
+        Default is [3, 2, 1].
+
+    Returns
+    -------
+    euler_angles: np.ndarray
+        If `rotation_matrix` is a 2d array, the euler angles are of shape `(3)`
+        and if `rotation_matrix` is a 3d np.ndarray,
+        the returned euler angles are of shape `(n,3)`
+        where `n` matches the number of matrices in rotation_matrix.
+    """
+    if not axes:
+        axes = [3, 2, 1]
+
+    # If rotation_matrix is 2d, add another dimension
+    while rotation_matrix.ndim < 3:
+        rotation_matrix = np.expand_dims(rotation_matrix, axis=0)
+
+    euler_angles = np.array([spice.m2eul(m, *axes) for m in rotation_matrix])
+    # Return array of euler angles and remove the first dimension if it is 1.
+    return np.squeeze(euler_angles)
+
+
 def instrument_pointing(
     et: Union[float, npt.NDArray],
     instrument: SpiceFrame,
@@ -644,3 +684,32 @@ def spherical_to_cartesian(spherical_coords: NDArray, degrees: bool = False) -> 
     cartesian_coords = np.stack((x, y, z), axis=-1)
 
     return cartesian_coords
+
+
+def get_right_ascension_and_declination(coords: npt.NDArray) -> npt.NDArray:
+    """
+    Convert rectangular coordinates to range, right ascension, and declination.
+
+    This is a vectorized wrapper around `spiceypy.recrad`
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/recrad_c.html
+
+    Parameters
+    ----------
+    coords : npt.NDArray
+        Cartesian (rectangular) coordinates with shape `(n, 3)`,
+        where each row contains [x, y, z].
+
+    Returns
+    -------
+     npt.NDArray
+        Returns np.ndarray containing range, right ascension and declination values.
+        If the input coords are shape `(3)`, the output array is of shape `(3)` and
+        if the input coords are shape `(n, 3)`,
+        the output array is of shape `(n, 3)` where n matches the number sets in coords.
+    """
+    # If coords is 1d, add another dimension
+    while coords.ndim < 2:
+        coords = np.expand_dims(coords, axis=0)
+
+    array = np.array([np.array(spice.recrad(coords)) for coords in coords])
+    return np.squeeze(array)
