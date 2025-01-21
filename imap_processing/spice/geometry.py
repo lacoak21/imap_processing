@@ -467,7 +467,7 @@ def get_rotation_matrix(
 
 
 def rotation_matrix_to_euler_angles(
-    rotation_matrix: npt.NDArray, axes: Union[list | None] = None
+    rotation_matrix: npt.NDArray, axes: Union[list, None] = None
 ) -> npt.NDArray:
     """
     Get the Euler angles from a rotation matrix.
