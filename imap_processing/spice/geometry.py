@@ -473,8 +473,8 @@ def rotation_matrix_to_euler_angles(
     Get the Euler angles from a rotation matrix.
 
     This is a vectorized wrapper around `spiceypy.m2eul`
-    "Factor a rotation matrix as a product of three rotations about
-        specified coordinate axes."
+    "Factor a rotation matrix as a product of three rotations about specified coordinate
+    axes."
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/m2eul.html
 
     Parameters
