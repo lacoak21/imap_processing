@@ -351,7 +351,6 @@ def test_get_rotation_matrix(furnish_kernels):
         rotation = get_rotation_matrix(
             et, SpiceFrame.IMAP_IDEX, SpiceFrame.IMAP_SPACECRAFT
         )
-
         assert rotation.shape == (3, 3)
         # test array of et input
         rotation = get_rotation_matrix(
