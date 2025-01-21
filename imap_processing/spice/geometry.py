@@ -695,13 +695,13 @@ def get_right_ascension_and_declination(coords: npt.NDArray) -> npt.NDArray:
 
     Parameters
     ----------
-    coords : npt.NDArray
-        Cartesian (rectangular) coordinates with shape `(n, 3)`,
+    coords : np.ndarray
+        Cartesian (rectangular) coordinates with shape `(3)` or `(n, 3)`,
         where each row contains [x, y, z].
 
     Returns
     -------
-     npt.NDArray
+     np.ndarray
         Returns np.ndarray containing range, right ascension and declination values.
         If the input coords are shape `(3)`, the output array is of shape `(3)` and
         if the input coords are shape `(n, 3)`,
