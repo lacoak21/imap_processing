@@ -15,7 +15,6 @@ from imap_processing.spice.geometry import (
     frame_transform,
     frame_transform_az_el,
     get_instrument_spin_phase,
-    get_right_ascension_and_declination,
     get_rotation_matrix,
     get_spacecraft_spin_phase,
     get_spacecraft_to_instrument_spin_phase_offset,
@@ -359,26 +358,18 @@ def test_get_rotation_matrix(furnish_kernels):
         assert rotation.shape == (10, 3, 3)
 
 
-def test_rotation_matrix_to_euler_angles(furnish_kernels):
-    """rotation_matrix_to_euler_angles()."""
-    kernels = [
-        "naif0012.tls",
-        "imap_wkcp.tf",
-        "imap_science_0001.tf",
-        "sim_1yr_imap_attitude.bc",
-        "sim_1yr_imap_pointing_frame.bc",
-    ]
+def test_rotation_matrix_to_euler_angles():
+    """Test rotation_matrix_to_euler_angles()."""
     # example rotation matrix
     rotation = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
 
-    with furnish_kernels(kernels):
-        # test with one rotation matrix
-        euler_angles = rotation_matrix_to_euler_angles(rotation, axes=[3, 2, 1])
-        assert euler_angles.shape == (3,)
-        # Test with multiple rotation matrices
-        rotation = np.tile(rotation, (10, 1, 1))
-        euler_angles = rotation_matrix_to_euler_angles(rotation, axes=[3, 2, 1])
-        assert euler_angles.shape == (10, 3)
+    # test with one rotation matrix
+    euler_angles = rotation_matrix_to_euler_angles(rotation, axes=[3, 2, 1])
+    assert euler_angles.shape == (3,)
+    # Test with multiple rotation matrices
+    rotation = np.tile(rotation, (10, 1, 1))
+    euler_angles = rotation_matrix_to_euler_angles(rotation, axes=[3, 2, 1])
+    assert euler_angles.shape == (10, 3)
 
 
 def test_instrument_pointing(furnish_kernels):
@@ -449,18 +440,11 @@ def test_cartesian_to_spherical():
 
     for point in cartesian_points:
         r, az, el = cartesian_to_spherical(point)
-        r_spice, colat_spice, slong_spice = spice.recsph(point)
+        range, ra, dec = spice.recrad(point)
 
-        # Convert SPICE co-latitude to elevation
-        el_spice = 90 - np.degrees(colat_spice)
-        az_spice = np.degrees(slong_spice)
-
-        # Normalize azimuth to [0, 360]
-        az_spice = az_spice % 360
-
-        np.testing.assert_allclose(r, r_spice, atol=1e-5)
-        np.testing.assert_allclose(az, az_spice, atol=1e-5)
-        np.testing.assert_allclose(el, el_spice, atol=1e-5)
+        np.testing.assert_allclose(r, range, atol=1e-5)
+        np.testing.assert_allclose(az, np.degrees(ra), atol=1e-5)
+        np.testing.assert_allclose(el, np.degrees(dec), atol=1e-5)
 
 
 def test_spherical_to_cartesian():
@@ -496,17 +480,3 @@ def test_spherical_to_cartesian():
 
         np.testing.assert_allclose(cartesian_coords[0], spice_coords, atol=1e-5)
         np.testing.assert_allclose(cartesian_from_degrees[i], spice_coords, atol=1e-5)
-
-
-def test_get_right_ascension_and_declination():
-    """Tests get_right_ascension_and_declination()."""
-    # example coordinates
-    coords = np.linspace(0, 1, 3)
-
-    # test with one rotation matrix
-    ra_and_dec = get_right_ascension_and_declination(coords)
-    assert ra_and_dec.shape == (3,)
-    # Test with multiple sets of coords
-    coords = np.tile(coords, (10, 1))
-    euler_angles = get_right_ascension_and_declination(coords)
-    assert euler_angles.shape == (10, 3)

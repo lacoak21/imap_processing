@@ -27,7 +27,7 @@ from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
 from imap_processing.spice.geometry import (
     SpiceBody,
     SpiceFrame,
-    get_right_ascension_and_declination,
+    cartesian_to_spherical,
     get_rotation_matrix,
     imap_state,
     rotation_matrix_to_euler_angles,
@@ -357,8 +357,7 @@ def get_spice_data(
     dict
         Spice array names and xr.DataArrays.
     """
-    # 'epoch' is in nanoseconds since j2000
-    # convert epoch times to seconds since j2000
+    # convert 'epoch' from nanoseconds to seconds since j2000
     et = j2000ns_to_j2000s(epoch)
     # Get IDEX rotation matrix (matrix to get transformation from the 'ECLIPJ2000'
     # Reference frame to the IDEX instrument frame)
@@ -368,23 +367,22 @@ def get_spice_data(
 
     # Get position and velocity of IMAP
     ephemeris = imap_state(et, observer=SpiceBody.SUN)
-    imap_position = ephemeris[:3]
+    imap_position = ephemeris[:, :3]
 
-    # get right ascension and declination of the IMAP spacecraft
-    range_ra_and_dec = get_right_ascension_and_declination(imap_position)
+    range_ra_and_dec = cartesian_to_spherical(imap_position)
 
     spice_data = {
-        "ephemeris_position_x": imap_position[0],
-        "ephemeris_position_y": imap_position[1],
-        "ephemeris_position_z": imap_position[2],
-        "ephemeris_velocity_x": ephemeris[3],
-        "ephemeris_velocity_y": ephemeris[4],
-        "ephemeris_velocity_z": ephemeris[5],
-        "right_ascension": range_ra_and_dec[1],
-        "declination": range_ra_and_dec[2],
-        "attitude_roll": euler_angles[2],
-        "attitude_pitch": euler_angles[1],
-        "attitude_yaw": euler_angles[0],
+        "ephemeris_position_x": imap_position[:, 0],
+        "ephemeris_position_y": imap_position[:, 1],
+        "ephemeris_position_z": imap_position[:, 2],
+        "ephemeris_velocity_x": ephemeris[:, 3],
+        "ephemeris_velocity_y": ephemeris[:, 4],
+        "ephemeris_velocity_z": ephemeris[:, 5],
+        "right_ascension": range_ra_and_dec[:, 1],
+        "declination": range_ra_and_dec[:, 2],
+        "attitude_roll": euler_angles[:, 2],
+        "attitude_pitch": euler_angles[:, 1],
+        "attitude_yaw": euler_angles[:, 0],
     }
 
     for name, array in spice_data.items():

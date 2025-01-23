@@ -11,6 +11,7 @@ from imap_processing import imap_module_directory
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
 from imap_processing.cdf.utils import write_cdf
 from imap_processing.idex.idex_l1b import (
+    get_spice_data,
     get_trigger_mode_and_level,
     idex_l1b,
     unpack_instrument_settings,
@@ -193,16 +194,39 @@ def test_get_trigger_settings_failure(decom_test_data):
         get_trigger_mode_and_level(decom_test_data)
 
 
-def test_spice_data(l1b_dataset):
+@mock.patch("imap_processing.idex.idex_l1b.get_rotation_matrix")
+@mock.patch("imap_processing.idex.idex_l1b.imap_state")
+def test_get_spice_data(mock_state, mock_matrix, decom_test_data, furnish_kernels):
     """
-    Check that the expected spice arrays are in the output l1b cdf
+    Test the get_spice_data() function.
 
     Parameters
     ----------
-    l1b_dataset : xarray.Dataset
-        L1b dataset
+    decom_test_data : xarray.Dataset
+        L1a dataset
     """
+    kernels = ["naif0012.tls"]
+    # example rotation matrix
+    rotation = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+    # Mock rotation matrix for each time (n, 3, 3)
+    mock_matrix.side_effect = lambda t, from_frame, to_frame: np.tile(
+        rotation, (len(t), 1, 1)
+    )
+    # Returns position and velocity values for each time (n,6)
+    mock_state.side_effect = lambda t, observer,: np.ones((len(t), 6))
+
+    # Mock attribute manager variable attrs
+    idex_attrs = ImapCdfAttributes()
+
+    with (
+        furnish_kernels(kernels),
+        mock.patch.object(idex_attrs, "get_variable_attributes") as mock_attrs,
+    ):
+        mock_attrs.return_value = {"CATDESC": "Test var"}
+        et = decom_test_data["epoch"].data
+
+        spice_data = get_spice_data(et, idex_attrs)
 
     for array in conftest.SPICE_ARRAYS:
-        assert array in l1b_dataset
-        assert len(l1b_dataset[array]) == len(l1b_dataset["epoch"])
+        assert array in spice_data
+        assert len(spice_data[array]) == len(decom_test_data["epoch"])

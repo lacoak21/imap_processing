@@ -482,9 +482,9 @@ def rotation_matrix_to_euler_angles(
     rotation_matrix : np.ndarray
         Either single 2d rotation matrix of shape, `(3,3)` or 3d array
         of rotation matrices of shape `(n, 3, 3)`.
-    axes : SpiceFrame
+    axes : list, optional
         Indices of third, second, and first rotation axes.
-        Default is [3, 2, 1].
+        Default is [3, 2, 1]. They must be in the set of values: [1, 2, 3].
 
     Returns
     -------
@@ -496,6 +496,8 @@ def rotation_matrix_to_euler_angles(
     """
     if not axes:
         axes = [3, 2, 1]
+    elif any(axis not in [1, 2, 3] for axis in axes):
+        raise ValueError("Axes must be in [1, 2, or 3].")
 
     # If rotation_matrix is 2d, add another dimension
     while rotation_matrix.ndim < 3:
@@ -684,32 +686,3 @@ def spherical_to_cartesian(spherical_coords: NDArray, degrees: bool = False) -> 
     cartesian_coords = np.stack((x, y, z), axis=-1)
 
     return cartesian_coords
-
-
-def get_right_ascension_and_declination(coords: npt.NDArray) -> npt.NDArray:
-    """
-    Convert rectangular coordinates to range, right ascension, and declination.
-
-    This is a vectorized wrapper around `spiceypy.recrad`
-    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/recrad_c.html
-
-    Parameters
-    ----------
-    coords : np.ndarray
-        Cartesian (rectangular) coordinates with shape `(3)` or `(n, 3)`,
-        where each row contains [x, y, z].
-
-    Returns
-    -------
-     np.ndarray
-        Returns np.ndarray containing range, right ascension and declination values.
-        If the input coords are shape `(3)`, the output array is of shape `(3)` and
-        if the input coords are shape `(n, 3)`,
-        the output array is of shape `(n, 3)` where n matches the number sets in coords.
-    """
-    # If coords is 1d, add another dimension
-    while coords.ndim < 2:
-        coords = np.expand_dims(coords, axis=0)
-
-    array = np.array([np.array(spice.recrad(coords)) for coords in coords])
-    return np.squeeze(array)
