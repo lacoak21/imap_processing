@@ -11,6 +11,7 @@ from imap_processing.spice.geometry import (
     SpiceBody,
     SpiceFrame,
     basis_vectors,
+    cartesian_to_latitudinal,
     cartesian_to_spherical,
     frame_transform,
     frame_transform_az_el,
@@ -21,7 +22,7 @@ from imap_processing.spice.geometry import (
     get_spin_data,
     imap_state,
     instrument_pointing,
-    rotation_matrix_to_euler_angles,
+    solar_longitude,
     spherical_to_cartesian,
 )
 from imap_processing.spice.kernels import ensure_spice
@@ -98,6 +99,11 @@ def test_get_spacecraft_spin_phase(query_met_times, expected, fake_spin_data):
         assert spin_phases.shape == expected.shape
     # Test the value
     np.testing.assert_array_almost_equal(spin_phases, expected)
+    # Test get spin phase in degrees
+    spin_phases_deg = get_spacecraft_spin_phase(
+        query_met_times=query_met_times, degrees=True
+    )
+    np.testing.assert_array_almost_equal(spin_phases, spin_phases_deg / 360)
 
 
 @pytest.mark.parametrize("query_met_times", [-1, 165])
@@ -358,20 +364,6 @@ def test_get_rotation_matrix(furnish_kernels):
         assert rotation.shape == (10, 3, 3)
 
 
-def test_rotation_matrix_to_euler_angles():
-    """Test rotation_matrix_to_euler_angles()."""
-    # example rotation matrix
-    rotation = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
-
-    # test with one rotation matrix
-    euler_angles = rotation_matrix_to_euler_angles(rotation, axes=[3, 2, 1])
-    assert euler_angles.shape == (3,)
-    # Test with multiple rotation matrices
-    rotation = np.tile(rotation, (10, 1, 1))
-    euler_angles = rotation_matrix_to_euler_angles(rotation, axes=[3, 2, 1])
-    assert euler_angles.shape == (10, 3)
-
-
 def test_instrument_pointing(furnish_kernels):
     kernels = [
         "naif0012.tls",
@@ -480,3 +472,40 @@ def test_spherical_to_cartesian():
 
         np.testing.assert_allclose(cartesian_coords[0], spice_coords, atol=1e-5)
         np.testing.assert_allclose(cartesian_from_degrees[i], spice_coords, atol=1e-5)
+
+
+def test_cartesian_to_latitudinal():
+    """Test cartesian_to_latitudinal()."""
+    # example cartesian coords
+    coords = np.ones(3)
+
+    # test with one coord vector
+    lat_coords = cartesian_to_latitudinal(coords, degrees=True)
+    assert lat_coords.shape == (3,)
+    assert lat_coords[1] == 45
+    assert lat_coords[2] == 35.264389682754654
+
+    # Test with multiple coord vectors
+    coords = np.tile(coords, (10, 1))
+    lat_coords = cartesian_to_latitudinal(coords, degrees=True)
+    assert lat_coords.shape == (10, 3)
+
+
+@mock.patch("imap_processing.spice.geometry.imap_state")
+def test_solar_longitude(mock_state):
+    """Test solar_longitude()."""
+
+    mock_state.side_effect = (
+        lambda t, observer: np.ones(6) if (isinstance(t, int)) else np.ones((len(t), 6))
+    )
+    # example et time
+    et = 798033670
+
+    # test for one time interval
+    lon = solar_longitude(et, degrees=True)
+    assert lon == 45
+
+    # Test with multiple time intervals
+    et = np.tile(et, (10, 1))
+    lon = solar_longitude(et, degrees=True)
+    assert lon.shape == (10,)

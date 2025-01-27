@@ -16,9 +16,8 @@ SPICE_ARRAYS = [
     "ephemeris_velocity_z",
     "right_ascension",
     "declination",
-    "attitude_roll",
-    "attitude_pitch",
-    "attitude_yaw",
+    "solar_longitude",
+    "spin_phase",
 ]
 
 
@@ -37,13 +36,13 @@ def decom_test_data() -> xr.Dataset:
     return PacketParser(test_file, "001").data
 
 
-def get_spice_data_side_effect_func(epoch, idex_attrs):
+def get_spice_data_side_effect_func(l1a_ds, idex_attrs):
     # Create a mock dictionary of spice arrays
 
     return {
         name: xr.DataArray(
             name=name,
-            data=np.ones(len(epoch)),
+            data=np.ones(len(l1a_ds["epoch"])),
             dims="epoch",
             attrs=idex_attrs.get_variable_attributes(name),
         )

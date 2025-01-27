@@ -18,7 +18,6 @@ import logging
 from enum import Enum
 from typing import Union
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -28,9 +27,10 @@ from imap_processing.spice.geometry import (
     SpiceBody,
     SpiceFrame,
     cartesian_to_spherical,
-    get_rotation_matrix,
+    get_spacecraft_spin_phase,
     imap_state,
-    rotation_matrix_to_euler_angles,
+    instrument_pointing,
+    solar_longitude,
 )
 from imap_processing.spice.time import j2000ns_to_j2000s
 from imap_processing.utils import convert_raw_to_eu
@@ -122,7 +122,7 @@ def idex_l1b(l1a_dataset: xr.Dataset, data_version: str) -> xr.Dataset:
     )
     # Get spice data and save them as xr.DataArrays in the output. Spice data is not
     # used for calculations yet but are saved in the CDF for reference.
-    spice_data = get_spice_data(epoch_da.data, idex_attrs)
+    spice_data = get_spice_data(l1a_dataset, idex_attrs)
 
     trigger_settings = get_trigger_mode_and_level(l1a_dataset)
     if trigger_settings:
@@ -340,15 +340,15 @@ def get_trigger_mode_and_level(
 
 
 def get_spice_data(
-    epoch: np.ndarray, idex_attrs: ImapCdfAttributes
+    l1a_dataset: xr.Dataset, idex_attrs: ImapCdfAttributes
 ) -> dict[str, xr.DataArray]:
     """
     Use spice to query ephemeris, attitude, celestial coordinates for each dust event.
 
     Parameters
     ----------
-    epoch : np.ndarray
-        Dust impact times.
+    l1a_dataset : xarray.Dataset
+        IDEX L1a dataset containing the six waveform arrays and instrument settings.
     idex_attrs : ImapCdfAttributes
         CDF attribute manager object.
 
@@ -358,31 +358,32 @@ def get_spice_data(
         Spice array names and xr.DataArrays.
     """
     # convert 'epoch' from nanoseconds to seconds since j2000
-    et = j2000ns_to_j2000s(epoch)
-    # Get IDEX rotation matrix (matrix to get transformation from the 'ECLIPJ2000'
-    # Reference frame to the IDEX instrument frame)
-    rotation = get_rotation_matrix(et, SpiceFrame.ECLIPJ2000, SpiceFrame.IMAP_IDEX)
-    # In order yaw, pitch, roll in radians
-    euler_angles = rotation_matrix_to_euler_angles(rotation)
-
-    # Get position and velocity of IMAP
+    et = j2000ns_to_j2000s(l1a_dataset["epoch"].data)
+    # Get 'shcoarse' (Mission Elapsed Time)
+    met = l1a_dataset["shcoarse"].data
+    # Get spacecraft spin phase in degrees
+    imap_spin_phase = get_spacecraft_spin_phase(query_met_times=met, degrees=True)
+    # Get position and velocity of IMAP in ecliptic frame
     ephemeris = imap_state(et, observer=SpiceBody.SUN)
-    imap_position = ephemeris[:, :3]
+    # Get Idex pointing in the j200 equatorial frame
+    idex_pointing = instrument_pointing(
+        et, SpiceFrame.IMAP_IDEX, SpiceFrame.J2000, cartesian=True
+    )
+    solar_lon = solar_longitude(et, degrees=True)
 
-    range_ra_and_dec = cartesian_to_spherical(imap_position)
+    range_ra_and_dec = cartesian_to_spherical(idex_pointing)
 
     spice_data = {
-        "ephemeris_position_x": imap_position[:, 0],
-        "ephemeris_position_y": imap_position[:, 1],
-        "ephemeris_position_z": imap_position[:, 2],
+        "ephemeris_position_x": ephemeris[:, 0],
+        "ephemeris_position_y": ephemeris[:, 1],
+        "ephemeris_position_z": ephemeris[:, 2],
         "ephemeris_velocity_x": ephemeris[:, 3],
         "ephemeris_velocity_y": ephemeris[:, 4],
         "ephemeris_velocity_z": ephemeris[:, 5],
         "right_ascension": range_ra_and_dec[:, 1],
         "declination": range_ra_and_dec[:, 2],
-        "attitude_roll": euler_angles[:, 2],
-        "attitude_pitch": euler_angles[:, 1],
-        "attitude_yaw": euler_angles[:, 0],
+        "spin_phase": imap_spin_phase,
+        "solar_longitude": solar_lon,
     }
 
     for name, array in spice_data.items():

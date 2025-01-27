@@ -160,6 +160,7 @@ def get_spin_data() -> pd.DataFrame:
 
 def get_spacecraft_spin_phase(
     query_met_times: Union[float, npt.NDArray],
+    degrees: bool = False,
 ) -> Union[float, npt.NDArray]:
     """
     Get the spacecraft spin phase for the input query times.
@@ -171,11 +172,14 @@ def get_spacecraft_spin_phase(
     ----------
     query_met_times : float or np.ndarray
         Query times in Mission Elapsed Time (MET).
+    degrees : bool
+        If True, spin phase output will be in degrees.
 
     Returns
     -------
     spin_phase : float or np.ndarray
-        Spin phase for the input query times.
+        Spin phase for the input query times. If 'degrees' is True, spin phase is a
+        floating point number in the range [0, 360) degrees.
     """
     spin_df = get_spin_data()
 
@@ -233,14 +237,16 @@ def get_spacecraft_spin_phase(
     bad_spin_phases = invalid_spin_phase_range | invalid_spins
     spin_phases[bad_spin_phases] = np.nan
 
+    if degrees:
+        spin_phases *= 360
+
     if is_scalar:
         return spin_phases[0]
     return spin_phases
 
 
 def get_instrument_spin_phase(
-    query_met_times: Union[float, npt.NDArray],
-    instrument: SpiceFrame,
+    query_met_times: Union[float, npt.NDArray], instrument: SpiceFrame
 ) -> Union[float, npt.NDArray]:
     """
     Get the instrument spin phase for the input query times.
@@ -466,48 +472,6 @@ def get_rotation_matrix(
     return vec_pxform(from_frame.name, to_frame.name, et)
 
 
-def rotation_matrix_to_euler_angles(
-    rotation_matrix: npt.NDArray, axes: Union[list, None] = None
-) -> npt.NDArray:
-    """
-    Get the Euler angles from a rotation matrix.
-
-    This is a vectorized wrapper around `spiceypy.m2eul`
-    "Factor a rotation matrix as a product of three rotations about specified coordinate
-    axes."
-    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/m2eul.html
-
-    Parameters
-    ----------
-    rotation_matrix : np.ndarray
-        Either single 2d rotation matrix of shape, `(3,3)` or 3d array
-        of rotation matrices of shape `(n, 3, 3)`.
-    axes : list, optional
-        Indices of third, second, and first rotation axes.
-        Default is [3, 2, 1]. They must be in the set of values: [1, 2, 3].
-
-    Returns
-    -------
-    euler_angles: np.ndarray
-        If `rotation_matrix` is a 2d array, the euler angles are of shape `(3)`
-        and if `rotation_matrix` is a 3d np.ndarray,
-        the returned euler angles are of shape `(n,3)`
-        where `n` matches the number of matrices in rotation_matrix.
-    """
-    if not axes:
-        axes = [3, 2, 1]
-    elif any(axis not in [1, 2, 3] for axis in axes):
-        raise ValueError("Axes must be in [1, 2, or 3].")
-
-    # If rotation_matrix is 2d, add another dimension
-    while rotation_matrix.ndim < 3:
-        rotation_matrix = np.expand_dims(rotation_matrix, axis=0)
-
-    euler_angles = np.array([spice.m2eul(m, *axes) for m in rotation_matrix])
-    # Return array of euler angles and remove the first dimension if it is 1.
-    return np.squeeze(euler_angles)
-
-
 def instrument_pointing(
     et: Union[float, npt.NDArray],
     instrument: SpiceFrame,
@@ -686,3 +650,64 @@ def spherical_to_cartesian(spherical_coords: NDArray, degrees: bool = False) -> 
     cartesian_coords = np.stack((x, y, z), axis=-1)
 
     return cartesian_coords
+
+
+def cartesian_to_latitudinal(coords: NDArray, degrees: bool = False) -> NDArray:
+    """
+    Convert cartesian coordinates to latitudinal coordinates in radians.
+
+    This is a vectorized wrapper around `spiceypy.reclat`
+    "Convert from rectangular coordinates to latitudinal coordinates."
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/reclat_c.html
+
+    Parameters
+    ----------
+    coords : np.ndarray
+        Either shape (n, 3) or (3) where the last dimension represents a vector
+        with x, y, z-components.
+    degrees : bool
+        If True, the longitude and latitude coords are returned in degrees.
+        Defaults to False.
+
+    Returns
+    -------
+    np.ndarray
+        A NumPy array with shape (n, 3) or (3), where the last dimension contains
+        the latitudinal coordinates (radius, longitude, latitude).
+    """
+    # If coords is 1d, add another dimension
+    while coords.ndim < 2:
+        coords = np.expand_dims(coords, axis=0)
+    latitudinal_coords = np.array([spice.reclat(vec) for vec in coords])
+
+    if degrees:
+        latitudinal_coords[..., 1:] = np.degrees(latitudinal_coords[..., 1:])
+    # Return array of latitudinal and remove the first dimension if it is 1.
+    return np.squeeze(latitudinal_coords)
+
+
+def solar_longitude(
+    et: Union[np.ndarray, float],
+    degrees: bool = False,
+) -> Union[float, npt.NDArray]:
+    """
+    Compute the solar longitude of the Imap Spacecraft.
+
+    Parameters
+    ----------
+    et : float or np.ndarray
+        Ephemeris time(s) to at which to compute solar longitude.
+    degrees : bool
+        If True, the longitude is returned in degrees.
+        Defaults to False.
+
+    Returns
+    -------
+    float or np.ndarray
+        The solar longitude at the specified times.
+    """
+    # Get position of IMAP in ecliptic frame
+    imap_pos = imap_state(et, observer=SpiceBody.SUN)[..., 0:3]
+    lat_coords = cartesian_to_latitudinal(imap_pos, degrees=degrees)[..., 1]
+
+    return float(lat_coords) if lat_coords.size == 1 else lat_coords

@@ -47,10 +47,10 @@ trigger_base: &trigger_base
 spice_base: &spice_base
   <<: *l1b_data_base
   VAR_TYPE: data
-  VALIDMIN: -9223372036854775808 # TODO: Find actual validmin
-  VALIDMAX: 9223372036854775807 # TODO: Find actual validmax
+  VALIDMIN: -180
+  VALIDMAX: 360
   DISPLAY_TYPE: time_series
-  UNITS: Radians
+  UNITS: Degrees
 
 # <=== Instrument Setting Attributes ===>
 trigger_mode:
@@ -343,6 +343,7 @@ current_neg2p5v_bus:
   UNITS: A
 
 # <=== Spice Data Attributes ===>
+# TODO: Get actual validmin and vaildmax for ephemeris attrs
 ephemeris_position_x:
   <<: *spice_base
   FIELDNAM: Position X
@@ -388,39 +389,27 @@ ephemeris_velocity_z:
 right_ascension:
   <<: *spice_base
   VALIDMIN: 0
-  VALIDMAX: 6.283185307179586
   FIELDNAM: Right Ascension
   CATDESC: Right ascension of the IMAP spacecraft position as observed from Earth in the ECLIPJ2000 reference frame.
   LABLAXIS: Right Ascension
 
 declination:
   <<: *spice_base
-  VALIDMIN: -1.5707963267948966
-  VALIDMAX: 1.5707963267948966
   FIELDNAM: Declination
   CATDESC: Declination of the IMAP spacecraft position as observed from Earth in the ECLIPJ2000 reference frame.
-  LABLAXIS: Current
+  LABLAXIS: Declination
 
-attitude_roll:
+spin_phase:
   <<: *spice_base
-  VALIDMIN: -3.141592653589793
-  VALIDMAX: 3.141592653589793
-  FIELDNAM: Roll
-  CATDESC: Roll angle (rotation around the X-axis) of the IMAP spacecraft in the ECLIPJ2000 reference frame.
-  LABLAXIS: Roll
+  VALIDMIN: 0
+  FIELDNAM: Spin Phase
+  CATDESC: IMAP Spin Phase
+  LABLAXIS: Spin Phase
 
-attitude_pitch:
+solar_longitude:
   <<: *spice_base
-  VALIDMIN: -1.5707963267948966
-  VALIDMAX: 3.141592653589793
-  FIELDNAM: Pitch
-  CATDESC: Pitch angle (rotation around the Y-axis) of the IMAP spacecraft in the ECLIPJ2000 reference frame.
-  LABLAXIS: Pitch
+  VALIDMAX: 180
+  FIELDNAM: Solar Longitude
+  CATDESC: Solar Longitude of the IMAP spacecraft
+  LABLAXIS: Solar Longitude
 
-attitude_yaw:
-  <<: *spice_base
-  VALIDMIN: -3.141592653589793
-  VALIDMAX: 3.141592653589793
-  FIELDNAM: Yaw
-  CATDESC: Yaw angle (rotation around the Z-axis) of the IMAP spacecraft in the ECLIPJ2000 reference frame.
-  LABLAXIS: Yaw
