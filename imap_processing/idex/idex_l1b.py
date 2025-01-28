@@ -27,7 +27,8 @@ from imap_processing.spice.geometry import (
     SpiceBody,
     SpiceFrame,
     cartesian_to_spherical,
-    get_spacecraft_spin_phase_angle,
+    get_spacecraft_spin_phase,
+    get_spin_angle,
     imap_state,
     instrument_pointing,
     solar_longitude,
@@ -362,7 +363,8 @@ def get_spice_data(
     # Get 'shcoarse' (Mission Elapsed Time)
     met = l1a_dataset["shcoarse"].data
     # Get spacecraft spin phase in degrees
-    imap_spin_phase = get_spacecraft_spin_phase_angle(query_met_times=met, degrees=True)
+    spin_phase = get_spacecraft_spin_phase(query_met_times=met)
+    imap_spin_phase = get_spin_angle(spin_phase, degrees=True)
     # Get position and velocity of IMAP in ecliptic frame
     ephemeris = imap_state(et, observer=SpiceBody.SUN)
     # Get Idex pointing in the j2000 equatorial frame
