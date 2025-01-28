@@ -18,6 +18,7 @@ from imap_processing.spice.geometry import (
     get_instrument_spin_phase,
     get_rotation_matrix,
     get_spacecraft_spin_phase,
+    get_spacecraft_spin_phase_angle,
     get_spacecraft_to_instrument_spin_phase_offset,
     get_spin_data,
     imap_state,
@@ -60,6 +61,22 @@ def fake_spin_data(monkeypatch, spice_test_data_path):
     return fake_spin_path
 
 
+@mock.patch("imap_processing.spice.geometry.get_spacecraft_spin_phase")
+def test_get_spacecraft_spin_phase_angle(mock_spin_phase):
+    """Test get_spacecraft_spin_phase_angle() with mocked spin data."""
+    test_met_times = np.ones(5)
+    mock_spin_phase.side_effect = lambda qt: np.ones(len(test_met_times)) * 0.5
+    # Expected values for spin phase in degrees and radians if spin phase is 0.5
+    expected_deg = 180
+    expected_rad = np.pi
+    # Get spin phase angles in degrees and radians
+    spin_phases_deg = get_spacecraft_spin_phase_angle(test_met_times, degrees=True)
+    spin_phases_rad = get_spacecraft_spin_phase_angle(test_met_times, degrees=False)
+    # Test conversions
+    assert np.all(spin_phases_deg == expected_deg)
+    assert np.all(spin_phases_rad == expected_rad)
+
+
 @pytest.mark.parametrize(
     "query_met_times, expected",
     [
@@ -99,11 +116,6 @@ def test_get_spacecraft_spin_phase(query_met_times, expected, fake_spin_data):
         assert spin_phases.shape == expected.shape
     # Test the value
     np.testing.assert_array_almost_equal(spin_phases, expected)
-    # Test get spin phase in degrees
-    spin_phases_deg = get_spacecraft_spin_phase(
-        query_met_times=query_met_times, degrees=True
-    )
-    np.testing.assert_array_almost_equal(spin_phases, spin_phases_deg / 360)
 
 
 @pytest.mark.parametrize("query_met_times", [-1, 165])

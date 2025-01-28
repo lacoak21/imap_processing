@@ -158,9 +158,37 @@ def get_spin_data() -> pd.DataFrame:
     return spin_df
 
 
-def get_spacecraft_spin_phase(
+def get_spacecraft_spin_phase_angle(
     query_met_times: Union[float, npt.NDArray],
     degrees: bool = False,
+) -> Union[float, npt.NDArray]:
+    """
+    Get the spacecraft spin phase angle for the input query times.
+
+    Parameters
+    ----------
+    query_met_times : float or np.ndarray
+        Query times in Mission Elapsed Time (MET).
+    degrees : bool
+        If degrees parameter is True, return angle in degrees otherwise return angle in
+        radians. Default is False.
+
+    Returns
+    -------
+    spin_phase : float or np.ndarray
+        Spin phase angle in degrees or radians for the input query times.
+    """
+    spin_phase = get_spacecraft_spin_phase(query_met_times)
+    if degrees:
+        # Convert to degrees
+        return spin_phase * 360
+    else:
+        # Convert to radians
+        return spin_phase * 2 * np.pi
+
+
+def get_spacecraft_spin_phase(
+    query_met_times: Union[float, npt.NDArray],
 ) -> Union[float, npt.NDArray]:
     """
     Get the spacecraft spin phase for the input query times.
@@ -172,14 +200,11 @@ def get_spacecraft_spin_phase(
     ----------
     query_met_times : float or np.ndarray
         Query times in Mission Elapsed Time (MET).
-    degrees : bool
-        If True, spin phase output will be in degrees.
 
     Returns
     -------
     spin_phase : float or np.ndarray
-        Spin phase for the input query times. If 'degrees' is True, spin phase is a
-        floating point number in the range [0, 360) degrees.
+        Spin phase for the input query times.
     """
     spin_df = get_spin_data()
 
@@ -236,9 +261,6 @@ def get_spacecraft_spin_phase(
     )
     bad_spin_phases = invalid_spin_phase_range | invalid_spins
     spin_phases[bad_spin_phases] = np.nan
-
-    if degrees:
-        spin_phases *= 360
 
     if is_scalar:
         return spin_phases[0]
