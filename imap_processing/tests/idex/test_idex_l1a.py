@@ -1,5 +1,7 @@
 """Tests the L1 processing for decommutated IDEX data"""
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 import xarray as xr
@@ -7,6 +9,7 @@ from cdflib.xarray.xarray_to_cdf import ISTPError
 
 from imap_processing import imap_module_directory
 from imap_processing.cdf.utils import load_cdf, write_cdf
+from imap_processing.idex.idex_l1a import PacketParser
 
 
 def test_idex_cdf_file(decom_test_data: xr.Dataset):
@@ -89,9 +92,40 @@ def test_idex_tof_high_data_from_cdf(decom_test_data: xr.Dataset):
     decom_test_data : xarray.Dataset
         The dataset to test with
     """
-    with open(f"{imap_module_directory}/tests/idex/impact_14_tof_high_data.txt") as f:
+    with open(
+        f"{imap_module_directory}/tests/idex/test_data/impact_14_tof_high_data.txt"
+    ) as f:
         data = np.array([int(line.rstrip()) for line in f])
 
     file_name = write_cdf(decom_test_data)
     l1_data = load_cdf(file_name)
     assert (l1_data["TOF_High"][13].data == data).all()
+
+
+def test_compressed_packet():
+    """
+    Test compressed data decompression against known non-compressed data.
+    """
+    test_data_dir = f"{imap_module_directory}/tests/idex/test_data"
+
+    compressed = Path(f"{test_data_dir}/compressed_2023_102_14_24_55.pkts")
+    non_compressed = Path(f"{test_data_dir}/non_compressed_2023_102_14_22_26.pkts")
+
+    decompressed = PacketParser(compressed, "001").data
+    expected = PacketParser(non_compressed, "001").data
+
+    waveforms = [
+        "TOF_High",
+        "TOF_Low",
+        "TOF_Mid",
+        "Ion_Grid",
+        "Target_High",
+        "Target_Low",
+    ]
+
+    # Compare each decompressed waveform with known non-compressed waveform.
+    for var in waveforms:
+        assert np.allclose(decompressed[var], expected[var]), (
+            f"Variable: {var} is different for the decompressed and non compressed "
+            f"datasets."
+        )
