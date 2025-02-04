@@ -161,6 +161,10 @@ class RawDustEvent:
         The number of samples in a "block" of low sample data.
     NUMBER_SAMPLES_PER_HIGH_SAMPLE_BLOCK: int
         The number of samples in a "block" of high sample data.
+    MAX_HIGH_BLOCKS: int
+        The maximum number of "blocks" for high sample data.
+    MAX_LOW_BLOCKS: int
+        The maximum number of "blocks" for low sample data.
 
     Methods
     -------
@@ -399,8 +403,10 @@ class RawDustEvent:
         """
         samples = self.MAX_HIGH_BLOCKS * self.NUMBER_SAMPLES_PER_HIGH_SAMPLE_BLOCK
         if self.compressed.raw_value == 1:
-            ints = idex_rice_decode(waveform_raw, nbit10=True, sample_count=samples)
-            ints = ints[:-3]
+            ints: list[int] = idex_rice_decode(
+                waveform_raw, nbit10=True, sample_count=samples
+            )
+            return ints[:-3]
         else:
             ints = []
             for i in range(0, len(waveform_raw), 32):
@@ -411,8 +417,7 @@ class RawDustEvent:
                     int(waveform_raw[i + 12 : i + 22], 2),
                     int(waveform_raw[i + 22 : i + 32], 2),
                 ]
-            ints = ints[:-4]  # Remove last 4 numbers
-        return ints
+            return ints[:-4]  # Remove last 4 numbers
 
     def _parse_low_sample_waveform(self, waveform_raw: str) -> list[int]:
         """
@@ -437,7 +442,9 @@ class RawDustEvent:
         """
         samples = self.MAX_LOW_BLOCKS * self.NUMBER_SAMPLES_PER_LOW_SAMPLE_BLOCK
         if self.compressed.raw_value == 1:
-            ints = idex_rice_decode(waveform_raw, nbit10=False, sample_count=samples)
+            ints: list[int] = idex_rice_decode(
+                waveform_raw, nbit10=False, sample_count=samples
+            )
         else:
             ints = []
             for i in range(0, len(waveform_raw), 32):
