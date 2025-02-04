@@ -1,28 +1,31 @@
+# ruff: noqa: PLR0912
 """
 Decompress IDEX raw wavelength data.
 
 Originally written by Corinne Wuerthner.
 """
 
-from bitstring import BitStream
-
 # sub_frame_size is the compression block size
 SUB_FRAME_SIZE = 64
 
 
+# TODO: refactor code blow to use less branches. Remove comment blow.
 def _decode_sub_frame(
-    bits: BitStream,
+    bits: str,
+    bp: int,
     psel: int,
     k: int,
     n_bits: int,
-) -> tuple[list[int], int]:
+) -> tuple[list[int], int, int]:
     """
     Decode a subframe of compressed data.
 
     Parameters
     ----------
-    bits : BitStream
-        Raw waveform bits.
+    bits : str
+        Raw waveform binary string.
+    bp : int
+        Current position to start reading from bits.
     psel : int
         Predictor select value.
     k : int
@@ -32,17 +35,19 @@ def _decode_sub_frame(
 
     Returns
     -------
-    tuple[list, int]
-        Decompressed subframe as a list of integers and the number of samples.
+    tuple[list, int, int]
+        Decompressed subframe as a list of integers, the number of samples and the
+        bit position.
     """
     sample_count = 0
     sub_frame_data = []
 
-    while (sample_count < SUB_FRAME_SIZE) and bits.pos < bits.len:
+    while (sample_count < SUB_FRAME_SIZE) and bp < len(bits):
         if sample_count == 0:
             # For every subframe, the first sample is always uncompressed.
             # Read warmup sample
-            d1 = bits.read(n_bits).uint
+            d1, bp = read_bits(bits, bp, n_bits)
+
             sub_frame_data.append(d1)
             sample_count += 1
 
@@ -59,7 +64,7 @@ def _decode_sub_frame(
         # representation.
         # A 'psel' value of 3 requires two uncompressed 'warm-up' samples.
         elif (psel == 1) or ((sample_count == 1) and (psel == 3)):
-            d1 = bits.read(n_bits).uint
+            d1, bp = read_bits(bits, bp, n_bits)
             sub_frame_data.append(d1)
             sample_count += 1
 
@@ -71,22 +76,26 @@ def _decode_sub_frame(
             # The remapped quotient is unary encoded by including a number of 0 bits
             # equal to the value of the quotient, followed by a single '1' bit.
             q = 0
-            while bits.read(1).uint == 0:
+            while read_bits(bits, bp, 1)[0] == 0:
+                bp += 1
                 q += 1
-
-            if q & 0x1:
-                q = int(-((q + 1) / 2))
-            else:
-                q = int(q / 2)
-
+            bp += 1
             # If the value of the quotient is equal to or larger than 47, then a
             # special symbol is used to denote that this particular residual value
             # is not rice encoded, but that this special symbol is followed by the
             # raw binary representation of the residual value using a (N_BITS+2)
             # bit binary number. This special symbol is simply 47 zeros followed
             # by a one.
-            r = bits.read(k + 1).uint
-            d1 = bits.read(n_bits + 2).int if q == 47 else (q << (k + 1)) + r
+            if q == 47:
+                d1, bp = read_bits(bits, bp, n_bits + 2, True)
+            else:
+                if q & 0x1:
+                    q = int(-((q + 1) / 2))
+                else:
+                    q = int(q / 2)
+
+                r, bp = read_bits(bits, bp, k + 1)
+                d1 = (q << (k + 1)) + r
 
             if psel == 2:
                 d1 = d1 + sub_frame_data[sample_count - 1]
@@ -107,7 +116,7 @@ def _decode_sub_frame(
             sub_frame_data.append(d1)
             sample_count += 1
 
-    return sub_frame_data, sample_count
+    return sub_frame_data, sample_count, bp
 
 
 def idex_rice_decode(
@@ -139,35 +148,58 @@ def idex_rice_decode(
     frame_size = sample_count
     sub_frame_per_frame = frame_size / SUB_FRAME_SIZE
 
-    byte_data = bytearray()
-    # Process 8 bits at a time
-    for i in range(0, len(compressed_data), 8):
-        byte_str = compressed_data[i : i + 8]
-        # Convert binary string to integer
-        byte_val = int(byte_str, 2)
-        byte_data.append(byte_val)
-
-    bits = BitStream(byte_data)
+    bits = compressed_data
     out_data = []
     total_count = 0
     sub_frame_count = 0
-
-    while bits.pos < bits.len and (sub_frame_count < sub_frame_per_frame):
+    bp = 0
+    while bp < len(bits) and (sub_frame_count < sub_frame_per_frame):
         # The next two bits are the predictor select bits
-        psel = bits.read(2).uint
-
+        psel, bp = read_bits(bits, bp, 2)
         if psel > 1:
-            k = bits.read(k_bits).uint
+            k, bp = read_bits(bits, bp, k_bits)
         else:
             k = 0
 
-        sub_frame_data, sample_count = _decode_sub_frame(bits, psel, k, n_bits)
+        sub_frame_data, sample_count, bp = _decode_sub_frame(bits, bp, psel, k, n_bits)
 
         out_data.extend(sub_frame_data)
         total_count += sample_count
         sub_frame_count += 1
 
-    if bits.pos < bits.len and (len(out_data) < frame_size):
+    if bp < len(bits) and (len(out_data) < frame_size):
         raise ValueError("End of file reached before", frame_size, "samples decoded")
 
     return out_data
+
+
+def read_bits(
+    bits: str, bit_pointer: int, read_num: int, signed: bool = False
+) -> tuple[int, int]:
+    """
+    Read bits from a binary string and convert to an int.
+
+    Parameters
+    ----------
+    bits : str
+       Binary string to read from.
+    bit_pointer : int
+       Current position in binary string.
+    read_num : int
+       Number of bits to read.
+    signed : bool, optional
+       If signed is True, convert bits to a signed int. Default is False.
+
+    Returns
+    -------
+    value : int
+       Value of bits read.
+    bit_pointer : int
+       Bit position after reading.
+    """
+    value = int(bits[bit_pointer : bit_pointer + read_num], 2)
+    if signed and bits[bit_pointer] == "1":
+        # If signed and is negative convert value
+        value = value - 2**read_num
+    bit_pointer += read_num
+    return value, bit_pointer
