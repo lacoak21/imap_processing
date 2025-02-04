@@ -9,7 +9,7 @@ Originally written by Corinne Wuerthner.
 SUB_FRAME_SIZE = 64
 
 
-# TODO: refactor code blow to use less branches. Remove comment blow.
+# TODO: refactor code blow to use less branches. Remove ruff disabled.
 def _decode_sub_frame(
     bits: str,
     bp: int,
