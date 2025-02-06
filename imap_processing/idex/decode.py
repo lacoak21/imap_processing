@@ -9,7 +9,9 @@ tightly as possible, and are not aligned to any byte or word boundary. The compr
 parameters are varied for each subframe to optimize the data compression. Within a
 subframe the same predictor, and the same Rice parameter is used for all the
 samples in that subframe. The predictor and rice parameter is allowed to vary
-from subframe to subframe. The start of each subframe consists of the following bits:
+from subframe to subframe.
+
+The start of each subframe consists of the following bits:
 2 bits specify the predictor used for this frame
   - 0: Constant value
       The predictor assumes that every sample in the frame is equal to the
