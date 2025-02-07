@@ -12,34 +12,36 @@ samples in that subframe. The predictor and rice parameter is allowed to vary
 from subframe to subframe.
 
 The start of each subframe consists of the following bits:
-2 bits specify the predictor used for this frame
-  - 0: Constant value
-      The predictor assumes that every sample in the frame is equal to the
-      first sample in the frame. In this case, the first sample is stored as
-      the original NBIT binary value and no other samples are included in the
-      frame.  The constant value predictor will only be selected for a
-      subframe where every sample is the same value.
-  - 1: Verbatim
-      The predictor assumes that the data is not well correlated, and simply
-      stores every sample in the frame using the original NBIT binary
-      representation. This predictor minimizes the impact of data expansion
-      for uncorrelated data samples where the golomb-rice coding would
-      actually make the encoded data significantly larger than the original
-      data set.
-  - 2: Linear predictor #1
-      This predictor assumes that each sample will have the same value as the
-      sample immediately before it (sample X(n) = sampleX(n-1)). The predicted
-      value is subtracted from the actual value of the sample and only the
-      error (residual) between the actual value, and the predicted value is
-      stored.  This predictor requires a single uncompressed sample as a
-      “warmup sample” to be used in predicting the other samples in the
-      subframe.
-  - 3: Linear Predictor #2
-      This predictor assumes that sample X(n) = 2*X(n-1)-X(n-2). This
-      predictor calculates the slope of the signal based on the two previous
-      values (slope = X(n-1)-X(n-2)) and predicts the value of X(n) will
-      follow on a straight line drawn between the two previous points.
-      X(n) = X(n-1) + (X(n-1)-X(n-2)) = 2*X(n-1)-X(n-2).
+    00: Constant value
+        The predictor assumes that every sample in the frame is equal to the
+        first sample in the frame. In this case, the first sample is stored as
+        the original NBIT binary value and no other samples are included in the
+        frame.  The constant value predictor will only be selected for a
+        subframe where every sample is the same value.
+
+    01: Verbatim
+        The predictor assumes that the data is not well correlated, and simply
+        stores every sample in the frame using the original NBIT binary
+        representation. This predictor minimizes the impact of data expansion
+        for uncorrelated data samples where the golomb-rice coding would
+        actually make the encoded data significantly larger than the original
+        data set.
+
+    10: Linear predictor #1
+        This predictor assumes that each sample will have the same value as the
+        sample immediately before it (sample X(n) = sampleX(n-1)). The predicted
+        value is subtracted from the actual value of the sample and only the
+        error (residual) between the actual value, and the predicted value is
+        stored.  This predictor requires a single uncompressed sample as a
+        “warmup sample” to be used in predicting the other samples in the
+        subframe.
+
+    11: Linear Predictor #2
+        This predictor assumes that sample X(n) = 2*X(n-1)-X(n-2). This
+        predictor calculates the slope of the signal based on the two previous
+        values (slope = X(n-1)-X(n-2)) and predicts the value of X(n) will
+        follow on a straight line drawn between the two previous points.
+        X(n) = X(n-1) + (X(n-1)-X(n-2)) = 2*X(n-1)-X(n-2).
 
 M bits for the rice parameter k. The bit width of k is equal to ceiling(log2(NBITS)).
 For 10 bits, the bit width of k is 4 because log2(10) = 3.32 and ceiling(3.32) = 4.
@@ -52,7 +54,6 @@ The next NBITS contain the raw binary value of the first sample in the subframe.
 SUB_FRAME_SIZE = 64
 
 
-# TODO: refactor code blow to use less branches. Remove ruff disabled.
 def _decode_sub_frame(
     bits: str,
     bp: int,
@@ -222,7 +223,7 @@ def read_bits(
        Current position in binary string.
     read_num : int
        Number of bits to read.
-    signed : bool, optional
+    signed : bool
        If signed is True, convert bits to a signed int. Default is False.
 
     Returns
