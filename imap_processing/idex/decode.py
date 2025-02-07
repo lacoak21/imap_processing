@@ -116,9 +116,8 @@ def _decode_sub_frame(
             # remainder) is called the quotient (q).
             # The remapped quotient is unary encoded by including a number of 0 bits
             # equal to the value of the quotient, followed by a single '1' bit.
-            ind = bits[bp:].find("1")
-            bp += ind + 1
-            q = ind
+            q = bits[bp:].find("1")
+            bp += q + 1
             # If the value of the quotient is equal to or larger than 47, then a
             # special symbol is used to denote that this particular residual value
             # is not rice encoded, but that this special symbol is followed by the

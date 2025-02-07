@@ -17,3 +17,5 @@ Level 1 Processing Code:
 
     idex_l0
     idex_l1a
+    decode
+    idex_l1b
