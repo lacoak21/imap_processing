@@ -130,7 +130,7 @@ def load_hdf_file(path: str, num_events: Optional[int] = None) -> dict:
         # Process data only if the event number is within the specified range
         if event_number <= num_events:
             if isinstance(obs, h5py.Dataset):
-                # Initialize storage for the group key if not already present
+                # Initialize an array for the group key if not already present
                 if group_key not in data_vars.keys():
                     # handle arrays
                     if isinstance(obs[()], np.ndarray):
@@ -153,11 +153,12 @@ def load_hdf_file(path: str, num_events: Optional[int] = None) -> dict:
 
     # Open the HDF5 file
     f = h5py.File(path, "r")
+    # Get how many events to load
     if not num_events or num_events > len(f.keys()):
         num_events = len(f.keys())
     # Initialize dictionary
     data_vars = {}
-    # First extract metadata from each event
+    # Populate dict
     f.visititems(collect_arrays)
 
     return data_vars

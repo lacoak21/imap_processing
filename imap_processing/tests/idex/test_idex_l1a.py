@@ -26,7 +26,6 @@ def test_idex_cdf_file(decom_test_data: xr.Dataset):
     file_name = write_cdf(decom_test_data)
 
     assert file_name.exists()
-    # assert file_name.name == "imap_idex_l1a_sci_20231218_v001.cdf"
     assert file_name.name == "imap_idex_l1a_sci-1week_20231218_v001.cdf"
 
 
