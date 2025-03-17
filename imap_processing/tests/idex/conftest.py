@@ -23,6 +23,54 @@ SPICE_ARRAYS = [
 ]
 
 
+@pytest.fixture(scope="module")
+def decom_test_data() -> xr.Dataset:
+    """Return a ``xarray`` dataset containing test data.
+
+    Returns
+    -------
+    dataset : xarray.Dataset
+        A ``xarray`` dataset containing the test data
+    """
+    test_file = Path(
+        f"{imap_module_directory}/tests/idex/test_data/imap_idex_l0_raw_20231218_v001.pkts"
+    )
+    return PacketParser(test_file, "001").data
+
+
+@pytest.fixture()
+def l1a_example_data():
+    """
+    Pytest fixture to load example L1A data (produced by the IDEX team) for testing.
+
+    Returns
+    -------
+    dict
+      A dictionary containing the 6 waveform and telemetry arrays
+    """
+    l1a_test_path = (
+        f"{imap_module_directory}/tests/idex/validation_files/L1A_Example.h5"
+    )
+    # The H5 files were modified to include only the first 6 events to ensure the file
+    # size stays below the maximum limit of 1MB.
+    num_events = 6
+    return load_hdf_file(l1a_test_path, num_events=num_events), num_events
+
+
+def get_spice_data_side_effect_func(l1a_ds, idex_attrs):
+    # Create a mock dictionary of spice arrays
+
+    return {
+        name: xr.DataArray(
+            name=name,
+            data=np.ones(len(l1a_ds["epoch"])),
+            dims="epoch",
+            attrs=idex_attrs.get_variable_attributes(name),
+        )
+        for name in SPICE_ARRAYS
+    }
+
+
 def load_hdf_file(path: str, num_events: Optional[int] = None) -> dict:
     """
     Loads an HDF5 file produced by the IDEX team into a dictionary where the keys
@@ -113,52 +161,3 @@ def load_hdf_file(path: str, num_events: Optional[int] = None) -> dict:
     f.visititems(collect_arrays)
 
     return data_vars
-
-
-@pytest.fixture(scope="module")
-def decom_test_data() -> xr.Dataset:
-    """Return a ``xarray`` dataset containing test data.
-
-    Returns
-    -------
-    dataset : xarray.Dataset
-        A ``xarray`` dataset containing the test data
-    """
-    # imap_idex_l0_raw_20231218_v001.pkts
-    test_file = Path(
-        f"{imap_module_directory}/tests/idex/test_data/imap_idex_l0_raw_20231214_v001.pkts"
-    )
-    return PacketParser(test_file, "001").data
-
-
-@pytest.fixture()
-def l1a_example_data():
-    """
-    Pytest fixture to load example L1A data (produced by the IDEX team) for testing.
-
-    Returns
-    -------
-    dict
-      A dictionary containing the 6 waveform and telemetry arrays
-    """
-    l1a_test_path = (
-        f"{imap_module_directory}/tests/idex/validation_files/L1A_Example.h5"
-    )
-    # The H5 files were modified to include only the first 10 events to ensure the file
-    # size stays below the maximum limit of 1MB.
-    num_events = 7
-    return load_hdf_file(l1a_test_path, num_events=num_events), num_events
-
-
-def get_spice_data_side_effect_func(l1a_ds, idex_attrs):
-    # Create a mock dictionary of spice arrays
-
-    return {
-        name: xr.DataArray(
-            name=name,
-            data=np.ones(len(l1a_ds["epoch"])),
-            dims="epoch",
-            attrs=idex_attrs.get_variable_attributes(name),
-        )
-        for name in SPICE_ARRAYS
-    }

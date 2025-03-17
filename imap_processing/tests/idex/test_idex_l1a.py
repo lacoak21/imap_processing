@@ -134,8 +134,8 @@ def test_validate_l1a_idex_data_variables(
         "Target H": "Target_High",
         "Target L": "Target_Low",
         "Ion Grid": "Ion_Grid",
-        "Time (high sampling)": "time_high_sr",
-        "Time (low sampling)": "time_low_sr",
+        "Time (high sampling)": "time_high_sample_rate",
+        "Time (low sampling)": "time_low_sample_rate",
     }
 
     # The Engineering data is converting to UTC, and the SDC is converting to J2000,
