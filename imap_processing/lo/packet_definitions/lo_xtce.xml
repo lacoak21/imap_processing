@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <xtce:SpaceSystem xmlns:xtce="http://www.omg.org/space/xtce" name="ILO">
-	<xtce:Header date="2020-12-04 00:00:00" version="2" author="IMAP SDC" />
+	<xtce:Header date="2020-12-04 00:00:00" version="2" author="IMAP SDC" source_file="TLM_ILO_FM1_27850.01-CT-TLMDEF-2_modified.xlsx" />
 	<xtce:TelemetryMetaData>
 		<xtce:ParameterTypeSet>
 			<xtce:IntegerParameterType name="VERSION" signed="false">
@@ -90,16 +90,930 @@
 			<xtce:IntegerParameterType name="ILO_SPIN.ACQ_END_SUBSEC" signed="false">
 				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
 			</xtce:IntegerParameterType>
-			<xtce:BinaryParameterType name="ILO_SPIN.SPIN_DATA">
-				<xtce:BinaryDataEncoding bitOrder="mostSignificantBitFirst">
-					<xtce:SizeInBits>
-						<xtce:DynamicValue>
-							<xtce:ParameterInstanceRef parameterRef="PKT_LEN" />
-							<xtce:LinearAdjustment slope="8" intercept="-184" />
-						</xtce:DynamicValue>
-					</xtce:SizeInBits>
-				</xtce:BinaryDataEncoding>
-			</xtce:BinaryParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_1" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_1" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_1" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_1" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_1" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_1" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_1" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_2" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_2" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_2" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_2" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_2" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_2" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_2" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_3" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_3" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_3" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_3" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_3" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_3" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_3" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_4" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_4" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_4" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_4" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_4" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_4" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_4" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_5" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_5" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_5" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_5" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_5" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_5" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_5" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_6" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_6" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_6" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_6" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_6" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_6" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_6" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_7" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_7" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_7" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_7" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_7" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_7" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_7" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_8" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_8" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_8" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_8" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_8" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_8" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_8" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_9" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_9" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_9" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_9" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_9" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_9" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_9" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_10" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_10" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_10" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_10" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_10" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_10" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_10" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_11" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_11" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_11" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_11" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_11" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_11" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_11" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_12" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_12" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_12" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_12" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_12" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_12" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_12" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_13" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_13" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_13" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_13" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_13" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_13" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_13" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_14" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_14" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_14" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_14" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_14" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_14" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_14" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_15" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_15" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_15" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_15" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_15" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_15" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_15" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_16" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_16" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_16" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_16" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_16" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_16" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_16" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_17" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_17" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_17" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_17" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_17" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_17" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_17" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_18" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_18" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_18" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_18" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_18" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_18" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_18" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_19" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_19" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_19" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_19" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_19" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_19" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_19" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_20" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_20" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_20" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_20" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_20" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_20" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_20" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_21" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_21" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_21" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_21" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_21" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_21" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_21" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_22" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_22" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_22" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_22" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_22" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_22" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_22" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_23" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_23" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_23" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_23" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_23" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_23" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_23" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_24" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_24" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_24" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_24" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_24" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_24" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_24" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_25" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_25" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_25" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_25" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_25" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_25" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_25" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_26" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_26" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_26" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_26" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_26" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_26" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_26" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_27" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_27" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_27" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_27" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_27" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_27" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_27" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SEC_SPIN_28" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.START_SUBSEC_SPIN_28" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_NEG_DAC_SPIN_28" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:IntegerParameterType name="ILO_SPIN.ESA_POS_DAC_SPIN_28" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
+			</xtce:IntegerParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PERIOD_SPIN_28" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.VALID_PHASE_SPIN_28" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="INVALID" />
+					<xtce:Enumeration value="1" label="VALID" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
+			<xtce:EnumeratedParameterType name="ILO_SPIN.PERIOD_SOURCE_SPIN_28" signed="false">
+				<xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+				<xtce:EnumerationList>
+					<xtce:Enumeration value="0" label="STAR" />
+					<xtce:Enumeration value="1" label="SUN" />
+				</xtce:EnumerationList>
+			</xtce:EnumeratedParameterType>
 			<xtce:IntegerParameterType name="ILO_SPIN.CHKSUM" signed="false">
 				<xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" />
 			</xtce:IntegerParameterType>
@@ -169,8 +1083,593 @@
 			<xtce:Parameter name="ILO_SPIN.ACQ_END_SUBSEC" parameterTypeRef="ILO_SPIN.ACQ_END_SUBSEC" shortDescription="Acquisition end subseconds">
 				<xtce:LongDescription>Acquisition end subseconds</xtce:LongDescription>
 			</xtce:Parameter>
-			<xtce:Parameter name="ILO_SPIN.SPIN_DATA" parameterTypeRef="ILO_SPIN.SPIN_DATA" shortDescription="Binary Spin data">
-				<xtce:LongDescription>Binary Spin data</xtce:LongDescription>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_1" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_1" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_1" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_1" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_1" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_1" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_1" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_1" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_1" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_1" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_1" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_1" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_1" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_1" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_2" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_2" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_2" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_2" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_2" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_2" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_2" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_2" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_2" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_2" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_2" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_2" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_2" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_2" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_3" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_3" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_3" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_3" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_3" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_3" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_3" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_3" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_3" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_3" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_3" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_3" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_3" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_3" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_4" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_4" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_4" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_4" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_4" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_4" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_4" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_4" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_4" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_4" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_4" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_4" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_4" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_4" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_5" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_5" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_5" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_5" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_5" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_5" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_5" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_5" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_5" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_5" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_5" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_5" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_5" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_5" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_6" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_6" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_6" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_6" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_6" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_6" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_6" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_6" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_6" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_6" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_6" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_6" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_6" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_6" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_7" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_7" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_7" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_7" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_7" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_7" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_7" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_7" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_7" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_7" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_7" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_7" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_7" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_7" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_8" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_8" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_8" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_8" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_8" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_8" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_8" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_8" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_8" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_8" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_8" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_8" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_8" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_8" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_9" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_9" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_9" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_9" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_9" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_9" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_9" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_9" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_9" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_9" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_9" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_9" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_9" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_9" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_10" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_10" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_10" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_10" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_10" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_10" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_10" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_10" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_10" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_10" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_10" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_10" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_10" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_10" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_11" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_11" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_11" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_11" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_11" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_11" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_11" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_11" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_11" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_11" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_11" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_11" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_11" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_11" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_12" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_12" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_12" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_12" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_12" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_12" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_12" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_12" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_12" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_12" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_12" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_12" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_12" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_12" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_13" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_13" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_13" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_13" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_13" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_13" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_13" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_13" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_13" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_13" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_13" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_13" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_13" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_13" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_14" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_14" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_14" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_14" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_14" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_14" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_14" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_14" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_14" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_14" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_14" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_14" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_14" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_14" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_15" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_15" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_15" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_15" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_15" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_15" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_15" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_15" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_15" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_15" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_15" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_15" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_15" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_15" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_16" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_16" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_16" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_16" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_16" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_16" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_16" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_16" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_16" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_16" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_16" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_16" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_16" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_16" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_17" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_17" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_17" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_17" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_17" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_17" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_17" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_17" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_17" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_17" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_17" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_17" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_17" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_17" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_18" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_18" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_18" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_18" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_18" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_18" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_18" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_18" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_18" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_18" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_18" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_18" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_18" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_18" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_19" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_19" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_19" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_19" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_19" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_19" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_19" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_19" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_19" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_19" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_19" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_19" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_19" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_19" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_20" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_20" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_20" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_20" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_20" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_20" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_20" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_20" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_20" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_20" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_20" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_20" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_20" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_20" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_21" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_21" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_21" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_21" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_21" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_21" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_21" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_21" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_21" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_21" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_21" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_21" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_21" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_21" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_22" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_22" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_22" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_22" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_22" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_22" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_22" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_22" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_22" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_22" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_22" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_22" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_22" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_22" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_23" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_23" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_23" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_23" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_23" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_23" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_23" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_23" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_23" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_23" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_23" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_23" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_23" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_23" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_24" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_24" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_24" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_24" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_24" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_24" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_24" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_24" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_24" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_24" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_24" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_24" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_24" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_24" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_25" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_25" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_25" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_25" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_25" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_25" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_25" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_25" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_25" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_25" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_25" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_25" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_25" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_25" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_26" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_26" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_26" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_26" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_26" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_26" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_26" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_26" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_26" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_26" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_26" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_26" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_26" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_26" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_27" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_27" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_27" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_27" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_27" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_27" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_27" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_27" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_27" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_27" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_27" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_27" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_27" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_27" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SEC_SPIN_28" parameterTypeRef="ILO_SPIN.START_SEC_SPIN_28" shortDescription="Spin start time, seconds">
+				<xtce:LongDescription>Spin start time, seconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.START_SUBSEC_SPIN_28" parameterTypeRef="ILO_SPIN.START_SUBSEC_SPIN_28" shortDescription="Spin start time, subseconds">
+				<xtce:LongDescription>Spin start time, subseconds</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_NEG_DAC_SPIN_28" parameterTypeRef="ILO_SPIN.ESA_NEG_DAC_SPIN_28" shortDescription="Spin ESA Negative DAC">
+				<xtce:LongDescription>Spin ESA Negative DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.ESA_POS_DAC_SPIN_28" parameterTypeRef="ILO_SPIN.ESA_POS_DAC_SPIN_28" shortDescription="Spin ESA Positive DAC">
+				<xtce:LongDescription>Spin ESA Positive DAC</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PERIOD_SPIN_28" parameterTypeRef="ILO_SPIN.VALID_PERIOD_SPIN_28" shortDescription="Spin period validity">
+				<xtce:LongDescription>Spin period validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.VALID_PHASE_SPIN_28" parameterTypeRef="ILO_SPIN.VALID_PHASE_SPIN_28" shortDescription="Spin phase validity">
+				<xtce:LongDescription>Spin phase validity</xtce:LongDescription>
+			</xtce:Parameter>
+			<xtce:Parameter name="ILO_SPIN.PERIOD_SOURCE_SPIN_28" parameterTypeRef="ILO_SPIN.PERIOD_SOURCE_SPIN_28" shortDescription="Spin period source">
+				<xtce:LongDescription>Spin period source</xtce:LongDescription>
 			</xtce:Parameter>
 			<xtce:Parameter name="ILO_SPIN.CHKSUM" parameterTypeRef="ILO_SPIN.CHKSUM" shortDescription="16 bit CRC checksum">
 				<xtce:LongDescription>16 bit CRC checksum</xtce:LongDescription>
@@ -237,7 +1736,202 @@
 					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ACQ_START_SUBSEC" />
 					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ACQ_END_SEC" />
 					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ACQ_END_SUBSEC" />
-					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.SPIN_DATA" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_1" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_1" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_1" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_1" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_1" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_1" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_1" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_2" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_2" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_2" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_2" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_2" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_2" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_2" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_3" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_3" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_3" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_3" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_3" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_3" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_3" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_4" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_4" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_4" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_4" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_4" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_4" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_4" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_5" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_5" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_5" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_5" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_5" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_5" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_5" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_6" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_6" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_6" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_6" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_6" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_6" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_6" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_7" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_7" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_7" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_7" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_7" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_7" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_7" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_8" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_8" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_8" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_8" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_8" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_8" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_8" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_9" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_9" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_9" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_9" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_9" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_9" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_9" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_10" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_10" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_10" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_10" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_10" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_10" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_10" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_11" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_11" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_11" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_11" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_11" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_11" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_11" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_12" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_12" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_12" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_12" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_12" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_12" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_12" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_13" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_13" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_13" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_13" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_13" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_13" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_13" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_14" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_14" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_14" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_14" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_14" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_14" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_14" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_15" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_15" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_15" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_15" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_15" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_15" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_15" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_16" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_16" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_16" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_16" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_16" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_16" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_16" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_17" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_17" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_17" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_17" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_17" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_17" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_17" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_18" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_18" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_18" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_18" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_18" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_18" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_18" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_19" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_19" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_19" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_19" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_19" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_19" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_19" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_20" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_20" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_20" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_20" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_20" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_20" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_20" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_21" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_21" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_21" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_21" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_21" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_21" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_21" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_22" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_22" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_22" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_22" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_22" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_22" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_22" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_23" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_23" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_23" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_23" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_23" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_23" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_23" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_24" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_24" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_24" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_24" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_24" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_24" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_24" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_25" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_25" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_25" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_25" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_25" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_25" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_25" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_26" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_26" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_26" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_26" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_26" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_26" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_26" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_27" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_27" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_27" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_27" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_27" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_27" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_27" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SEC_SPIN_28" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.START_SUBSEC_SPIN_28" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_NEG_DAC_SPIN_28" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.ESA_POS_DAC_SPIN_28" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PERIOD_SPIN_28" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.VALID_PHASE_SPIN_28" />
+					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.PERIOD_SOURCE_SPIN_28" />
 					<xtce:ParameterRefEntry parameterRef="ILO_SPIN.CHKSUM" />
 				</xtce:EntryList>
 			</xtce:SequenceContainer>

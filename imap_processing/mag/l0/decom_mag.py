@@ -16,7 +16,7 @@ from imap_processing.ccsds.ccsds_data import CcsdsData
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
 from imap_processing.mag.constants import DataMode
 from imap_processing.mag.l0.mag_l0_data import MagL0, Mode
-from imap_processing.spice.time import met_to_j2000ns
+from imap_processing.spice.time import met_to_ttj2000ns
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +109,7 @@ def generate_dataset(
             )
         vector_data[index, :vector_len] = datapoint.VECTORS
 
-        shcoarse_data[index] = met_to_j2000ns(datapoint.SHCOARSE)
+        shcoarse_data[index] = met_to_ttj2000ns(datapoint.SHCOARSE)
         # Add remaining pieces to arrays
         for key, value in dataclasses.asdict(datapoint).items():
             if key not in ("ccsds_header", "VECTORS", "SHCOARSE"):
@@ -164,12 +164,19 @@ def generate_dataset(
 
     for key, value in support_data.items():
         # Time varying values
-        if key not in ["SHCOARSE", "VECTORS"]:
-            output[key] = xr.DataArray(
+        if key not in [
+            "SHCOARSE",
+            "VECTORS",
+            "PUS_SPARE1",
+            "PUS_SPARE2",
+            "SPARE1",
+            "SPARE2",
+        ]:
+            output[key.lower()] = xr.DataArray(
                 value,
                 name=key.lower(),
                 dims=["epoch"],
-                attrs=attribute_manager.get_variable_attributes(key),
+                attrs=attribute_manager.get_variable_attributes(key.lower()),
             )
 
     return output

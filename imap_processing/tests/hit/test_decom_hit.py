@@ -15,7 +15,6 @@ from imap_processing.hit.l0.decom_hit import (
     is_sequential,
     parse_count_rates,
     parse_data,
-    subcom_sectorates,
     update_ccsds_header_dims,
 )
 from imap_processing.utils import packet_file_to_datasets
@@ -80,7 +79,7 @@ def test_parse_count_rates(sci_dataset):
         "hdr_code_ok",
         "hdr_minute_cnt",
         "spare",
-        "livetime",
+        "livetime_counter",
         "num_trig",
         "num_reject",
         "num_acc_w_pha",
@@ -108,7 +107,7 @@ def test_parse_count_rates(sci_dataset):
         "nerror",
         "nbadtags",
         "coinrates",
-        "bufrates",
+        "pbufrates",
         "l2fgrates",
         "l2bgrates",
         "l3fgrates",
@@ -126,12 +125,10 @@ def test_parse_count_rates(sci_dataset):
 
 def test_is_sequential():
     """Test the is_sequential function."""
-    counters = np.array([0, 1, 2, 3, 4])
-    if is_sequential(counters):
-        assert True
-    counters = np.array([0, 2, 3, 4, 5])
-    if not is_sequential(counters):
-        assert True
+    assert is_sequential(np.array([0, 1, 2, 3, 4]))
+    assert not is_sequential(np.array([0, 2, 3, 4, 5]))
+    # Wrap-around case
+    assert is_sequential(np.array([16382, 16383, 0, 1, 2]))
 
 
 def test_get_valid_starting_indices():
@@ -201,45 +198,6 @@ def test_assemble_science_frames(sci_dataset):
     assert "pha_raw" in updated_dataset
 
 
-def test_subcom_sectorates(sci_dataset):
-    """Test the subcom_sectorates function.
-
-    This function organizes the sector rates data
-    into new variables for each species and adds
-    them to the dataset.
-    """
-
-    # Prepare the input needed for the function to be called
-    sci_dataset = update_ccsds_header_dims(sci_dataset)
-    sci_dataset = assemble_science_frames(sci_dataset)
-    parse_count_rates(sci_dataset)
-
-    # Call the function to be tested
-    subcom_sectorates(sci_dataset)
-
-    # Check if the dataset has the expected new variables
-    for species in ["H", "4He", "CNO", "NeMgSi", "Fe"]:
-        assert species in sci_dataset
-        assert f"{species}_energy_min" in sci_dataset
-        assert f"{species}_energy_max" in sci_dataset
-
-    # Check the shape of the new variables
-    for species in ["H", "4He", "CNO", "NeMgSi", "Fe"]:
-        if species == "H":
-            assert sci_dataset[species].shape == (86, 3, 8, 15)
-            assert sci_dataset[f"{species}_energy_min"].shape == (3,)
-        elif species in ("4He", "CNO", "NeMgSi"):
-            assert sci_dataset[species].shape == (86, 2, 8, 15)
-            assert sci_dataset[f"{species}_energy_min"].shape == (2,)
-        elif species == "Fe":
-            assert sci_dataset[species].shape == (86, 1, 8, 15)
-            assert sci_dataset[f"{species}_energy_min"].shape == (1,)
-        assert (
-            sci_dataset[f"{species}_energy_max"].shape
-            == sci_dataset[f"{species}_energy_min"].shape
-        )
-
-
 @pytest.mark.parametrize(
     "packed, expected",
     [
@@ -266,14 +224,64 @@ def test_decom_hit(sci_dataset):
     This function orchestrates the unpacking and decompression
     of the HIT science data.
     """
-    # TODO: complete this test once the function is complete
     updated_dataset = decom_hit(sci_dataset)
-    # Check if the dataset has the expected new variables
-    # Check that binary science data exists
-    assert "count_rates_raw" in updated_dataset
-    assert "pha_raw" in updated_dataset
-    # Check that sector rates data has been organized
-    for species in ["H", "4He", "CNO", "NeMgSi", "Fe"]:
-        assert species in updated_dataset
-        assert f"{species}_energy_min" in updated_dataset
-        assert f"{species}_energy_max" in updated_dataset
+    # Check if the dataset has the expected data variables
+    sci_fields = [
+        "version",
+        "type",
+        "sec_hdr_flg",
+        "pkt_apid",
+        "seq_flgs",
+        "src_seq_ctr",
+        "pkt_len",
+        "pha_raw",
+        "hdr_unit_num",
+        "hdr_frame_version",
+        "hdr_dynamic_threshold_state",
+        "hdr_leak_conv",
+        "hdr_heater_duty_cycle",
+        "hdr_code_ok",
+        "hdr_minute_cnt",
+        "livetime_counter",
+        "num_trig",
+        "num_reject",
+        "num_acc_w_pha",
+        "num_acc_no_pha",
+        "num_haz_trig",
+        "num_haz_reject",
+        "num_haz_acc_w_pha",
+        "num_haz_acc_no_pha",
+        "sngrates",
+        "nread",
+        "nhazard",
+        "nadcstim",
+        "nodd",
+        "noddfix",
+        "nmulti",
+        "nmultifix",
+        "nbadtraj",
+        "nl2",
+        "nl3",
+        "nl4",
+        "npen",
+        "nformat",
+        "naside",
+        "nbside",
+        "nerror",
+        "nbadtags",
+        "coinrates",
+        "pbufrates",
+        "l2fgrates",
+        "l2bgrates",
+        "l3fgrates",
+        "l3bgrates",
+        "penfgrates",
+        "penbgrates",
+        "ialirtrates",
+        "sectorates",
+        "l4fgrates",
+        "l4bgrates",
+    ]
+
+    for field in sci_fields:
+        assert field in updated_dataset

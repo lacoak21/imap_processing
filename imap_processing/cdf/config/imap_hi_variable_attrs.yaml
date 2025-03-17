@@ -55,6 +55,62 @@ default_float32_attrs: &default_float32
   VALIDMAX: 3.4028235e+38
   dtype: float32
 
+default_float64_attrs: &default_float64
+  <<: *default
+  FILLVAL: .NAN
+  FORMAT: F10.2
+  VALIDMIN: -1.7976931348623157e+308
+  VALIDMAX: 1.7976931348623157e+308
+  dtype: float64
+
+default_ccsds_version: &default_ccsds_version
+  <<: *default_uint8
+  CATDESC: CCSDS packet version number
+  FIELDNAM: CCSDS version
+  VAR_TYPE: support_data
+
+default_ccsds_type: &default_ccsds_type
+  <<: *default_uint8
+  CATDESC: CCSDS packet type
+  FIELDNAM: CCSDS type
+  VAR_TYPE: support_data
+
+default_ccsds_sec_hdr_flg: &default_ccsds_sec_hdr_flg
+  <<: *default_uint8
+  CATDESC: CCSDS secondary header flag
+  FIELDNAM: CCSDS secondary header flag
+  VAR_TYPE: support_data
+
+default_ccsds_pkt_apid: &default_ccsds_pkt_apid
+  <<: *default_uint16
+  CATDESC: CCSDS application process ID
+  FIELDNAM: CCSDS APID
+  VAR_TYPE: support_data
+
+default_ccsds_seq_flgs: &default_ccsds_seq_flgs
+  <<: *default_uint8
+  CATDESC: CCSDS sequence flags
+  FIELDNAM: CCSDS sequence flags
+  VAR_TYPE: support_data
+
+default_ccsds_src_seq_ctr: &default_ccsds_src_seq_ctr
+  <<: *default_uint16
+  CATDESC: CCSDS source sequence counter
+  FIELDNAM: CCSDS sequence counter
+  VAR_TYPE: support_data
+
+default_ccsds_pkt_len: &default_ccsds_pkt_len
+  <<: *default_uint16
+  CATDESC: CCSDS packet length
+  FIELDNAM: CCSDS packet length
+  VAR_TYPE: support_data
+
+default_ccsds_cksum: &default_ccsds_cksum
+  <<: *default_uint16
+  CATDESC: CCSDS packet checksum
+  FIELDNAM: CCSDS packet checksum
+  VAR_TYPE: support_data
+
 default_ccsds_met: &hi_ccsds_met
   <<: *default_uint32
   CATDESC: CCSDS mission elapsed time (MET). 32-bit integer value that represents the MET in seconds.
@@ -78,44 +134,71 @@ hi_esa_step: &hi_esa_step
     outer ESA surfaces.
 
 # ======= L1A DE Section =======
+hi_de_src_seq_ctr:
+  <<: *default_ccsds_src_seq_ctr
+
+hi_de_pkt_len:
+  <<: *default_ccsds_pkt_len
+
 hi_de_ccsds_met:
   <<: *hi_ccsds_met
 
-hi_de_de_tag:
-  <<: *default_uint16
-  CATDESC: Ticks (nominally 2 ms) since last meta-event
-  FIELDNAM: Direct Event Time Tag
-  LABLAXIS: DE Time Tag
+hi_de_last_spin_num:
+  <<: *default_uint8
+  CATDESC: Spin number (1-based) for the first spin in the packet
+  FIELDNAM: last spin
+  FORMAT: I2
+  LABLAXIS: last spin
+  VALIDMAX: 15
+
+hi_de_spin_invalids:
+  <<: *default_uint8
+  CATDESC: Binary mask where a 1-bit indicates an invalid spin for corresponding spin in packet
+  FIELDNAM: spin flags
+  FORMAT: I3
+  LABLAXIS: spin flag
 
 hi_de_esa_step:
   <<: *hi_esa_step
 
-hi_de_event_met:
-  <<: *default_int64
-  CATDESC: Mission Elapsed Time (MET) of Direct Event
-  DISPLAY_TYPE: no_plot
-  FIELDNAM: Time since (TODO - what is the def of MET?)
-  LABLAXIS: DE MET
-  UNITS: ns
+hi_de_meta_seconds:
+  <<: *default_uint32
+  CATDESC: Coarse mission elapsed time (MET) of last meta-event
+  DISPLAY_TYPE: time_series
+  FIELDNAM: Coarse Meta-event MET
+  LABLAXIS: Coarse Meta MET
+  UNITS: seconds
   VAR_TYPE: support_data
-  SCALE_TYP: linear
 
-hi_de_meta_event_met:
-  <<: *default_int64
-  CATDESC: Mission elapsed time (MET) of last meta-event
-  DISPLAY_TYPE: no_plot
-  FIELDNAM: Meta-event Mission Elapsed Time
-  LABLAXIS: Meta MET
-  UNITS: ns
-  VALIDMIN: 0
-  VALIDMAX: 4294967295
+hi_de_meta_subseconds:
+  <<: *default_uint16
+  CATDESC: Fine mission elapsed time (MET) of last meta-event
+  DISPLAY_TYPE: time_series
+  FIELDNAM: Fine Meta-event MET
+  LABLAXIS: Fine Meta MET
+  UNITS: ms
   VAR_TYPE: support_data
-  SCALE_TYP: linear
-  dtype: int64
+
+hi_de_event_met:
+  <<: *default_float64
+  CATDESC: Mission Elapsed Time (MET) in seconds of Direct Event
+  DISPLAY_TYPE: no_plot
+  FIELDNAM: Direct Event MET
+  LABLAXIS: DE MET
+  UNITS: seconds
+  VAR_TYPE: support_data
+
+hi_de_de_tag:
+  <<: *default_uint16
+  CATDESC: Ticks (nominally 1999us) since last meta-event
+  DEPEND_0: event_met
+  FIELDNAM: Direct Event Time Tag
+  LABLAXIS: DE Time Tag
 
 hi_de_trigger_id:
   <<: *default_uint8
   CATDESC: Trigger ID of the detector that was hit first
+  DEPEND_0: event_met
   FIELDNAM: Trigger ID
   FILLVAL: 0
   FORMAT: I1
@@ -128,6 +211,7 @@ hi_de_trigger_id:
 
 default_tof: &default_tof
   <<: *default_uint16
+  DEPEND_0: event_met
   FORMAT: I4
   UNITS: ticks
   VALIDMAX: 1023
@@ -156,6 +240,13 @@ hi_de_tof_3:
     Time of flight is 10-bit integer value that represents the time of flight of
     the direct event. 1023 is the value used to indicate no event was registered.
 
+hi_de_ccsds_index:
+  <<: *default_uint16
+  CATDESC: Zero-based index that associates an event with the packet it was encoded in.
+  DEPEND_0: event_met
+  FIELDNAM: Packet Index
+  LABLAXIS: Packet Index
+
 # ======= L1A HIST Section =======
 # <=== Label Attributes ===>
 # LABL_PTR_i expects VAR_TYPE of metadata with char data type
@@ -178,11 +269,38 @@ hi_hist_angle:
   VAR_TYPE: support_data
   dtype: uint16
 
+hi_hist_version:
+  <<: *default_ccsds_version
+
+hi_hist_type:
+  <<: *default_ccsds_type
+
+hi_hist_sec_hdr_flg:
+  <<: *default_ccsds_sec_hdr_flg
+
+hi_hist_pkt_apid:
+  <<: *default_ccsds_pkt_apid
+
+hi_hist_seq_flgs:
+  <<: *default_ccsds_seq_flgs
+
+hi_hist_src_seq_ctr:
+  <<: *default_ccsds_src_seq_ctr
+
+hi_hist_pkt_len:
+  <<: *default_ccsds_pkt_len
+
 hi_hist_ccsds_met:
   <<: *hi_ccsds_met
 
 hi_hist_esa_step:
   <<: *hi_esa_step
+
+hi_hist_num_of_spins:
+  <<: *default_uint8
+  CATDESC: Number of spins included in histograms for this packet
+  FIELDNAM: Number of spins
+  LABLAXIS: Num spins
 
 hi_hist_counters:
   <<: *default_uint16
@@ -193,10 +311,14 @@ hi_hist_counters:
   LABL_PTR_1: angle_label
   FORMAT: I4
 
+hi_hist_cksum:
+  <<: *default_ccsds_cksum
+
 # ======= L1B DE Section =======
 hi_de_coincidence_type:
   <<: *default_uint8
   CATDESC: Bitmap of detectors hit for Direct Event
+  DEPEND_0: event_met
   FIELDNAM: Coincidence Type
   FILLVAL: 0
   FORMAT: I2
@@ -221,37 +343,39 @@ hi_de_esa_energy_step:
   <<: *default_esa_energy_step
   LABLAXIS: Energy Step
 
-default_delta_t: &default_delta_t
+default_l1b_tof: &default_l1b_tof
   <<: *default_int32
+  DEPEND_0: event_met
   FORMAT: I3
-  LABLAXIS: delta T
+  LABLAXIS: Time of Flight
   UNITS: ns
   VALIDMIN: -512
   VALIDMAX: 512
 
-hi_de_delta_t_ab:
-  <<: *default_delta_t
+hi_de_tof_ab:
+  <<: *default_l1b_tof
   CATDESC: Time difference between detector A and B events (t_B - t_A)
-  FIELDNAM: Delta T, event A to B
+  FIELDNAM: ToF, event A to B
 
-hi_de_delta_t_ac1:
-  <<: *default_delta_t
+hi_de_tof_ac1:
+  <<: *default_l1b_tof
   CATDESC: Time difference between detector A and C1 events (t_C1 - t_A)
-  FIELDNAM: Delta T, event A to C1
+  FIELDNAM: ToF, event A to C1
 
-hi_de_delta_t_bc1:
-  <<: *default_delta_t
+hi_de_tof_bc1:
+  <<: *default_l1b_tof
   CATDESC: Time difference between detector B and C1 events (t_C1 - t_B)
-  FIELDNAM: Delta T, event B to C1
+  FIELDNAM: ToF, event B to C1
 
-hi_de_delta_t_c1c2:
-  <<: *default_delta_t
+hi_de_tof_c1c2:
+  <<: *default_l1b_tof
   CATDESC: Time difference between detector C1 and C2 events (t_C2 - t_C1)
-  FIELDNAM: Delta T, event C1 to C2
+  FIELDNAM: ToF, event C1 to C2
 
 hi_de_spin_phase:
   <<: *default_float32
   CATDESC: Floating point spin phase
+  DEPEND_0: event_met
   FIELDNAM: Spin Phase
   FORMAT: F4.3
   LABLAXIS: Spin Phase
@@ -261,6 +385,7 @@ hi_de_spin_phase:
 hi_de_hae_latitude:
   <<: *default_float32
   CATDESC: Look direction HAE latitude
+  DEPEND_0: event_met
   FIELDNAM: Ecliptic Latitude
   FORMAT: F5.2
   LABLAXIS: Lat
@@ -271,6 +396,7 @@ hi_de_hae_latitude:
 hi_de_hae_longitude:
   <<: *default_float32
   CATDESC: Look direction HAE longitude
+  DEPEND_0: event_met
   FIELDNAM: Ecliptic Longitude
   FORMAT: F5.2
   LABLAXIS: Lon
@@ -281,6 +407,7 @@ hi_de_hae_longitude:
 hi_de_quality_flag:
   <<: *default_uint16
   CATDESC: Direct event bitwise quality flag
+  DEPEND_0: event_met
   FIELDNAM: DE quality flag
   FILLVAL: 65535
   FORMAT: I5
@@ -293,6 +420,7 @@ hi_de_quality_flag:
 hi_de_nominal_bin:
   <<: *default_uint8
   CATDESC: Corresponding histogram angle bin for this Direct Event
+  DEPEND_0: event_met
   FIELDNAM: Histogram Bin Number
   FORMAT: I2
   LABLAXIS: Hist Bin \#
@@ -300,6 +428,11 @@ hi_de_nominal_bin:
   VALIDMAX: 89
 
 # ======= L1C PSET Section =======
+
+# Define override values for epoch as defined in imap_constant_attrs.yaml
+hi_pset_epoch:
+  CATDESC: Midpoint time of pointing, number of nanoseconds since J2000 with leap seconds included
+  BIN_LOCATION: 0.5
 
 hi_pset_esa_energy_step:
   <<: *default_esa_energy_step
@@ -322,7 +455,7 @@ hi_pset_calibration_prod:
   SCALE_TYP: linear
   MONOTON: INCREASE
   VALIDMIN: 0
-  VALIDMAX: 4
+  VALIDMAX: 9
   VAR_TYPE: support_data
   dtype: uint8
 
@@ -332,7 +465,7 @@ hi_pset_spin_angle_bin:
   FILLVAL: 65535
   FORMAT: I3
   LABLAXIS: Bin Index
-  UNITS: deg
+  UNITS: " "
   SCALE_TYP: linear
   MONOTON: INCREASE
   VALIDMIN: 0
@@ -405,11 +538,9 @@ hi_pset_exposure_times:
   FIELDNAM: Bin exposure times
   DEPEND_0: epoch
   DEPEND_1: esa_energy_step
-  DEPEND_2: calibration_prod
-  DEPEND_3: spin_angle_bin
+  DEPEND_2: spin_angle_bin
   LABL_PTR_1: esa_energy_step_label
-  LABL_PTR_2: calibration_prod_label
-  LABL_PTR_3: spin_bin_label
+  LABL_PTR_2: spin_bin_label
   UNITS: sec
   DISPLAY_TYPE: stack_plot
   FORMAT: F6.2

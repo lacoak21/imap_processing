@@ -11,7 +11,7 @@ import xarray as xr
 
 from imap_processing import decom, imap_module_directory
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
-from imap_processing.spice.time import met_to_j2000ns
+from imap_processing.spice.time import met_to_ttj2000ns
 from imap_processing.ultra.l0.decom_ultra import process_ultra_apids
 from imap_processing.ultra.l0.ultra_utils import (
     ULTRA_AUX,
@@ -44,7 +44,7 @@ def initiate_data_arrays(decom_ultra: dict, apid: int) -> xr.Dataset:
         index = ULTRA_EVENTS.apid.index(apid)
         logical_source = ULTRA_EVENTS.logical_source[index]
         addition_to_logical_desc = ULTRA_EVENTS.addition_to_logical_desc
-        raw_time = decom_ultra["EVENTTIMES"]
+        raw_time = decom_ultra["SHCOARSE"]
     elif apid in ULTRA_TOF.apid:
         index = ULTRA_TOF.apid.index(apid)
         logical_source = ULTRA_TOF.logical_source[index]
@@ -69,7 +69,7 @@ def initiate_data_arrays(decom_ultra: dict, apid: int) -> xr.Dataset:
     cdf_manager.add_instrument_variable_attrs("ultra", "l1a")
 
     epoch_time = xr.DataArray(
-        met_to_j2000ns(raw_time),
+        met_to_ttj2000ns(raw_time),
         name="epoch",
         dims=["epoch"],
         attrs=cdf_manager.get_variable_attributes("epoch"),
@@ -120,59 +120,43 @@ def initiate_data_arrays(decom_ultra: dict, apid: int) -> xr.Dataset:
     return dataset
 
 
-def get_event_time(decom_ultra_dict: dict) -> dict:
+def get_event_id(decom_ultra_dict: dict) -> dict:
     """
-    Get event times using data from events and aux packets.
+    Get unique event IDs using data from events packets.
 
     Parameters
     ----------
     decom_ultra_dict : dict
-        Events and aux data.
+        Events data.
 
     Returns
     -------
     decom_events : dict
-        Ultra events data with calculated events timestamps.
-
-    Notes
-    -----
-    Equation for event time:
-    t = t_(spin start) + t_(spin start sub)/1000 +
-    t_(spin duration)/1000 * phase_angle/720
+        Ultra events data with calculated unique event IDs as 64-bit integers.
     """
-    event_times, durations, spin_starts = ([] for _ in range(3))
-    decom_aux = decom_ultra_dict[ULTRA_AUX.apid[0]]
     decom_events: dict = decom_ultra_dict[ULTRA_EVENTS.apid[0]]
 
-    timespinstart_array = np.array(decom_aux["TIMESPINSTART"])
-    timespinstartsub_array = np.array(decom_aux["TIMESPINSTARTSUB"]) / 1000
+    event_ids = []
+    packet_counters = {}
 
-    # spin start according to aux data
-    aux_spin_starts = timespinstart_array + timespinstartsub_array
+    for met in decom_events["SHCOARSE"]:
+        # Initialize the counter for a new packet (MET value)
+        if met not in packet_counters:
+            packet_counters[met] = 0
+        else:
+            packet_counters[met] += 1
 
-    for time in np.unique(decom_events["SHCOARSE"]):
-        # Get the nearest spin start and duration prior to the event
-        spin_start = aux_spin_starts[aux_spin_starts <= time][-1]
-        duration = np.array(decom_aux["DURATION"])[aux_spin_starts <= time][-1]
+        # Left shift SHCOARSE (u32) by 31 bits, to make room for our event counters
+        # (31 rather than 32 to keep it positive in the int64 representation)
+        # Append the current number of events in this packet to the right-most bits
+        # This makes each event a unique value including the MET and event number
+        # in the packet
+        # NOTE: CDF does not allow for uint64 values,
+        # so we use int64 representation here
+        event_id = (np.int64(met) << np.int64(31)) | np.int64(packet_counters[met])
+        event_ids.append(event_id)
 
-        # Find the events
-        event_indices = np.where(np.array(decom_events["SHCOARSE"]) == time)
-
-        for event_index in event_indices[0]:
-            phase_angle = decom_events["PHASE_ANGLE"][event_index]
-
-            durations.append(duration)
-            spin_starts.append(spin_start)
-
-            # If there were no events, the time is set to 'SHCOARSE'
-            if decom_events["COUNT"][event_index] == 0:
-                event_times.append(decom_events["SHCOARSE"][event_index])
-            else:
-                event_times.append(spin_start + (duration / 1000) * (phase_angle / 720))
-
-    decom_events["DURATION"] = durations
-    decom_events["TIMESPINSTART"] = spin_starts
-    decom_events["EVENTTIMES"] = event_times
+    decom_events["EVENTID"] = event_ids
 
     return decom_events
 
@@ -194,7 +178,7 @@ def create_dataset(decom_ultra_dict: dict) -> xr.Dataset:
     # Combine events and aux datasets so we can have proper event timestamps
     if ULTRA_EVENTS.apid[0] in decom_ultra_dict.keys():
         apid = ULTRA_EVENTS.apid[0]
-        decom_ultra = get_event_time(decom_ultra_dict)
+        decom_ultra = get_event_id(decom_ultra_dict)
     else:
         apid = next(iter(decom_ultra_dict.keys()))
         decom_ultra = decom_ultra_dict[apid]
@@ -286,31 +270,19 @@ def ultra_l1a(
     output_datasets = []
 
     # This is used for two purposes currently:
-    # 1. For testing purposes to only generate a dataset for a single apid.
+    #    For testing purposes to only generate a dataset for a single apid.
     #    Each test dataset is only for a single apid while the rest of the apids
     #    contain zeros. Ideally we would have
     #    test data for all apids and remove this parameter.
-    # 2. When we are generating the l1a dataset for the events packet since
-    #    right now we need to combine the events and aux packets to get the
-    #    correct event timestamps (get_event_time). This part will change
-    #    when we begin using the spin table in the database instead of the aux packet.
     if apid is not None:
         apids = [apid]
     else:
         apids = list(grouped_data.keys())
 
     for apid in apids:
-        if apid == ULTRA_EVENTS.apid[0]:
-            decom_ultra_dict = {
-                apid: process_ultra_apids(grouped_data[apid], apid),
-                ULTRA_AUX.apid[0]: process_ultra_apids(
-                    grouped_data[ULTRA_AUX.apid[0]], ULTRA_AUX.apid[0]
-                ),
-            }
-        else:
-            decom_ultra_dict = {
-                apid: process_ultra_apids(grouped_data[apid], apid),
-            }
+        decom_ultra_dict = {
+            apid: process_ultra_apids(grouped_data[apid], apid),
+        }
         dataset = create_dataset(decom_ultra_dict)
         # TODO: move this to use ImapCdfAttributes().add_global_attribute()
         dataset.attrs["Data_version"] = data_version

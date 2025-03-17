@@ -9,6 +9,19 @@ import xarray as xr
 from imap_processing import imap_module_directory
 from imap_processing.idex.idex_l1a import PacketParser
 
+SPICE_ARRAYS = [
+    "ephemeris_position_x",
+    "ephemeris_position_y",
+    "ephemeris_position_z",
+    "ephemeris_velocity_x",
+    "ephemeris_velocity_y",
+    "ephemeris_velocity_z",
+    "right_ascension",
+    "declination",
+    "solar_longitude",
+    "spin_phase",
+]
+
 
 def load_hdf_file(path: str, num_events: Optional[int] = None) -> dict:
     """
@@ -102,7 +115,7 @@ def load_hdf_file(path: str, num_events: Optional[int] = None) -> dict:
     return data_vars
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def decom_test_data() -> xr.Dataset:
     """Return a ``xarray`` dataset containing test data.
 
@@ -111,8 +124,9 @@ def decom_test_data() -> xr.Dataset:
     dataset : xarray.Dataset
         A ``xarray`` dataset containing the test data
     """
+    # imap_idex_l0_raw_20231218_v001.pkts
     test_file = Path(
-        f"{imap_module_directory}/tests/idex/test_data/imap_idex_l0_raw_20231218_v001.pkts"
+        f"{imap_module_directory}/tests/idex/test_data/imap_idex_l0_raw_20231214_v001.pkts"
     )
     return PacketParser(test_file, "001").data
 
@@ -134,3 +148,17 @@ def l1a_example_data():
     # size stays below the maximum limit of 1MB.
     num_events = 7
     return load_hdf_file(l1a_test_path, num_events=num_events), num_events
+
+
+def get_spice_data_side_effect_func(l1a_ds, idex_attrs):
+    # Create a mock dictionary of spice arrays
+
+    return {
+        name: xr.DataArray(
+            name=name,
+            data=np.ones(len(l1a_ds["epoch"])),
+            dims="epoch",
+            attrs=idex_attrs.get_variable_attributes(name),
+        )
+        for name in SPICE_ARRAYS
+    }

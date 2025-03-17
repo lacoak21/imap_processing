@@ -6,7 +6,7 @@ import re
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import cdflib
 import imap_data_access
@@ -14,10 +14,10 @@ import numpy as np
 import pandas as pd
 import pytest
 import requests
-import spiceypy as spice
+import spiceypy
 
 from imap_processing import imap_module_directory
-from imap_processing.spice.time import met_to_j2000ns
+from imap_processing.spice.time import met_to_ttj2000ns
 
 
 @pytest.fixture(autouse=True)
@@ -42,49 +42,108 @@ def _autoclear_spice():
     prevent the kernel pool from interfering with future tests. Option autouse
     ensures this is run after every test."""
     yield
-    spice.kclear()
+    spiceypy.kclear()
 
 
 @pytest.fixture(scope="session")
-def _download_de440s(spice_test_data_path):
-    """This fixture downloads the de440s.bsp kernel into the
-    tests/spice/test_data directory if it does not already exist there. The
-    fixture is not intended to be used directly. It is automatically added to
-    tests marked with "external_kernel" in the hook below."""
+def _download_external_kernels(spice_test_data_path):
+    """This fixture downloads externally-located kernels into the tests/spice/test_data
+    directory if they do not already exist there. The fixture is not intended to be
+    used directly. It is automatically added to tests marked with "external_kernel"
+    in the hook below."""
     logger = logging.getLogger(__name__)
-    kernel_url = (
-        "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440s.bsp"
-    )
-    kernel_name = kernel_url.split("/")[-1]
-    local_filepath = spice_test_data_path / kernel_name
+    kernel_urls = [
+        "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440s.bsp",
+        "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/pck00011.tpc",
+        "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/earth_1962_240827_2124_combined.bpc",
+    ]
 
-    if local_filepath.exists():
-        return
-    allowed_attempts = 3
-    for attempt_number in range(allowed_attempts):
-        try:
-            with requests.get(kernel_url, stream=True, timeout=30) as r:
-                r.raise_for_status()
-                with open(local_filepath, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        f.write(chunk)
-            logger.info("Cached kernel file to %s", local_filepath)
-            break
-        except requests.exceptions.RequestException as error:
-            logger.info(f"Request failed. {error}")
-            if attempt_number < allowed_attempts:
-                logger.info(
-                    f"Trying again, retries left "
-                    f"{allowed_attempts - attempt_number}, "
-                    f"Exception: {error}"
-                )
-                time.sleep(1)
+    for kernel_url in kernel_urls:
+        kernel_name = kernel_url.split("/")[-1]
+        local_filepath = spice_test_data_path / kernel_name
+
+        if local_filepath.exists():
+            continue
+        allowed_attempts = 3
+        for attempt_number in range(allowed_attempts):
+            try:
+                with requests.get(kernel_url, stream=True, timeout=30) as r:
+                    r.raise_for_status()
+                    with open(local_filepath, "wb") as f:
+                        for chunk in r.iter_content(chunk_size=8192):
+                            f.write(chunk)
+                logger.info("Cached kernel file to %s", local_filepath)
+                continue
+            except requests.exceptions.RequestException as error:
+                logger.info(f"Request failed. {error}")
+                if attempt_number < allowed_attempts:
+                    logger.info(
+                        f"Trying again, retries left "
+                        f"{allowed_attempts - attempt_number}, "
+                        f"Exception: {error}"
+                    )
+                    time.sleep(1)
+                else:
+                    logger.error(
+                        f"Failed to download file {kernel_name} after "
+                        f"{allowed_attempts} attempts, Final Error: {error}"
+                    )
+                    raise
+
+
+@pytest.fixture(scope="session")
+def _download_test_data(test_data_paths):
+    """This fixture downloads externally-located test data files into a specific
+    location. The list of files and their storage locations are specified in
+    the `test_data_paths` parameter, which is a list of tuples; the zeroth
+    element being the source of the test file in the AWS S3 bucket, and the
+    first element being the location in which to store the downloaded file."""
+
+    logger = logging.getLogger(__name__)
+
+    for test_data_path in test_data_paths:
+        source = test_data_path[0]
+        destination = test_data_path[1]
+
+        # Download the test data if necessary and write it to the appropriate
+        # directory
+        if not destination.exists():
+            response = requests.get(source, timeout=60)
+            if response.status_code == 200:
+                with open(destination, "wb") as file:
+                    file.write(response.content)
+                logger.info(f"Downloaded file: {source}")
             else:
-                logger.error(
-                    f"Failed to download file after {allowed_attempts} "
-                    f"attempts, Final Error: {error}"
-                )
-                raise
+                logger.error(f"Failed to download file: {response.status_code}")
+        else:
+            logger.info(f"File already exists: {destination}")
+
+
+@pytest.fixture(scope="session")
+def test_data_paths():
+    """Defines a list of test data files to download from the AWS S3 bucket
+    and the corresponding location in which to store the downloaded file"""
+    test_data_path_list = [
+        (
+            "https://api.dev.imap-mission.com/download/test_data/imap_codice_l0_raw_20241110_v001.pkts",
+            imap_module_directory
+            / "tests"
+            / "codice"
+            / "data"
+            / "imap_codice_l0_raw_20241110_v001.pkts",
+        ),
+        (
+            "https://api.dev.imap-mission.com/download/test_data/imap_hi_l1a_45sensor-de_20250415_v999.cdf",
+            imap_module_directory
+            / "tests/hi/data/l1/imap_hi_l1a_45sensor-de_20250415_v999.cdf",
+        ),
+        (
+            "https://api.dev.imap-mission.com/download/test_data/imap_hi_l1b_45sensor-de_20250415_v999.cdf",
+            imap_module_directory
+            / "tests/hi/data/l1/imap_hi_l1b_45sensor-de_20250415_v999.cdf",
+        ),
+    ]
+    return test_data_path_list
 
 
 def pytest_collection_modifyitems(items):
@@ -93,12 +152,13 @@ def pytest_collection_modifyitems(items):
     been collected. In this case, it automatically adds fixtures based on the
     following table:
 
-    +---------------------+---------------------+
-    | pytest mark         | fixture added       |
-    +=====================+=====================+
-    | external_kernel     | _download_de440s    |
-    | use_test_metakernel | use_test_metakernel |
-    +---------------------+---------------------+
+    +---------------------+----------------------------+
+    | pytest mark         | fixture added              |
+    +=====================+============================+
+    | external_kernel     | _download_external_kernels |
+    | external_test_data  | _download_test_data        |
+    | use_test_metakernel | use_test_metakernel        |
+    +---------------------+----------------------------+
 
     Notes
     -----
@@ -106,11 +166,16 @@ def pytest_collection_modifyitems(items):
     pytest hook:
     https://docs.pytest.org/en/stable/reference/reference.html#pytest.hookspec.pytest_collection_modifyitems
     """
+    markers_to_fixtures = {
+        "external_kernel": "_download_external_kernels",
+        "external_test_data": "_download_test_data",
+        "use_test_metakernel": "use_test_metakernel",
+    }
+
     for item in items:
-        if item.get_closest_marker("external_kernel") is not None:
-            item.fixturenames.append("_download_de440s")
-        if item.get_closest_marker("use_test_metakernel") is not None:
-            item.fixturenames.append("use_test_metakernel")
+        for marker, fixture in markers_to_fixtures.items():
+            if item.get_closest_marker(marker) is not None:
+                item.fixturenames.append(fixture)
 
 
 @pytest.fixture(scope="session")
@@ -121,22 +186,22 @@ def spice_test_data_path(imap_tests_path):
 @pytest.fixture()
 def furnish_time_kernels(spice_test_data_path):
     """Furnishes (temporarily) the testing LSK and SCLK"""
-    spice.kclear()
+    spiceypy.kclear()
     test_lsk = spice_test_data_path / "naif0012.tls"
     test_sclk = spice_test_data_path / "imap_sclk_0000.tsc"
-    spice.furnsh(str(test_lsk))
-    spice.furnsh(str(test_sclk))
+    spiceypy.furnsh(str(test_lsk))
+    spiceypy.furnsh(str(test_sclk))
     yield test_lsk, test_sclk
-    spice.kclear()
+    spiceypy.kclear()
 
 
 @pytest.fixture()
 def furnish_sclk(spice_test_data_path):
     """Furnishes (temporarily) the SCLK for JPSS stored in the package data directory"""
     test_sclk = spice_test_data_path / "imap_sclk_0000.tsc"
-    spice.furnsh(str(test_sclk))
+    spiceypy.furnsh(str(test_sclk))
     yield test_sclk
-    spice.kclear()
+    spiceypy.kclear()
 
 
 @pytest.fixture()
@@ -145,7 +210,9 @@ def furnish_kernels(spice_test_data_path):
 
     @contextmanager
     def furnish_kernels(kernels: list[Path]):
-        with spice.KernelPool([str(spice_test_data_path / k) for k in kernels]) as pool:
+        with spiceypy.KernelPool(
+            [str(spice_test_data_path / k) for k in kernels]
+        ) as pool:
             yield pool
 
     return furnish_kernels
@@ -224,7 +291,7 @@ def session_test_metakernel(monkeypatch_session, tmpdir_factory, spice_test_data
     -----
     - This fixture needs to `scope=session` so that the SPICE_METAKERNEL
     environment variable is available for other fixtures that require time
-    conversions using spice.
+    conversions using spiceypy.
     - No furnishing of kernels occur as part of this fixture. This allows other
     fixtures with lesser scope or individual tests to override the environment
     variable as needed. Use the `metakernel_path_not_set` fixture in tests that
@@ -236,7 +303,7 @@ def session_test_metakernel(monkeypatch_session, tmpdir_factory, spice_test_data
     make_metakernel_from_kernels(metakernel_path, kernels_to_load)
     monkeypatch_session.setenv("SPICE_METAKERNEL", str(metakernel_path))
     yield str(metakernel_path)
-    spice.kclear()
+    spiceypy.kclear()
 
 
 @pytest.fixture()
@@ -286,7 +353,7 @@ def use_test_metakernel(
         make_metakernel_from_kernels(metakernel_path, kernels_to_load)
         monkeypatch.setenv("SPICE_METAKERNEL", str(metakernel_path))
         yield str(metakernel_path)
-    spice.kclear()
+    spiceypy.kclear()
 
 
 @pytest.fixture()
@@ -401,7 +468,7 @@ def generate_spin_data():
         )
 
         # Convert spin_start_sec to datetime to set repointing times flags
-        spin_start_dates = met_to_j2000ns(spin_start_sec + spin_start_subsec / 1000)
+        spin_start_dates = met_to_ttj2000ns(spin_start_sec + spin_start_subsec / 1000)
         spin_start_dates = cdflib.cdfepoch.to_datetime(spin_start_dates)
 
         # Convert DatetimeIndex to Series for using .dt accessor
@@ -423,3 +490,96 @@ def generate_spin_data():
         return spin_df
 
     return make_data
+
+
+@pytest.fixture()
+def use_test_repoint_data_csv(monkeypatch):
+    """Sets the REPOINT_DATA_FILEPATH environment variable to input path."""
+
+    def wrapped_set_repoint_data_filepath(path: Path):
+        monkeypatch.setenv("REPOINT_DATA_FILEPATH", str(path))
+
+    return wrapped_set_repoint_data_filepath
+
+
+def generate_repoint_data(
+    repoint_start_met: Union[float, np.ndarray],
+    repoint_end_met: Optional[Union[float, np.ndarray]] = None,
+    repoint_id_start: Optional[int] = 0,
+) -> pd.DataFrame:
+    """
+    Generate a repoint dataframe for the star/end times provided.
+
+    Parameters
+    ----------
+    repoint_start_met : float, np.ndarray
+            Provides the repoint start time(s) in Mission Elapsed Time (MET).
+    repoint_end_met : float, np.ndarray, optional
+        Provides the repoint end time(s) in MET. If not provided, end times
+        will be 15 minutes after start times.
+    repoint_id_start : int, optional
+        Provides the starting repoint id number of the first repoint in the
+        generated data.
+
+    Returns
+    -------
+    repoint_df : pd.DataFrame
+        Repoint dataframe with start and end repoint times provided and incrementing
+        repoint_ids starting at 1.
+    """
+    repoint_start_times = np.array(repoint_start_met)
+    if repoint_end_met is None:
+        repoint_end_met = repoint_start_times + 15 * 60
+    repoint_df = pd.DataFrame.from_dict(
+        {
+            "repoint_start_time": repoint_start_times,
+            "repoint_end_time": np.array(repoint_end_met),
+            "repoint_id": np.arange(repoint_start_times.size, dtype=int)
+            + repoint_id_start,
+        }
+    )
+    return repoint_df
+
+
+@pytest.fixture()
+def use_fake_repoint_data_for_time(use_test_repoint_data_csv, tmpdir):
+    """
+    Generate and use fake spin data for testing.
+
+    Returns
+    -------
+    callable
+        Returns a callable function that takes start_met and optionally n_repoints
+        as inputs, generates fake repoint data, writes the data to a csv file,
+        and sets the REPOINT_DATA_FILEPATH environment variable to point to the
+        fake repoint data file.
+    """
+
+    def wrapped_repoint_data_filepath(
+        repoint_start_met: Union[float, np.ndarray],
+        repoint_end_met: Optional[Union[float, np.ndarray]] = None,
+        repoint_id_start: Optional[int] = 0,
+    ) -> pd.DataFrame:
+        """
+        Generate and use fake repoint data for testing.
+        Parameters
+        ----------
+        repoint_start_met : float, np.ndarray
+            Provides the repoint start time(s) in Mission Elapsed Time (MET).
+        repoint_end_met : float, np.ndarray
+            Provides the repoint end time(s) in MET. If not provided, end times
+            will be 15 minutes after start times.
+        repoint_id_start : int, optional
+            Provides the starting repoint id number of the first repoint in the
+            generated data.
+        """
+        repoint_df = generate_repoint_data(
+            repoint_start_met,
+            repoint_end_met=repoint_end_met,
+            repoint_id_start=repoint_id_start,
+        )
+        repoint_csv_file_path = tmpdir / "repoint_data.repointing.csv"
+        repoint_df.to_csv(repoint_csv_file_path, index=False)
+        use_test_repoint_data_csv(repoint_csv_file_path)
+
+    return wrapped_repoint_data_filepath

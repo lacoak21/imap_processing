@@ -8,37 +8,15 @@ import pandas as pd
 import xarray as xr
 
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
-from imap_processing.swe.utils.swe_utils import read_lookup_table
+from imap_processing.spice.time import met_to_ttj2000ns
+from imap_processing.swe.utils import swe_constants
+from imap_processing.swe.utils.swe_utils import (
+    calculate_data_acquisition_time,
+    combine_acquisition_time,
+    read_lookup_table,
+)
 
 logger = logging.getLogger(__name__)
-
-# ESA voltage and index in the final data table
-esa_voltage_row_index_dict = {
-    0.56: 0,
-    0.78: 1,
-    1.08: 2,
-    1.51: 3,
-    2.10: 4,
-    2.92: 5,
-    4.06: 6,
-    5.64: 7,
-    7.85: 8,
-    10.92: 9,
-    15.19: 10,
-    21.13: 11,
-    29.39: 12,
-    40.88: 13,
-    56.87: 14,
-    79.10: 15,
-    110.03: 16,
-    153.05: 17,
-    212.89: 18,
-    296.14: 19,
-    411.93: 20,
-    572.99: 21,
-    797.03: 22,
-    1108.66: 23,
-}
 
 
 def get_esa_dataframe(esa_table_number: int) -> pd.DataFrame:
@@ -110,7 +88,7 @@ def deadtime_correction(counts: np.ndarray, acq_duration: int) -> npt.NDArray:
     return corrected_count.astype(np.float64)
 
 
-def convert_counts_to_rate(data: np.ndarray, acq_duration: int) -> npt.NDArray:
+def convert_counts_to_rate(data: np.ndarray, acq_duration: np.ndarray) -> npt.NDArray:
     """
     Convert counts to rate using sampling time.
 
@@ -120,7 +98,7 @@ def convert_counts_to_rate(data: np.ndarray, acq_duration: int) -> npt.NDArray:
     ----------
     data : numpy.ndarray
         Counts data.
-    acq_duration : int
+    acq_duration : numpy.ndarray
         Acquisition duration. acq_duration is in microseconds.
 
     Returns
@@ -134,51 +112,108 @@ def convert_counts_to_rate(data: np.ndarray, acq_duration: int) -> npt.NDArray:
     return count_rate.astype(np.float64)
 
 
-def calculate_calibration_factor(time: int) -> None:
+def read_in_flight_cal_data() -> pd.DataFrame:
     """
-    Calculate calibration factor.
+    Read in-flight calibration data.
+
+    In-flight calibration data file will contain rows where each line
+    has 8 numbers, with the first being a time stamp in MET, and the next
+    7 being the factors for the 7 detectors.
+
+    This file will be updated weekly with new calibration data. In other
+    words, one line of data will be added each week to the existing file.
+    File will be in CSV format. Processing won't be kicked off until there
+    is in-flight calibration data that covers science data.
+
+    TODO: decide filename convention given this information. This function
+    is a placeholder for reading in the calibration data until we decide on
+    how to read calibration data through dependencies list.
+
+    Returns
+    -------
+    in_flight_cal_df : pandas.DataFrame
+        DataFrame with in-flight calibration data.
+    """
+    # TODO: Read in in-flight calibration file.
+
+    # Define the column headers
+    columns = ["met_time", "cem1", "cem2", "cem3", "cem4", "cem5", "cem6", "cem7"]
+
+    # Create an empty DataFrame with the specified columns
+    empty_df = pd.DataFrame(columns=columns)
+    return empty_df
+
+
+def calculate_calibration_factor(
+    acquisition_times: np.ndarray, cal_times: np.ndarray, cal_data: np.ndarray
+) -> npt.NDArray:
+    """
+    Calculate calibration factor using linear interpolation.
 
     Steps to calculate calibration factor:
-
-    1. Convert input time to match time format in the calibration data file.
-    2. Find the nearest in time calibration data point.
-    3. Linear interpolate between those two nearest time and get factor for input time.
-
-    What this function is doing:
-
-    | 1. **Reading Calibration Data**: The function first reads a file containing
-    |     calibration data for electron measurements over time. This data helps
-    |     adjust or correct the measurements based on changes in the instrument's
-    |     sensitivity.
-
-    | 2. **Interpolating Calibration Factors**: Imagine you have several points on
-    |     a graph, and you want to estimate values between those points. In our case,
-    |     these points represent calibration measurements taken at different times.
-    |     The function figures out which two calibration points are closest in time
-    |     to the specific measurement time you're interested in.
-
-    | 3. **Calculating Factors**: Once it finds these two nearby calibration points,
-    |     the function calculates a correction factor by drawing a straight line
-    |     between them (linear interpolation). This factor helps adjust the measurement
-    |     to make it more accurate, considering how the instrument's sensitivity changed
-    |     between those two calibration points.
-
-    | 4. **Returning the Correction Factor**: Finally, the function returns this
-    |     correction factor. You can then use this factor to adjust or calibrate your
-    |     measurements at the specific time you're interested in. This ensures that
-    |     your measurements are as accurate as possible, taking into account the
-    |     instrument's changing sensitivity over time.
+        1. Convert input time to match time format in the calibration data file.
+           Both times should be in S/C MET time.
+        2. Find the nearest in time calibration data point.
+        3. Linear interpolate between those two nearest time and get factor for
+           input time.
 
     Parameters
     ----------
-    time : int
-        Input time.
+    acquisition_times : numpy.ndarray
+        Data points to interpolate. Shape is (N_ESA_STEPS, N_ANGLE_SECTORS).
+    cal_times : numpy.ndarray
+        X-coordinates data points. Calibration times. Shape is (n,).
+    cal_data : numpy.ndarray
+        Y-coordinates data points. Calibration data of corresponding cal_times.
+        Shape is (n, N_CEMS).
+
+    Returns
+    -------
+    calibration_factor : numpy.ndarray
+        Calibration factor for each CEM detector. Shape is
+        (N_ESA_STEPS, N_ANGLE_SECTORS, N_CEMS) where last 7 dimension
+        contains calibration factor for each CEM detector.
     """
-    # NOTE: waiting on fake calibration data to write this.
-    pass
+    # Raise error if there is no pre or post time in cal_times. SWE does not
+    # want to extrapolate calibration data.
+    if (
+        acquisition_times.min() < cal_times.min()
+        or acquisition_times.max() > cal_times.max()
+    ):
+        error_msg = (
+            f"Acquisition min/max times: {acquisition_times.min()} to "
+            f"{acquisition_times.max()}. "
+            f"Calibration min/max times: {cal_times.min()} to {cal_times.max()}. "
+            "Acquisition times should be within calibration time range."
+        )
+        raise ValueError(error_msg)
+
+    # This line of code finds the indices of acquisition_times in cal_times where
+    # acquisition_times should be inserted to maintain order. As a result, it finds
+    # its nearest pre and post time from cal_times.
+    input_time_indices = np.searchsorted(cal_times, acquisition_times)
+
+    # Assign to a variable for better readability
+    x = acquisition_times
+    xp = cal_times
+    fp = cal_data
+
+    # Given this situation which will be the case for SWE data
+    # where data will fall in between two calibration times and
+    # not be exactly equal to any calibration time,
+    #   >>> a = [1, 2, 3]
+    #   >>> np.searchsorted(a, [2.5])
+    #   array([2])
+    # we need to use (j - 1) to get pre time indices. (j-1) is
+    # pre time indices and j is post time indices.
+    j = input_time_indices
+    w = (x - xp[j - 1]) / (xp[j] - xp[j - 1])
+    return fp[j - 1] + w[..., None] * (fp[j] - fp[j - 1])
 
 
-def apply_in_flight_calibration(data: np.ndarray) -> None:
+def apply_in_flight_calibration(
+    corrected_counts: np.ndarray, acquisition_time: np.ndarray
+) -> npt.NDArray:
     """
     Apply in flight calibration to full cycle data.
 
@@ -188,12 +223,32 @@ def apply_in_flight_calibration(data: np.ndarray) -> None:
 
     Parameters
     ----------
-    data : numpy.ndarray
-        Full cycle data array.
+    corrected_counts : numpy.ndarray
+        Corrected count of full cycle data. Data shape is
+        (N_ESA_STEPS, N_ANGLE_SECTORS, N_CEMS).
+    acquisition_time : numpy.ndarray
+        Acquisition time of full cycle data. Data shape is
+        (N_ESA_STEPS, N_ANGLE_SECTORS).
+
+    Returns
+    -------
+    corrected_counts : numpy.ndarray
+        Corrected count of full cycle data after applying in-flight calibration.
+        Array shape is (N_ESA_STEPS, N_ANGLE_SECTORS, N_CEMS).
     """
-    # calculate calibration factor
-    # Apply to all data
-    pass
+    # Read in in-flight calibration data
+    in_flight_cal_df = read_in_flight_cal_data()
+    # calculate calibration factor.
+    # return shape of calculate_calibration_factor is
+    # (N_ESA_STEPS, N_ANGLE_SECTORS, N_CEMS) where
+    # last 7 dimension contains calibration factor for each CEM detector.
+    cal_factor = calculate_calibration_factor(
+        acquisition_time,
+        in_flight_cal_df["met_time"].values,
+        in_flight_cal_df.iloc[:, 1:].values,
+    )
+    # Apply to full cycle data
+    return corrected_counts.astype(np.float64) * cal_factor
 
 
 def populate_full_cycle_data(
@@ -222,49 +277,50 @@ def populate_full_cycle_data(
     # with information that esa step ramps up in even column and ramps down
     # in odd column every six steps.
     if esa_table_num == 0:
-        energy_steps = 24
-        angle = 30
-        cem_detectors = 7
         # create new full cycle data array
-        full_cycle_data = np.zeros((energy_steps, angle, cem_detectors))
+        full_cycle_data = np.zeros(
+            (
+                swe_constants.N_ESA_STEPS,
+                swe_constants.N_ANGLE_SECTORS,
+                swe_constants.N_CEMS,
+            )
+        )
         # SWE needs to store acquisition time of each count data point
         # to use in level 2 processing to calculate
         # spin phase. This is done below by using information from
         # science packet.
-        acquisition_times = np.zeros((energy_steps, angle, cem_detectors))
+        acquisition_times = np.zeros(
+            (swe_constants.N_ESA_STEPS, swe_constants.N_ANGLE_SECTORS)
+        )
+
+        # Store acquisition duration for later calculation in this function
+        acq_duration_arr = np.zeros(
+            (swe_constants.N_ESA_STEPS, swe_constants.N_ANGLE_SECTORS)
+        )
 
         # Initialize esa_step_number and column_index.
         # esa_step_number goes from 0 to 719 range where
-        # 720 came from 24 x 30. full_cycle_data array has (24, 30)
-        # dimension.
+        # 720 came from 24 x 30. full_cycle_data array has
+        # (N_ESA_STEPS, N_ANGLE_SECTORS) dimension.
         esa_step_number = 0
         # column_index goes from 0 to 29 range where
         # 30 came from 30 column in full_cycle_data array
         column_index = -1
 
         # Go through four quarter cycle data packets
-        for index in range(4):
+        for index in range(swe_constants.N_QUARTER_CYCLES):
             decompressed_counts = l1a_data["science_data"].data[packet_index + index]
             # Do deadtime correction
             acq_duration = l1a_data["acq_duration"].data[packet_index + index]
             settle_duration = l1a_data["settle_duration"].data[packet_index + index]
             corrected_counts = deadtime_correction(decompressed_counts, acq_duration)
-            # Convert counts to rate
-            counts_rate = convert_counts_to_rate(corrected_counts, acq_duration)
 
             # Each quarter cycle data should have same acquisition start time coarse
             # and fine value. We will use that as base time to calculate each
-            # acquisition time for each count data. Acquisition time of each count
-            # data point will be calculated using this formula:
-            #   base_quarter_cycle_acq_time = acq_start_coarse +
-            #                                 acq_start_fine / 1000000
-            #   each_count_acq_time = base_quarter_cycle_acq_time +
-            #                         (step * ( acq_duration + settle_duration) / 1000 )
-            # where step goes from 0 to 179, acq_start_coarse is in seconds and
-            # acq_start_fine is in microseconds and acq_duration is in milliseconds.
-            base_quarter_cycle_acq_time = (
-                l1a_data["acq_start_coarse"].data[packet_index + index]
-                + l1a_data["acq_start_fine"].data[packet_index + index] / 1000000
+            # acquisition time for each count data.
+            base_quarter_cycle_acq_time = combine_acquisition_time(
+                l1a_data["acq_start_coarse"].data[packet_index + index],
+                l1a_data["acq_start_fine"].data[packet_index + index],
             )
 
             # Go through each quarter cycle's 180 ESA measurements
@@ -273,18 +329,28 @@ def populate_full_cycle_data(
                 # Get esa voltage value from esa lookup table and
                 # use that to get row index in full data array
                 esa_voltage_value = esa_lookup_table.loc[esa_step_number]["esa_v"]
-                esa_voltage_row_index = esa_voltage_row_index_dict[esa_voltage_value]
+                esa_voltage_row_index = swe_constants.ESA_VOLTAGE_ROW_INDEX_DICT[
+                    esa_voltage_value
+                ]
 
                 # every six steps, increment column index
                 if esa_step_number % 6 == 0:
                     column_index += 1
                 # Put counts rate in full cycle data array
-                full_cycle_data[esa_voltage_row_index][column_index] = counts_rate[step]
-                # Put acquisition time in acquisition_times array
+                full_cycle_data[esa_voltage_row_index][column_index] = corrected_counts[
+                    step
+                ]
+                # Acquisition time (in seconds) of each count data point
                 acquisition_times[esa_voltage_row_index][column_index] = (
-                    base_quarter_cycle_acq_time
-                    + (step * (acq_duration + settle_duration) / 1000)
+                    calculate_data_acquisition_time(
+                        base_quarter_cycle_acq_time,
+                        esa_step_number,
+                        acq_duration,
+                        settle_duration,
+                    )
                 )
+                # Store acquisition duration for later calculation
+                acq_duration_arr[esa_voltage_row_index][column_index] = acq_duration
                 esa_step_number += 1
 
             # reset column index for next quarter cycle
@@ -295,11 +361,20 @@ def populate_full_cycle_data(
     # data. But for now, we are advice to continue with current setup and can
     # add/change it when we get real data.
 
-    # Store count data and acquisition times of full cycle data in xr.Dataset
+    # Apply calibration based on in-flight calibration.
+    calibrated_counts = apply_in_flight_calibration(full_cycle_data, acquisition_times)
+
+    # Convert counts to rate
+    counts_rate = convert_counts_to_rate(
+        calibrated_counts, acq_duration_arr[:, :, np.newaxis]
+    )
+
+    # Store full cycle data in xr.Dataset for later use.
     full_cycle_ds = xr.Dataset(
         {
-            "full_cycle_data": (["energy", "angle", "cem"], full_cycle_data),
-            "sci_step_acq_time_sec": (["energy", "angle", "cem"], acquisition_times),
+            "full_cycle_data": (["esa_step", "spin_sector", "cem_id"], counts_rate),
+            "acquisition_time": (["esa_step", "spin_sector"], acquisition_times),
+            "acq_duration": (["esa_step", "spin_sector"], acq_duration_arr),
         }
     )
 
@@ -322,7 +397,7 @@ def find_cycle_starts(cycles: np.ndarray) -> npt.NDArray:
     first_quarter_indices : numpy.ndarray
         Array of indices of start cycle.
     """
-    if cycles.size < 4:
+    if cycles.size < swe_constants.N_QUARTER_CYCLES:
         return np.array([], np.int64)
 
     # calculate difference between consecutive cycles
@@ -363,7 +438,10 @@ def get_indices_of_full_cycles(quarter_cycle: np.ndarray) -> npt.NDArray:
     #   Eg. [[0, 1, 2, 3]]
     # then we add both of them together to get an array of shape(n, 4)
     #   Eg. [[3, 4, 5, 6], [8, 9, 10, 11]]
-    full_cycles_indices = indices_of_start[..., None] + np.arange(4)[None, ...]
+    full_cycles_indices = (
+        indices_of_start[..., None]
+        + np.arange(swe_constants.N_QUARTER_CYCLES)[None, ...]
+    )
     return full_cycles_indices.reshape(-1)
 
 
@@ -411,7 +489,9 @@ def swe_l1b_science(l1a_data: xr.Dataset, data_version: str) -> xr.Dataset:
     # Array to store list of table populated with data
     # of full cycles
     full_cycle_science_data = []
+    # These two are carried in l1b for level 2 and 3 processing
     full_cycle_acq_times = []
+    full_cycle_acq_duration = []
     packet_index = 0
     l1a_data_copy = l1a_data.copy(deep=True)
 
@@ -446,7 +526,7 @@ def swe_l1b_science(l1a_data: xr.Dataset, data_version: str) -> xr.Dataset:
             )
 
     # Go through each cycle and populate full cycle data
-    for packet_index in range(0, total_packets, 4):
+    for packet_index in range(0, total_packets, swe_constants.N_QUARTER_CYCLES):
         # get ESA lookup table information
         esa_table_num = l1a_data["esa_table_num"].data[packet_index]
 
@@ -464,7 +544,8 @@ def swe_l1b_science(l1a_data: xr.Dataset, data_version: str) -> xr.Dataset:
 
         # save full data array to file
         full_cycle_science_data.append(full_cycle_ds["full_cycle_data"].data)
-        full_cycle_acq_times.append(full_cycle_ds["sci_step_acq_time_sec"].data)
+        full_cycle_acq_times.append(full_cycle_ds["acquisition_time"].data)
+        full_cycle_acq_duration.append(full_cycle_ds["acq_duration"].data)
 
     # ------------------------------------------------------------------
     # Save data to dataset.
@@ -475,67 +556,86 @@ def swe_l1b_science(l1a_data: xr.Dataset, data_version: str) -> xr.Dataset:
     cdf_attrs.add_instrument_variable_attrs("swe", "l1b")
     cdf_attrs.add_global_attribute("Data_version", data_version)
 
-    # Get epoch time of full cycle data and then reshape it to
-    # (n, 4) where n = total number of full cycles and 4 = four
-    # quarter cycle data metadata. For epoch's data, we take the first element
-    # of each quarter cycle data metadata.
-    epoch_time = xr.DataArray(
-        l1a_data["epoch"].data[full_cycle_data_indices].reshape(-1, 4)[:, 0],
-        name="epoch",
-        dims=["epoch"],
-        attrs=cdf_attrs.get_variable_attributes("epoch"),
+    # One full cycle data combines four quarter cycles data.
+    # Epoch will store center of each science meansurement using
+    # third acquisition start time coarse and fine value
+    # of four quarter cycle data packets. For example, we want to
+    # get indices of 3rd quarter cycle data packet in each full cycle
+    # and use that to calculate center time of data acquisition time.
+    #   Quarter cycle indices: 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, ...
+    indices_of_center_time = np.arange(2, total_packets, swe_constants.N_QUARTER_CYCLES)
+
+    center_time = combine_acquisition_time(
+        full_cycle_l1a_data["acq_start_coarse"].data[indices_of_center_time],
+        full_cycle_l1a_data["acq_start_fine"].data[indices_of_center_time],
     )
 
-    energy = xr.DataArray(
-        np.arange(24),
-        name="energy",
-        dims=["energy"],
-        attrs=cdf_attrs.get_variable_attributes("energy"),
+    epoch_time = xr.DataArray(
+        met_to_ttj2000ns(center_time),
+        name="epoch",
+        dims=["epoch"],
+        attrs=cdf_attrs.get_variable_attributes("epoch", check_schema=False),
+    )
+
+    esa_step = xr.DataArray(
+        np.arange(swe_constants.N_ESA_STEPS),
+        name="esa_step",
+        dims=["esa_step"],
+        attrs=cdf_attrs.get_variable_attributes("esa_step", check_schema=False),
     )
 
     # NOTE: LABL_PTR_1 should be CDF_CHAR.
-    energy_label = xr.DataArray(
-        energy.values.astype(str),
-        name="energy_label",
-        dims=["energy_label"],
-        attrs=cdf_attrs.get_variable_attributes("energy_label"),
+    esa_step_label = xr.DataArray(
+        esa_step.values.astype(str),
+        name="esa_step_label",
+        dims=["esa_step"],
+        attrs=cdf_attrs.get_variable_attributes("esa_step_label", check_schema=False),
     )
 
-    angle = xr.DataArray(
-        np.arange(30),
-        name="angle",
-        dims=["angle"],
-        attrs=cdf_attrs.get_variable_attributes("angle"),
+    spin_sector = xr.DataArray(
+        np.arange(swe_constants.N_ANGLE_SECTORS),
+        name="spin_sector",
+        dims=["spin_sector"],
+        attrs=cdf_attrs.get_variable_attributes("spin_sector", check_schema=False),
     )
 
     # NOTE: LABL_PTR_2 should be CDF_CHAR.
-    angle_label = xr.DataArray(
-        angle.values.astype(str),
-        name="angle_label",
-        dims=["angle_label"],
-        attrs=cdf_attrs.get_variable_attributes("angle_label"),
+    spin_sector_label = xr.DataArray(
+        spin_sector.values.astype(str),
+        name="spin_sector_label",
+        dims=["spin_sector"],
+        attrs=cdf_attrs.get_variable_attributes(
+            "spin_sector_label", check_schema=False
+        ),
     )
 
     cycle = xr.DataArray(
-        np.arange(4),
+        np.arange(swe_constants.N_QUARTER_CYCLES),
         name="cycle",
         dims=["cycle"],
-        attrs=cdf_attrs.get_variable_attributes("cycle"),
+        attrs=cdf_attrs.get_variable_attributes("cycle", check_schema=False),
     )
 
-    cem = xr.DataArray(
-        np.arange(7, dtype=np.float64),
-        name="cem",
-        dims=["cem"],
-        attrs=cdf_attrs.get_variable_attributes("cem"),
+    cycle_label = xr.DataArray(
+        cycle.values.astype(str),
+        name="cycle_label",
+        dims=["cycle"],
+        attrs=cdf_attrs.get_variable_attributes("cycle_label", check_schema=False),
+    )
+
+    cem_id = xr.DataArray(
+        np.arange(swe_constants.N_CEMS, dtype=np.int8),
+        name="cem_id",
+        dims=["cem_id"],
+        attrs=cdf_attrs.get_variable_attributes("cem_id", check_schema=False),
     )
 
     # NOTE: LABL_PTR_3 should be CDF_CHAR.
-    cem_label = xr.DataArray(
-        cem.values.astype(str),
-        name="cem_label",
-        dims=["cem_label"],
-        attrs=cdf_attrs.get_variable_attributes("cem_label"),
+    cem_id_label = xr.DataArray(
+        cem_id.values.astype(str),
+        name="cem_id_label",
+        dims=["cem_id"],
+        attrs=cdf_attrs.get_variable_attributes("cem_id_label", check_schema=False),
     )
 
     # Add science data and it's associated metadata into dataset.
@@ -556,35 +656,41 @@ def swe_l1b_science(l1a_data: xr.Dataset, data_version: str) -> xr.Dataset:
     dataset = xr.Dataset(
         coords={
             "epoch": epoch_time,
-            "energy": energy,
-            "angle": angle,
-            "cem": cem,
+            "esa_step": esa_step,
+            "spin_sector": spin_sector,
+            "cem_id": cem_id,
             "cycle": cycle,
-            "energy_label": energy_label,
-            "angle_label": angle_label,
-            "cem_label": cem_label,
+            "esa_step_label": esa_step_label,
+            "spin_sector_label": spin_sector_label,
+            "cem_id_label": cem_id_label,
+            "cycle_label": cycle_label,
         },
         attrs=cdf_attrs.get_global_attributes("imap_swe_l1b_sci"),
     )
 
     dataset["science_data"] = xr.DataArray(
         full_cycle_science_data,
-        dims=["epoch", "energy", "angle", "cem"],
+        dims=["epoch", "esa_step", "spin_sector", "cem_id"],
         attrs=cdf_attrs.get_variable_attributes("science_data"),
     )
-    dataset["sci_step_acq_time_sec"] = xr.DataArray(
+    dataset["acquisition_time"] = xr.DataArray(
         full_cycle_acq_times,
-        dims=["epoch", "energy", "angle", "cem"],
-        attrs=cdf_attrs.get_variable_attributes("sci_step_acq_time_sec"),
+        dims=["epoch", "esa_step", "spin_sector"],
+        attrs=cdf_attrs.get_variable_attributes("acquisition_time"),
+    )
+    dataset["acq_duration"] = xr.DataArray(
+        full_cycle_acq_duration,
+        dims=["epoch", "esa_step", "spin_sector"],
+        attrs=cdf_attrs.get_variable_attributes("acq_duration"),
     )
 
     # create xarray dataset for each metadata field
     for key, value in full_cycle_l1a_data.items():
-        if key == "science_data":
+        if key in ["science_data", "acq_duration"]:
             continue
         metadata_field = key.lower()
         dataset[metadata_field] = xr.DataArray(
-            value.data.reshape(-1, 4),
+            value.data.reshape(-1, swe_constants.N_QUARTER_CYCLES),
             dims=["epoch", "cycle"],
             attrs=cdf_attrs.get_variable_attributes(metadata_field),
         )

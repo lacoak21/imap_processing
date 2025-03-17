@@ -27,6 +27,7 @@ from imap_processing.codice import constants
 from imap_processing.codice.codice_l0 import decom_packets
 from imap_processing.codice.decompress import decompress
 from imap_processing.codice.utils import CODICEAPID
+from imap_processing.spice.time import met_to_ttj2000ns
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -57,6 +58,8 @@ class CoDICEL1aPipeline:
 
     Methods
     -------
+    calculate_epoch_values()
+        Calculate and return the values to be used for `epoch`.
     decompress_data(science_values)
         Perform decompression on the data.
     define_coordinates()
@@ -71,6 +74,8 @@ class CoDICEL1aPipeline:
         Retrieve the acquisition times via the Lo stepping table.
     get_energy_table()
         Retrieve the ESA sweep values.
+    get_hi_energy_table_data(species)
+        Retrieve energy table data for CoDICE-Hi products
     reshape_data()
         Reshape the data arrays based on the data product being made.
     set_data_product_config()
@@ -83,6 +88,26 @@ class CoDICEL1aPipeline:
         self.plan_id = plan_id
         self.plan_step = plan_step
         self.view_id = view_id
+
+    def calculate_epoch_values(self) -> NDArray[int]:
+        """
+        Calculate and return the values to be used for `epoch`.
+
+        On CoDICE, the epoch values are derived from the `acq_start_seconds` and
+        `acq_start_subseconds` fields in the packet. Note that the
+        `acq_start_subseconds` field needs to be converted from microseconds to
+        seconds
+
+        Returns
+        -------
+        epoch : NDArray[int]
+            List of epoch values.
+        """
+        epoch = met_to_ttj2000ns(
+            self.dataset.acq_start_seconds + self.dataset.acq_start_subseconds / 1e6
+        )
+
+        return epoch
 
     def decompress_data(self, science_values: list[str]) -> None:
         """
@@ -126,17 +151,34 @@ class CoDICEL1aPipeline:
         """
         self.coords = {}
 
-        for name in self.config["coords"]:
+        coord_names = ["epoch", *list(self.config["output_dims"].keys())]
+
+        # These are labels unique to lo-counters products coordinates
+        if self.config["dataset_name"] in [
+            "imap_codice_l1a_lo-counters-aggregated",
+            "imap_codice_l1a_lo-counters-singles",
+        ]:
+            coord_names.append("spin_sector_pairs_label")
+
+        for name in coord_names:
             if name == "epoch":
-                values = self.dataset.epoch.data
-            elif name == "inst_az":
-                values = np.arange(self.config["num_positions"])
-            elif name == "spin_sector":
-                values = np.arange(self.config["num_spin_sectors"])
-            elif name == "esa_step":
-                values = np.arange(self.config["num_energy_steps"])
+                values = self.calculate_epoch_values()
+            elif name in ["esa_step", "inst_az", "spin_sector", "spin_sector_pairs"]:
+                values = np.arange(self.config["output_dims"][name])
+            elif name == "spin_sector_pairs_label":
+                values = np.array(
+                    [
+                        "0-30 deg",
+                        "30-60 deg",
+                        "60-90 deg",
+                        "90-120 deg",
+                        "120-150 deg",
+                        "150-180 deg",
+                    ]
+                )
             else:
-                # TODO: Need to implement other types of coords
+                # TODO: May need to implement other types of coords for Hi
+                #       and/or event data products
                 continue
 
             coord = xr.DataArray(
@@ -170,26 +212,31 @@ class CoDICEL1aPipeline:
         # Stack the data so that it is easier to reshape and iterate over
         all_data = np.stack(self.data)
 
-        # The dimension of all data is (epoch, num_counters, num_positions,
-        # num_spin_sectors, num_energy_steps) (or may be slightly different
-        # depending on the data product). In any case, iterate over the
-        # num_counters dimension to isolate the data for each counter so
-        # that it can be placed in a CDF data variable.
+        # The dimension of all_data is something like (epoch, num_counters,
+        # num_energy_steps, num_positions, num_spin_sectors) (or may be slightly
+        # different depending on the data product). In any case, iterate over
+        # the num_counters dimension to isolate the data for each counter so
+        # each counter's data can be placed in a separate CDF data variable.
         for counter, variable_name in zip(
             range(all_data.shape[1]), self.config["variable_names"]
         ):
-            counter_data = all_data[:, counter, :, :, :]
+            # Extract the counter data
+            counter_data = all_data[:, counter, ...]
 
             # Get the CDF attributes
             descriptor = self.config["dataset_name"].split("imap_codice_l1a_")[-1]
             cdf_attrs_key = f"{descriptor}-{variable_name}"
             attrs = self.cdf_attrs.get_variable_attributes(cdf_attrs_key)
 
+            # The final CDF dimensions always has "epoch" as the first dimension,
+            # followed by the dimensions for the specific data product
+            dims = ["epoch", *list(self.config["output_dims"].keys())]
+
             # Create the CDF data variable
             dataset[variable_name] = xr.DataArray(
                 counter_data,
                 name=variable_name,
-                dims=self.config["dims"],
+                dims=dims,
                 attrs=attrs,
             )
 
@@ -216,30 +263,94 @@ class CoDICEL1aPipeline:
         dataset : xarray.Dataset
             ``xarray`` dataset for the data product, with added support variables.
         """
-        for variable_name in self.config["support_variables"]:
-            if variable_name == "energy_table":
-                variable_data = self.get_energy_table()
-                dims = ["esa_step"]
-                attrs = self.cdf_attrs.get_variable_attributes("esa_step")
+        # These variables can be gathered from the packet data
+        packet_data_variables = [
+            "rgfo_half_spin",
+            "nso_half_spin",
+            "sw_bias_gain_mode",
+            "st_bias_gain_mode",
+        ]
 
-            elif variable_name == "acquisition_time_per_step":
-                variable_data = self.get_acquisition_times()
-                dims = ["esa_step"]
-                attrs = self.cdf_attrs.get_variable_attributes(
-                    "acquisition_time_per_step"
+        hi_energy_table_variables = [
+            "energy_h",
+            "energy_he3",
+            "energy_he4",
+            "energy_c",
+            "energy_o",
+            "energy_ne_mg_si",
+            "energy_fe",
+            "energy_uh",
+            "energy_junk",
+        ]
+
+        for variable_name in self.config["support_variables"]:
+            # CoDICE-Hi energy tables are treated differently because values
+            # are binned and we need to record the energies _and_ their deltas
+            if variable_name in hi_energy_table_variables:
+                centers, deltas = self.get_hi_energy_table_data(
+                    variable_name.split("energy_")[-1]
                 )
 
-            else:
-                # TODO: Need to implement methods to gather and set other
-                #       support attributes
-                continue
+                # Add bin centers and deltas to the dataset
+                dataset[variable_name] = xr.DataArray(
+                    centers,
+                    dims=[variable_name],
+                    attrs=self.cdf_attrs.get_variable_attributes(
+                        f"{self.config['dataset_name'].split('_')[-1]}-{variable_name}"
+                    ),
+                )
+                dataset[f"{variable_name}_delta"] = xr.DataArray(
+                    deltas,
+                    dims=[f"{variable_name}_delta"],
+                    attrs=self.cdf_attrs.get_variable_attributes(
+                        f"{self.config['dataset_name'].split('_')[-1]}-{variable_name}_delta"
+                    ),
+                )
 
-            # Add variable to the dataset
-            dataset[variable_name] = xr.DataArray(
-                variable_data,
-                dims=dims,
-                attrs=attrs,
-            )
+            # Otherwise, support variable data can be gathered from nominal
+            # lookup tables or packet data
+            else:
+                # These variables require reading in external tables
+                if variable_name == "energy_table":
+                    variable_data = self.get_energy_table()
+                    dims = ["esa_step"]
+                    attrs = self.cdf_attrs.get_variable_attributes("energy_table")
+
+                elif variable_name == "acquisition_time_per_step":
+                    variable_data = self.get_acquisition_times()
+                    dims = ["esa_step"]
+                    attrs = self.cdf_attrs.get_variable_attributes(
+                        "acquisition_time_per_step"
+                    )
+
+                # These variables can be gathered straight from the packet data
+                elif variable_name in packet_data_variables:
+                    variable_data = self.dataset[variable_name].data
+                    dims = ["epoch"]
+                    attrs = self.cdf_attrs.get_variable_attributes(variable_name)
+
+                # Data quality is named differently in packet data and needs to be
+                # treated slightly differently
+                elif variable_name == "data_quality":
+                    variable_data = self.dataset.suspect.data
+                    dims = ["epoch"]
+                    attrs = self.cdf_attrs.get_variable_attributes("data_quality")
+
+                # Spin period requires the application of a conversion factor
+                # See Table B.5 in the algorithm document
+                elif variable_name == "spin_period":
+                    variable_data = (
+                        self.dataset.spin_period.data * constants.SPIN_PERIOD_CONVERSION
+                    )
+                    dims = ["epoch"]
+                    attrs = self.cdf_attrs.get_variable_attributes("spin_period")
+
+                # Add variable to the dataset
+                dataset[variable_name] = xr.DataArray(
+                    variable_data,
+                    dims=dims,
+                    attrs=attrs,
+                )
 
         return dataset
 
@@ -332,54 +443,83 @@ class CoDICEL1aPipeline:
 
         return energy_table
 
+    def get_hi_energy_table_data(
+        self, species: str
+    ) -> tuple[NDArray[float], NDArray[float]]:
+        """
+        Retrieve energy table data for CoDICE-Hi products.
+
+        This includes the centers and deltas of the energy bins for a given
+        species. These data eventually get included in the CoDICE-Hi CDF data
+        products.
+
+        Parameters
+        ----------
+        species : str
+            The species of interest, which determines which lookup table to
+            use (e.g. ``h``).
+
+        Returns
+        -------
+        centers : NDArray[float]
+            An array whose values represent the centers of the energy bins.
+        deltas : NDArray[float]
+            An array whose values represent the deltas of the energy bins.
+        """
+        data_product = self.config["dataset_name"].split("-")[-1].upper()
+        energy_table = getattr(constants, f"{data_product}_ENERGY_TABLE")[species]
+
+        # Find the centers and deltas of the energy bins
+        centers = np.array(
+            [
+                (energy_table[i] + energy_table[i + 1]) / 2
+                for i in range(len(energy_table) - 1)
+            ]
+        )
+        deltas = energy_table[1:] - centers
+
+        return centers, deltas
+
     def reshape_data(self) -> None:
         """
         Reshape the data arrays based on the data product being made.
 
         These data need to be divided up by species or priorities (or
         what I am calling "counters" as a general term), and re-arranged into
-        3D arrays representing dimensions such as spin sectors, positions, and
-        energies (depending on the data product).
+        4D arrays representing dimensions such as time, spin sectors, positions,
+        and energies (depending on the data product).
+
+        However, the existence and order of these dimensions can vary depending
+        on the specific data product, so we define this in the "input_dims"
+        and "output_dims" values configuration dictionary; the "input_dims"
+        defines how the dimensions are written into the packet data, while
+        "output_dims" defines how the dimensions should be written to the final
+        CDF product.
         """
+        # This will contain the reshaped data for all counters
         self.data = []
 
-        # For CoDICE-lo, data are a 3D arrays with a shape representing
-        # [<num_positions>,<num_spin_sectors>,<num_energy_steps>]
-        if self.config["instrument"] == "lo":
-            for packet_data in self.raw_data:
-                if packet_data:
-                    reshaped_packet_data = np.array(
-                        packet_data, dtype=np.uint32
-                    ).reshape(
-                        (
-                            self.config["num_counters"],
-                            self.config["num_positions"],
-                            self.config["num_spin_sectors"],
-                            self.config["num_energy_steps"],
-                        )
-                    )
-                    self.data.append(reshaped_packet_data)
-                else:
-                    self.data.append(None)
+        # First reshape the data based on how it is written to the data array of
+        # the packet data. The number of counters is the first dimension / axis.
+        reshape_dims = (
+            self.config["num_counters"],
+            *self.config["input_dims"].values(),
+        )
 
-        # For CoDICE-hi, data are a 3D array with a shape representing
-        # [<num_energy_steps>,<num_positions>,<num_spin_sectors>]
-        elif self.config["instrument"] == "hi":
-            for packet_data in self.raw_data:
-                if packet_data:
-                    reshaped_packet_data = np.array(
-                        packet_data, dtype=np.uint32
-                    ).reshape(
-                        (
-                            self.config["num_counters"],
-                            self.config["num_energy_steps"],
-                            self.config["num_positions"],
-                            self.config["num_spin_sectors"],
-                        )
-                    )
-                    self.data.append(reshaped_packet_data)
-                else:
-                    self.data.append(None)
+        # Then, transpose the data based on how the dimensions should be written
+        # to the CDF file. Since this is specific to each data product, we need
+        # to determine this dynamically based on the "output_dims" config.
+        input_keys = ["num_counters", *self.config["input_dims"].keys()]
+        output_keys = ["num_counters", *self.config["output_dims"].keys()]
+        transpose_axes = [input_keys.index(dim) for dim in output_keys]
+
+        for packet_data in self.raw_data:
+            reshaped_packet_data = np.array(packet_data, dtype=np.uint32).reshape(
+                reshape_dims
+            )
+            reshaped_cdf_data = np.transpose(reshaped_packet_data, axes=transpose_axes)
+
+            self.data.append(reshaped_cdf_data)
 
         # No longer need to keep the raw data around
         del self.raw_data
@@ -501,7 +641,23 @@ def create_hskp_dataset(
         attrs=cdf_attrs.get_global_attributes("imap_codice_l1a_hskp"),
     )
 
+    # These variables don't need to carry over from L0 to L1a
+    exclude_variables = [
+        "spare_1",
+        "spare_2",
+        "spare_3",
+        "spare_4",
+        "spare_5",
+        "spare_6",
+        "spare_62",
+        "spare_68",
+        "chksum",
+    ]
+
     for variable in packet:
+        if variable in exclude_variables:
+            continue
+
         attrs = cdf_attrs.get_variable_attributes(variable)
 
         dataset[variable] = xr.DataArray(

@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12']
     defaults:
       run:
         shell: bash
@@ -29,6 +29,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: Gr1N/setup-poetry@v8
+        with:
+          poetry-version: "1.8.0"
 
 
       - name: Install dependencies and app
@@ -40,16 +42,16 @@ jobs:
       - name: Testing
         id: test
         env:
-          RUN_EXTERNAL_KERNEL_MARK: ${{ contains(matrix.os, 'ubuntu') && matrix.python-version == '3.9' }}
+          USE_EXTERNAL_DATA: ${{ contains(matrix.os, 'ubuntu') && matrix.python-version == '3.10' }}
         run: |
           # Ignore the network marks from the remote test environment
-          if [ "$RUN_EXTERNAL_KERNEL_MARK" = "true" ]; then
+          if [ "$USE_EXTERNAL_DATA" = "true" ]; then
             poetry run pytest --color=yes --cov --cov-report=xml
           else
-            poetry run pytest --color=yes --cov --cov-report=xml -m "not external_kernel"
+            poetry run pytest --color=yes --cov --cov-report=xml -m "not external_kernel and not external_test_data"
           fi
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
