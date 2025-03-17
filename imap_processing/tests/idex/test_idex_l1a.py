@@ -136,7 +136,7 @@ def test_validate_l1a_idex_data_variables(
         "Time (high sampling)": "time_high_sample_rate",
         "Time (low sampling)": "time_low_sample_rate",
     }
-
+    decom_test_data = decom_test_data.isel(epoch=slice(0, num_events))
     # The Engineering data is converting to UTC, and the SDC is converting to J2000,
     # for 'epoch' and 'Timestamp' so this test is using the raw time value 'SCHOARSE' to
     # validate time
@@ -151,9 +151,7 @@ def test_validate_l1a_idex_data_variables(
             else:
                 cdf_var = var.lower()
 
-            assert np.array_equal(
-                decom_test_data[cdf_var][:num_events], l1a_examples[var]
-            ), (
+            assert np.array_equal(decom_test_data[cdf_var], l1a_examples[var]), (
                 f"The array '{cdf_var}' does not equal the expected example array "
                 f"'{var}' produced by the IDEX team"
             )
