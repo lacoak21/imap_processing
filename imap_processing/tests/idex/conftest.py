@@ -5,10 +5,10 @@ import xarray as xr
 from imap_processing import imap_module_directory
 from imap_processing.idex.idex_l1a import PacketParser
 
-TEST_DATA_PATH = imap_module_directory / "tests" / "idex"
+TEST_DATA_PATH = imap_module_directory / "tests" / "idex" / "test_data"
 
-TEST_L0_FILE = TEST_DATA_PATH / "test_data" / "imap_idex_l0_raw_20231218_v001.pkts"
-L1A_EXAMPLE_FILE = TEST_DATA_PATH / "validation_files" / "idex_l1a_validation_file.h5"
+TEST_L0_FILE = TEST_DATA_PATH / "imap_idex_l0_raw_20231218_v001.pkts"
+L1A_EXAMPLE_FILE = TEST_DATA_PATH / "idex_l1a_validation_file.h5"
 
 pytestmark = pytest.mark.external_test_data
 
