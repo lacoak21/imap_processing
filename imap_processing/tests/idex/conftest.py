@@ -38,7 +38,7 @@ def decom_test_data() -> xr.Dataset:
     return PacketParser(TEST_L0_FILE, "001").data
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def l1a_example_data(_download_test_data):
     """
     Pytest fixture to load example L1A data (produced by the IDEX team) for testing.
