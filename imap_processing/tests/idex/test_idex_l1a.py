@@ -22,7 +22,6 @@ def test_idex_cdf_file(decom_test_data: xr.Dataset):
     decom_test_data : xarray.Dataset
         The dataset to test with
     """
-
     file_name = write_cdf(decom_test_data)
 
     assert file_name.exists()
@@ -105,27 +104,21 @@ def test_idex_tof_high_data_from_cdf(decom_test_data: xr.Dataset):
 
 
 def test_validate_l1a_idex_data_variables(
-    decom_test_data: xr.Dataset, l1a_example_data: dict
+    decom_test_data: xr.Dataset, l1a_example_data: xr.Dataset
 ):
     """
     Verify that each of the 6 waveform and telemetry arrays are equal to the
     corresponding array produced by the IDEX team using the same l0 file.
-
-    The comparison is limited to `num_events` because the L1A example contains fewer
-    events (due to file size requirements) than the SCD dataset.
 
 
     Parameters
     ----------
     decom_test_data : xarray.Dataset
         The dataset to test with
-    l1a_example_data: dict
-        A dictionary containing the 6 waveform and telemetry arrays
+    l1a_example_data: xarray.Dataset
+        A dataset containing the 6 waveform and telemetry arrays
     """
     # Lookup table to match the SDS array names to the Idex Team array names
-    l1a_examples = l1a_example_data[0]
-    # Number of events in the l1a_examples dict for each data_variable
-    num_events = l1a_example_data[1]
     match_variables = {
         "TOF L": "TOF_Low",
         "TOF H": "TOF_High",
@@ -136,22 +129,18 @@ def test_validate_l1a_idex_data_variables(
         "Time (high sampling)": "time_high_sample_rate",
         "Time (low sampling)": "time_low_sample_rate",
     }
-    decom_test_data = decom_test_data.isel(epoch=slice(0, num_events))
     # The Engineering data is converting to UTC, and the SDC is converting to J2000,
     # for 'epoch' and 'Timestamp' so this test is using the raw time value 'SCHOARSE' to
     # validate time
-    arrays_to_skip = ["Timestamp", "Epoch"]
+    arrays_to_skip = ["Timestamp", "Epoch", "event"]
 
     # loop through all keys from the l1a example dict
-    for var in l1a_examples.keys():
+    for var in l1a_example_data.variables:
         if var not in arrays_to_skip:
             # Find the corresponding array name
-            if var in match_variables.keys():
-                cdf_var = match_variables[var]
-            else:
-                cdf_var = var.lower()
+            cdf_var = match_variables.get(var, var.lower())
 
-            assert np.array_equal(decom_test_data[cdf_var], l1a_examples[var]), (
+            assert np.array_equal(decom_test_data[cdf_var], l1a_example_data[var]), (
                 f"The array '{cdf_var}' does not equal the expected example array "
                 f"'{var}' produced by the IDEX team"
             )

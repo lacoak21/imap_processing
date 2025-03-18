@@ -1,13 +1,16 @@
-from pathlib import Path
-from typing import Optional
-
-import h5py
 import numpy as np
 import pytest
 import xarray as xr
 
 from imap_processing import imap_module_directory
 from imap_processing.idex.idex_l1a import PacketParser
+
+TEST_DATA_PATH = imap_module_directory / "tests" / "idex"
+
+TEST_L0_FILE = TEST_DATA_PATH / "test_data" / "imap_idex_l0_raw_20231218_v001.pkts"
+L1A_EXAMPLE_FILE = TEST_DATA_PATH / "validation_files" / "idex_l1a_validation_file.h5"
+
+pytestmark = pytest.mark.external_test_data
 
 SPICE_ARRAYS = [
     "ephemeris_position_x",
@@ -32,14 +35,11 @@ def decom_test_data() -> xr.Dataset:
     dataset : xarray.Dataset
         A ``xarray`` dataset containing the test data
     """
-    test_file = Path(
-        f"{imap_module_directory}/tests/idex/test_data/imap_idex_l0_raw_20231218_v001.pkts"
-    )
-    return PacketParser(test_file, "001").data
+    return PacketParser(TEST_L0_FILE, "001").data
 
 
 @pytest.fixture()
-def l1a_example_data():
+def l1a_example_data(_download_test_data):
     """
     Pytest fixture to load example L1A data (produced by the IDEX team) for testing.
 
@@ -48,13 +48,7 @@ def l1a_example_data():
     dict
       A dictionary containing the 6 waveform and telemetry arrays
     """
-    l1a_test_path = (
-        f"{imap_module_directory}/tests/idex/validation_files/L1A_Example.h5"
-    )
-    # The H5 files were modified to include only the first 6 events to ensure the file
-    # size stays below the maximum limit of 1MB.
-    num_events = 6
-    return load_hdf_file(l1a_test_path, num_events=num_events), num_events
+    return load_hdf_file(L1A_EXAMPLE_FILE)
 
 
 def get_spice_data_side_effect_func(l1a_ds, idex_attrs):
@@ -71,94 +65,42 @@ def get_spice_data_side_effect_func(l1a_ds, idex_attrs):
     }
 
 
-def load_hdf_file(path: str, num_events: Optional[int] = None) -> dict:
+def load_hdf_file(path: str) -> xr.Dataset:
     """
-    Loads an HDF5 file produced by the IDEX team into a dictionary where the keys
-    correspond to the groups in the file, and the values are arrays containing the data.
+    Loads an HDF5 file produced by the IDEX team into a dataset.
 
-    The HDF5 files are organized by event number, where each event contains groups
-    for metadata and data items. This function consolidates all events into a single
-    array to be consistent with the cdf organization.
-    For example, if there are 14 events and the metadata value "category" is extracted,
-    it will appear in the output dictionary as:
-    {"category": np.ndarray of shape (14,)}.
-
-    Parameters:
+    Parameters
     ----------
     path : str
         The file path to the HDF5 file.
-    num_events : int, optional
-        The number of events to extract. If None, all events in the file are processed.
 
-    Returns:
+    Returns
     -------
-    dict
-        A dictionary containing the extracted data.
-
-    Warnings:
-    --------
-    - This function assumes the HDF5 file is structured with top-level groups named
-      numerically (e.g., "1", "2", "3") representing events.
+    dataset
+        A dataset containing the extracted data.
     """
+    # Load hdf5 data into a datatree
+    datatree = xr.open_datatree(path, engine="netcdf4")
+    datasets = []
+    # Sort datatree by the event number
+    datatree = sorted(datatree.items(), key=lambda x: int(x[0]))
+    # Iterate through every nested tree in the datatree (Each nested tree represents
+    # data from one event).
+    # Rename the dimensions across every tree to be the same
+    # Add an "event" dimension which will allow them all to be concatenated together.
+    for event, tree in datatree:
+        event_num = int(event)
+        # Extract the metadata
+        metadata = tree.Metadata.to_dataset().expand_dims({"event": [event_num]})
+        ds = tree.to_dataset()
+        # Sort dimensions by shape. The high sampling time dimension is always less
+        # than the low sampling time.
+        dims = [k for k, v in sorted(ds.dims.items(), key=lambda item: item[1])]
+        ds = ds.rename({dims[0]: "time_low", dims[1]: "time_high"}).expand_dims(
+            {"event": [event_num]}
+        )
+        datasets.append(xr.merge([ds, metadata]))
 
-    def collect_arrays(name, obs):
-        """
-        Collects data from HDF5 datasets into the dictionary `data_vars`.
+    example_dataset = xr.concat(datasets, dim="event")
 
-        Parameters:
-        ----------
-        name : str
-            The full path of the dataset in the HDF5 file.
-        obs : h5py.Dataset or h5py.Group
-            The object at the current position in the HDF5 file.
-        """
-        # Split the full dataset path to extract the group key and event number
-        names = name.split("/")
-        group_key = names[-1]
-        event = names[0]
-
-        # Check if the event name can be converted to an integer
-        # This function assumes all top level groups are event numbers represented as
-        # strings
-        try:
-            event_number = int(event)
-        except ValueError as e:
-            raise ValueError(
-                f"Invalid group name '{event}': Top-level groups must be integers."
-            ) from e
-
-        # Process data only if the event number is within the specified range
-        if event_number <= num_events:
-            if isinstance(obs, h5py.Dataset):
-                # Initialize an array for the group key if not already present
-                if group_key not in data_vars.keys():
-                    # handle arrays
-                    if isinstance(obs[()], np.ndarray):
-                        data_vars[group_key] = np.zeros(
-                            (num_events, len(obs[()])), dtype=type(obs[()])
-                        )
-                    # Handle byte strings
-                    elif isinstance(obs[()], bytes):
-                        data_vars[group_key] = np.zeros(num_events, dtype=object)
-                    # Handle other types (scalars)
-                    else:
-                        data_vars[group_key] = np.zeros(num_events, dtype=obs[()].dtype)
-                # Convert bytes to string
-                if isinstance(obs[()], bytes):
-                    value = obs.asstr()[()]
-                else:
-                    value = obs[()]
-                # store value at event number
-                data_vars[group_key][int(event) - 1] = value
-
-    # Open the HDF5 file
-    f = h5py.File(path, "r")
-    # Get how many events to load
-    if not num_events or num_events > len(f.keys()):
-        num_events = len(f.keys())
-    # Initialize dictionary
-    data_vars = {}
-    # Populate dict
-    f.visititems(collect_arrays)
-
-    return data_vars
+    return example_dataset
