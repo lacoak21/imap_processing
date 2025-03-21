@@ -36,7 +36,7 @@ imap-data-access = ">=0.10.1"
 python = ">=3.10,<4"
 space_packet_parser = "^5.0.1"
 spiceypy = ">=6.0.0"
-xarray = '>=2023.0.0'
+xarray = '>=2024.10.0'
 numpy = "<=3"
 sammi-cdf = "^1.0"
 scipy = "^1.13"

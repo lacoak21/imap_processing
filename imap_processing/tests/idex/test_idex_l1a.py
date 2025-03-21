@@ -140,9 +140,11 @@ def test_validate_l1a_idex_data_variables(
             # Find the corresponding array name
             cdf_var = match_variables.get(var, var.lower())
 
-            assert np.array_equal(decom_test_data[cdf_var], l1a_example_data[var]), (
-                f"The array '{cdf_var}' does not equal the expected example array "
-                f"'{var}' produced by the IDEX team"
+            np.testing.assert_array_equal(
+                decom_test_data[cdf_var],
+                l1a_example_data[var],
+                f"The array '{cdf_var}' does not equal the expected example "
+                f"array '{var}' produced by the IDEX team",
             )
 
 
