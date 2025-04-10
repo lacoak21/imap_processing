@@ -9,7 +9,6 @@ from imap_processing.idex.idex_constants import SPICE_ARRAYS
 from imap_processing.idex.idex_l1a import PacketParser
 from imap_processing.idex.idex_l1b import idex_l1b
 from imap_processing.idex.idex_l2a import idex_l2a
-from imap_processing.idex.idex_utils import get_idex_attrs
 
 TEST_DATA_PATH = imap_module_directory / "tests" / "idex" / "test_data"
 

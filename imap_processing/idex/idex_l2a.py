@@ -32,7 +32,7 @@ from imap_processing import imap_module_directory
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
 from imap_processing.idex import idex_constants
 from imap_processing.idex.idex_constants import SPICE_ARRAYS
-from imap_processing.idex.idex_utils import setup_dataset
+from imap_processing.idex.idex_utils import setup_dataset, get_idex_attrs
 
 logger = logging.getLogger(__name__)
 
@@ -75,12 +75,12 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
     l1b_dataset : xarray.Dataset
         The``xarray`` dataset containing the science data and supporting metadata.
     """
-    # TODO replace with idex_attrs = get_idex_attrs("l2a") when attrs are added
-    idex_attrs = ImapCdfAttributes()
-    idex_attrs.add_instrument_global_attrs("idex")
+    # Get attributes
+    idex_attrs = get_idex_attrs("l2a")
     logger.info(
         f"Running IDEX L2A processing on dataset: {l1b_dataset.attrs['Logical_source']}"
     )
+
 
     tof_high = l1b_dataset["TOF_High"]
     hs_time = l1b_dataset["time_high_sample_rate"]
@@ -97,6 +97,7 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
         name="mass_scale",
         data=mass_scales,
         dims=("epoch", "time_high_sample_rate_index"),
+        attrs=idex_attrs.get_variable_attributes("mass_scale", check_schema=False),
     )
     snr = calculate_snr(tof_high, hs_time)
     # Find peaks for each event. The peaks represent a TOF of an ion.
@@ -126,6 +127,13 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
         ],
         vectorize=True,
         keep_attrs=True,
+    )
+    peak_fits_params.attrs = idex_attrs.get_variable_attributes(
+        "tof_peak_fit_parameters", check_schema=False
+    )
+    peak_fits_params.rename("tof_peak_fit_parameters")
+    area_under_fits.attrs = idex_attrs.get_variable_attributes(
+        "tof_peak_area_under_fit", check_schema=False
     )
 
     area_under_fits.rename("tof_peak_area_under_fit")
@@ -186,36 +194,49 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
     l2a_dataset["tof_peak_kappa"] = xr.DataArray(
         kappa,
         dims="epoch",
+        attrs=idex_attrs.get_variable_attributes("tof_peak_kappa", check_schema=False),
     )
     l2a_dataset["tof_snr"] = xr.DataArray(
         snr,
         dims="epoch",
+        attrs=idex_attrs.get_variable_attributes("tof_snr", check_schema=False),
     )
     # Add index and label arrays
     l2a_dataset["mass_index"] = xr.DataArray(
         name="mass_index",
         data=np.arange(len(area_under_fits[0])),
         dims="mass_index",
+        attrs=idex_attrs.get_variable_attributes("mass_index", check_schema=False),
     )
     l2a_dataset["peak_fit_parameter_index"] = xr.DataArray(
         name="peak_fit_parameter_index",
         data=np.arange(len(l2a_dataset["tof_peak_fit_parameters"][0][0])),
         dims="peak_fit_parameter_index",
+        attrs=idex_attrs.get_variable_attributes(
+            "peak_fit_parameter_index", check_schema=False
+        ),
     )
     l2a_dataset["target_fit_parameter_index"] = xr.DataArray(
         name="target_fit_parameter_index",
-        data=np.arange(5),
+        data=np.arange(5),  # TODO do i need this index,
         dims="target_fit_parameter_index",
+        attrs=idex_attrs.get_variable_attributes(
+            "target_fit_parameter_index", check_schema=False
+        ),
     )
     l2a_dataset["mass_labels"] = xr.DataArray(
         name="mass_labels",
         data=l2a_dataset.mass_index.astype(str),
         dims="mass_index",
+        attrs=idex_attrs.get_variable_attributes("mass_labels", check_schema=False),
     )
     l2a_dataset["peak_fit_parameter_labels"] = xr.DataArray(
         name="peak_fit_parameter_labels",
         data=np.array(["mu", "sigma", "lambda"]),
         dims="peak_fit_parameter_index",
+        attrs=idex_attrs.get_variable_attributes(
+            "peak_fit_parameter_labels", check_schema=False
+        ),
     )
     l2a_dataset["target_fit_parameter_labels"] = xr.DataArray(
         name="target_fit_parameter_labels",
@@ -229,6 +250,9 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
             ]
         ),
         dims="target_fit_parameter_index",
+        attrs=idex_attrs.get_variable_attributes(
+            "target_fit_parameter_labels", check_schema=False
+        ),
     )
     logger.info("IDEX L2A science data processing completed.")
     return l2a_dataset
