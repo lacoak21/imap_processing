@@ -199,7 +199,6 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
 
     l2a_dataset["mass"] = mass_scales_da
     # Update global attributes
-    idex_attrs = get_idex_attrs("l2a")
     l2a_dataset.attrs = idex_attrs.get_global_attributes("imap_idex_l2a_sci")
 
     l2a_dataset["tof_peak_kappa"] = xr.DataArray(
