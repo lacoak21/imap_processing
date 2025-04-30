@@ -31,6 +31,7 @@ from scipy.stats import exponnorm
 from imap_processing import imap_module_directory
 from imap_processing.idex import idex_constants
 from imap_processing.idex.idex_constants import SPICE_ARRAYS
+from imap_processing.idex.idex_utils import setup_dataset
 from imap_processing.idex.idex_utils import setup_dataset, get_idex_attrs
 
 logger = logging.getLogger(__name__)
@@ -155,7 +156,6 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
     l2a_dataset = setup_dataset(
         l1b_dataset, prefixes + SPICE_ARRAYS, idex_attrs, data_vars
     )
-    l2a_dataset.attrs = idex_attrs.get_global_attributes("imap_idex_l2a_sci")
 
     for waveform in ["Target_Low", "Target_High", "Ion_Grid"]:
         # Get the dust mass estimates and fit results
@@ -192,8 +192,7 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
         for name, data in output_vars.items():
             l2a_dataset[name] = data
 
-    l2a_dataset["mass"] = mass_scales_das
-    l2a_dataset.attrs = idex_attrs.get_global_attributes("imap_idex_l2a_sci")
+    l2a_dataset["mass"] = mass_scales_da
 
     l2a_dataset["tof_peak_kappa"] = xr.DataArray(
         kappa,
