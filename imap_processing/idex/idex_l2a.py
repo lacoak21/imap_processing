@@ -29,7 +29,6 @@ from scipy.signal import butter, detrend, filtfilt, find_peaks
 from scipy.stats import exponnorm
 
 from imap_processing import imap_module_directory
-from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
 from imap_processing.idex import idex_constants
 from imap_processing.idex.idex_constants import SPICE_ARRAYS
 from imap_processing.idex.idex_utils import setup_dataset, get_idex_attrs
@@ -81,7 +80,6 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
         f"Running IDEX L2A processing on dataset: {l1b_dataset.attrs['Logical_source']}"
     )
 
-
     tof_high = l1b_dataset["TOF_High"]
     hs_time = l1b_dataset["time_high_sample_rate"]
     ls_time = l1b_dataset["time_low_sample_rate"]
@@ -131,9 +129,14 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
     peak_fits_params.attrs = idex_attrs.get_variable_attributes(
         "tof_peak_fit_parameters", check_schema=False
     )
-    peak_fits_params.rename("tof_peak_fit_parameters")
     area_under_fits.attrs = idex_attrs.get_variable_attributes(
         "tof_peak_area_under_fit", check_schema=False
+    )
+    fit_chisqr.attrs = idex_attrs.get_variable_attributes(
+        "tof_peak_chi_squared", check_schema=False
+    )
+    fit_redchi.attrs = idex_attrs.get_variable_attributes(
+        "tof_peak_reduced_chi_squared", check_schema=False
     )
 
     area_under_fits.rename("tof_peak_area_under_fit")
@@ -189,7 +192,8 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
         for name, data in output_vars.items():
             l2a_dataset[name] = data
 
-    l2a_dataset["mass"] = mass_scales_da
+    l2a_dataset["mass"] = mass_scales_das
+    l2a_dataset.attrs = idex_attrs.get_global_attributes("imap_idex_l2a_sci")
 
     l2a_dataset["tof_peak_kappa"] = xr.DataArray(
         kappa,
@@ -218,7 +222,7 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
     )
     l2a_dataset["target_fit_parameter_index"] = xr.DataArray(
         name="target_fit_parameter_index",
-        data=np.arange(5),  # TODO do i need this index,
+        data=np.arange(5),
         dims="target_fit_parameter_index",
         attrs=idex_attrs.get_variable_attributes(
             "target_fit_parameter_index", check_schema=False
