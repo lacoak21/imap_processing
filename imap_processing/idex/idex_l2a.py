@@ -31,6 +31,7 @@ from scipy.stats import exponnorm
 from imap_processing import imap_module_directory
 from imap_processing.idex import idex_constants
 from imap_processing.idex.idex_constants import SPICE_ARRAYS
+from imap_processing.idex.idex_utils import get_idex_attrs, setup_dataset
 from imap_processing.idex.idex_utils import setup_dataset
 from imap_processing.idex.idex_utils import setup_dataset, get_idex_attrs
 
@@ -153,6 +154,7 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
         "tof_peak_chi_square": fit_chisqr,
         "tof_peak_reduced_chi_square": fit_redchi,
     }
+
     l2a_dataset = setup_dataset(
         l1b_dataset, prefixes + SPICE_ARRAYS, idex_attrs, data_vars
     )
@@ -191,8 +193,14 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
         # Add variables to dataset with attrs
         for name, data in output_vars.items():
             l2a_dataset[name] = data
+            l2a_dataset[name].attrs = idex_attrs.get_variable_attributes(
+                name, check_schema=False
+            )
 
     l2a_dataset["mass"] = mass_scales_da
+    # Update global attributes
+    idex_attrs = get_idex_attrs("l2a")
+    l2a_dataset.attrs = idex_attrs.get_global_attributes("imap_idex_l2a_sci")
 
     l2a_dataset["tof_peak_kappa"] = xr.DataArray(
         kappa,
