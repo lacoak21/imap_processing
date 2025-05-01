@@ -292,27 +292,35 @@ def test_decode_sub_frame_psel_3():
     assert ints == [1, 2, 4, 1, 5]
 
 
-def test_cdf_creation_catlst(decom_test_data_catlst: xr.Dataset):
-    """Verify that a sample of the data can be written to a cdf without errors.
+def test_catlst_dataset(decom_test_data_catlst: xr.Dataset):
+    """Verify that the dataset contains what we expect and can be written to a cdf.
 
     Parameters
     ----------
     decom_test_data_catlst : xarray.Dataset
         The dataset to test with
     """
+    assert "shcoarse" in decom_test_data_catlst
+    assert "shfine" in decom_test_data_catlst
+    # Assert that the dataset can be written to a CDF file
     filename = write_cdf(decom_test_data_catlst)
 
     assert filename.name == "imap_idex_l1a_catlst_20241206_v999.cdf"
 
 
-def test_cdf_creation_evt(decom_test_data_evt: xr.Dataset):
-    """Verify that a sample of the data can be written to a cdf without errors.
+def test_evt_dataset(decom_test_data_evt: xr.Dataset):
+    """Verify that the dataset contains what we expect and can be written to a cdf.
 
     Parameters
     ----------
     decom_test_data_evt : xarray.Dataset
         The dataset to test with
     """
+    assert "elid_evtpkt" in decom_test_data_evt
+    assert "shcoarse" in decom_test_data_evt
+    assert "shfine" in decom_test_data_evt
+
+    # Assert that the dataset can be written to a CDF file
     filename = write_cdf(decom_test_data_evt)
 
     assert filename.name == "imap_idex_l1a_evt_20250108_v999.cdf"

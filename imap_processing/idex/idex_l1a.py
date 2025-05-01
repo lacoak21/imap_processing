@@ -89,6 +89,7 @@ class PacketParser:
             logger.info("Processing IDEX L1A Event Message data.")
             data = datset_by_apid[IDEXAPID.IDEX_EVT]
             data.attrs = self.idex_attrs.get_global_attributes("imap_idex_l1a_evt")
+            data["epoch"] = calculate_idex_epoch_time(data["shcoarse"], data["shfine"])
             data["epoch"].attrs = epoch_attrs
             self.data.append(data)
 
@@ -96,6 +97,7 @@ class PacketParser:
             logger.info("Processing IDEX L1A Catalog List Summary data.")
             data = datset_by_apid[IDEXAPID.IDEX_CATLST]
             data.attrs = self.idex_attrs.get_global_attributes("imap_idex_l1a_catlst")
+            data["epoch"] = calculate_idex_epoch_time(data["shcoarse"], data["shfine"])
             data["epoch"].attrs = epoch_attrs
             self.data.append(data)
 
@@ -228,6 +230,39 @@ def _read_waveform_bits(waveform_raw: str, high_sample: bool = True) -> list[int
     return ints
 
 
+def calculate_idex_epoch_time(
+    shcoarse_time: Union[float, np.ndarray], shfine_time: Union[float, np.ndarray]
+) -> npt.NDArray[np.int64]:
+    """
+    Calculate the epoch time from the FPGA header time variables.
+
+    We are given the MET seconds, we need to convert it to nanoseconds in j2000. IDEX
+    epoch is calculated with shcoarse and shfine time values. The shcoarse time counts
+    the number of whole seconds elapsed since the epoch (Jan 1st 2010), while shfine
+    time counts the number of additional 20-microsecond intervals beyond the whole
+    seconds. Together, these time measurements establish when a dust event took place.
+
+    Parameters
+    ----------
+    shcoarse_time : float, numpy.ndarray
+        The coarse time value from the FPGA header. Number of seconds since epoch.
+    shfine_time : float, numpy.ndarray
+        The fine time value from the FPGA header. Number of 20 microsecond "ticks" since
+         the last second.
+
+    Returns
+    -------
+    numpy.ndarray[numpy.int64]
+        The mission elapsed time converted to nanoseconds since the J2000 epoch
+        in the terrestrial time (TT) timescale.
+    """
+    # Number of microseconds since the last second
+    microseconds_since_last_second = 20 * shfine_time
+    # Get met time in seconds including shfine
+    met = shcoarse_time + microseconds_since_last_second * 1e-6
+    return met_to_ttj2000ns(met)
+
+
 class RawDustEvent:
     """
     Encapsulate IDEX Raw Dust Event.
@@ -259,8 +294,6 @@ class RawDustEvent:
     -------
     _append_raw_data(scitype, bits)
         Append data to the appropriate bit string.
-    _set_impact_time(packet)
-        Calculate the datetime64 from the FPGA header information.
     _set_sample_trigger_times(packet)
         Calculate the actual sample trigger time.
     _parse_high_sample_waveform(waveform_raw)
@@ -308,7 +341,9 @@ class RawDustEvent:
         """
         # Calculate the impact time in seconds since epoch
         self.impact_time = 0
-        self._set_impact_time(header_packet)
+        self.impact_time = calculate_idex_epoch_time(
+            header_packet["SHCOARSE"], header_packet["SHFINE"]
+        )
 
         # The actual trigger time for the low and high sample rate in
         # microseconds since the impact time
@@ -366,35 +401,6 @@ class RawDustEvent:
             self.Ion_Grid_bits += bits
         else:
             logger.warning("Unknown science type received: [%s]", scitype)
-
-    def _set_impact_time(self, packet: space_packet_parser.packets.CCSDSPacket) -> None:
-        """
-        Calculate the impact time from the FPGA header information.
-
-        We are given the MET seconds, we need convert it to UTC in type
-        ``np.datetime64``.
-
-        Parameters
-        ----------
-        packet : space_packet_parser.packets.CCSDSPacket
-            The IDEX FPGA header packet.
-
-        Notes
-        -----
-        TODO: This conversion is temporary for now, and will need SPICE in the
-              future. IDEX has set the time launch to Jan 1 2012 for calibration
-              testing.
-        """
-        # Number of seconds since epoch (nominally the launch time)
-        seconds_since_launch = packet["SHCOARSE"]
-        # Number of 20 microsecond "ticks" since the last second
-        num_of_20_microsecond_increments = packet["SHFINE"]
-        # Number of microseconds since the last second
-        microseconds_since_last_second = 20 * num_of_20_microsecond_increments
-        # Get the datetime of Jan 1 2012 as the start date
-        met = seconds_since_launch + microseconds_since_last_second * 1e-6
-
-        self.impact_time = met_to_ttj2000ns(met)
 
     def _set_sample_trigger_times(
         self, packet: space_packet_parser.packets.CCSDSPacket

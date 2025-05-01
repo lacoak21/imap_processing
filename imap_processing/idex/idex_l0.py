@@ -40,6 +40,8 @@ def decom_packets(
     hk_xtce_file = f"{xtce_base_path}/idex_housekeeping_packet_definition.xml"
 
     science_decom_packet_list = decom.decom_packets(packet_file, science_xtce_file)
-    datasets_by_apid = packet_file_to_datasets(packet_file, hk_xtce_file)
+    datasets_by_apid = packet_file_to_datasets(
+        packet_file, hk_xtce_file, use_derived_value=True
+    )
 
     return list(science_decom_packet_list), datasets_by_apid
