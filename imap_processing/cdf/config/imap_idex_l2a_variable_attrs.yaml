@@ -17,6 +17,7 @@ fit_parameter_base: &fit_parameter_base
   FORMAT: F12.6
   FILLVAL: *double_fillval
   DISPLAY_TYPE: no_plot
+  DICT_KEY: SPASE>Particle>ParticleType:Dust>ParticleQuantity:ChargeState>Qualifier:Fit
 
 impact_charge_base: &impact_charge_base
   UNITS: C
@@ -28,6 +29,7 @@ impact_charge_base: &impact_charge_base
   FORMAT: F12.4
   FILLVAL: *double_fillval
   LABLAXIS: "Impact Charge"
+  DICT_KEY: SPASE>Particle>ParticleType:Dust>ParticleQuantity:ChargeState>Qualifier:Derived
 
 mass_estimate_base: &mass_estimate_base
   UNITS: kg
@@ -39,6 +41,7 @@ mass_estimate_base: &mass_estimate_base
   FORMAT: F10.4
   FILLVAL: *double_fillval
   LABLAXIS: "Dust Mass Estimate"
+  DICT_KEY: SPASE>Particle>ParticleType:Dust>ParticleQuantity:Mass>Qualifier:Derived
 
 chi_square_base: &chi_square_base
   UNITS: " "
@@ -50,6 +53,7 @@ chi_square_base: &chi_square_base
   FORMAT: F12.5
   FILLVAL: *double_fillval
   LABLAXIS: "Chi Square"
+  DICT_KEY: SPASE>Support>SupportQuantity:DataQuality
 
 fit_results_base: &fit_results_base
   UNITS: pC
@@ -62,6 +66,7 @@ fit_results_base: &fit_results_base
   DISPLAY_TYPE: time_series
   FORMAT: F12.6
   FILLVAL: *double_fillval
+  DICT_KEY: SPASE>Particle>ParticleType:Dust>ParticleQuantity:ChargeState>Qualifier:Derived
 
 # <=== LABL_PTR_i Attributes ===>
 peak_fit_parameter_labels:
@@ -94,6 +99,7 @@ peak_fit_parameter_index:
   VALIDMAX: 2
   FILLVAL: *int_fillval
   DISPLAY_TYPE: no_plot
+  DICT_KEY: SPASE>Support>SupportQuantity:Other # TODO what to do for indices?
 
 target_fit_parameter_index:
   CATDESC: "Target fit parameter index"
@@ -105,6 +111,7 @@ target_fit_parameter_index:
   VALIDMAX: 2
   FILLVAL: *int_fillval
   DISPLAY_TYPE: no_plot
+  DICT_KEY: SPASE>Support>SupportQuantity:Other # TODO what to do for indices?
 
 mass_index:
   CATDESC: "Mass index values from 1 to 500"
@@ -116,17 +123,9 @@ mass_index:
   VALIDMAX: 500
   FILLVAL: *int_fillval
   DISPLAY_TYPE: no_plot
+  DICT_KEY: SPASE>Support>SupportQuantity:Other # TODO what to do for indices?
 
 # <=== Data Attributes ===>
-peak_fit_parameters:
-  CATDESC: "TOF peak EMG fit parameters."
-  FIELDNAM: "Peak Fit Parameters"
-  UNITS: " "
-  FILLVAL: *double_fillval
-  VAR_TYPE: support_data
-  DISPLAY_TYPE: no_plot
-  LABLAXIS: "EMG Fit Parameters"
-  FORMAT: F12.4
 
 tof_snr:
   CATDESC: "TOF High signal to noise ratio."
@@ -140,6 +139,7 @@ tof_snr:
   FORMAT: F10.3
   FILLVAL: *double_fillval
   LABLAXIS: "TOF High SNR"
+  DICT_KEY: SPASE>Support>SupportQuantity:DataQuality
 
 tof_peak_kappa:
   CATDESC: "TOF High spectrum with x-axis converted from time to mass."
@@ -153,6 +153,7 @@ tof_peak_kappa:
   FORMAT: F10.3
   FILLVAL: *double_fillval
   LABLAXIS: "TOF High Kappa"
+  DICT_KEY: SPASE>Support>SupportQuantity:DataQuality
 
 tof_peak_fit_parameters:
   CATDESC: "EMG fit parameters (mu, sigma, lambda) for TOF High peaks."
@@ -170,6 +171,7 @@ tof_peak_fit_parameters:
   FORMAT: F12.6
   FILLVAL: *double_fillval
   DISPLAY_TYPE: no_plot
+  DICT_KEY: SPASE>Particle>ParticleType:Ion>ParticleQuantity:ChargeState>Qualifier:Fit # TODO charge state?
 
 tof_peak_area_under_fit:
   CATDESC: "Area under the EMG curve for each mass peak."
@@ -185,6 +187,7 @@ tof_peak_area_under_fit:
   DISPLAY_TYPE: spectrogram
   FORMAT: F12.6
   FILLVAL: *double_fillval
+  DICT_KEY: SPASE>Particle>ParticleType:Ion>ParticleQuantity:ChargeState>Qualifier:Integral
 
 tof_peak_chi_squared:
   <<: *chi_square_base
@@ -210,6 +213,7 @@ mass_scale:
   LABLAXIS: "Mass Scale"
   DISPLAY_TYPE: spectrogram
   FORMAT: F10.3
+  DICT_KEY: SPASE>Support>SupportQuantity:Temporal
 
 target_low_fit_parameters:
   <<: *fit_parameter_base
