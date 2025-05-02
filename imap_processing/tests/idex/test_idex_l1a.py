@@ -12,6 +12,7 @@ from imap_processing import imap_module_directory
 from imap_processing.cdf.utils import load_cdf, write_cdf
 from imap_processing.idex.decode import _decode_sub_frame, read_bits, rice_decode
 from imap_processing.idex.idex_l1a import PacketParser
+from imap_processing.spice.time import met_to_ttj2000ns
 
 
 def test_idex_cdf_file(decom_test_data_sci: xr.Dataset):
@@ -302,6 +303,11 @@ def test_catlst_dataset(decom_test_data_catlst: xr.Dataset):
     """
     assert "shcoarse" in decom_test_data_catlst
     assert "shfine" in decom_test_data_catlst
+    # Assert epoch is calculated using fine grained clock ticks
+    expected_epoch = met_to_ttj2000ns(
+        decom_test_data_catlst["shcoarse"] + decom_test_data_catlst["shfine"] * 20e-6
+    )
+    np.testing.assert_array_equal(decom_test_data_catlst.epoch, expected_epoch)
     # Assert that the dataset can be written to a CDF file
     filename = write_cdf(decom_test_data_catlst)
 
@@ -319,7 +325,11 @@ def test_evt_dataset(decom_test_data_evt: xr.Dataset):
     assert "elid_evtpkt" in decom_test_data_evt
     assert "shcoarse" in decom_test_data_evt
     assert "shfine" in decom_test_data_evt
-
+    # Assert epoch is calculated using fine grained clock ticks
+    expected_epoch = met_to_ttj2000ns(
+        decom_test_data_evt["shcoarse"] + decom_test_data_evt["shfine"] * 20e-6
+    )
+    np.testing.assert_array_equal(decom_test_data_evt.epoch, expected_epoch)
     # Assert that the dataset can be written to a CDF file
     filename = write_cdf(decom_test_data_evt)
 

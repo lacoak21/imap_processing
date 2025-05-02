@@ -256,10 +256,8 @@ def calculate_idex_epoch_time(
         The mission elapsed time converted to nanoseconds since the J2000 epoch
         in the terrestrial time (TT) timescale.
     """
-    # Number of microseconds since the last second
-    microseconds_since_last_second = 20 * shfine_time
-    # Get met time in seconds including shfine
-    met = shcoarse_time + microseconds_since_last_second * 1e-6
+    # Get met time in seconds including shfine (number of 20 microsecond ticks)
+    met = shcoarse_time + shfine_time * 20e-6
     return met_to_ttj2000ns(met)
 
 
