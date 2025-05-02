@@ -293,44 +293,47 @@ def test_decode_sub_frame_psel_3():
     assert ints == [1, 2, 4, 1, 5]
 
 
-def test_catlst_dataset(decom_test_data_catlst: xr.Dataset):
+def test_catlst_dataset(decom_test_data_catlst: list[xr.Dataset]):
     """Verify that the dataset contains what we expect and can be written to a cdf.
 
     Parameters
     ----------
-    decom_test_data_catlst : xarray.Dataset
-        The dataset to test with
+    decom_test_data_catlst : list[xarray.Dataset]
+        The raw and derived (l1a and l1b) datasets to test with.
     """
-    assert "shcoarse" in decom_test_data_catlst
-    assert "shfine" in decom_test_data_catlst
-    # Assert epoch is calculated using fine grained clock ticks
-    expected_epoch = met_to_ttj2000ns(
-        decom_test_data_catlst["shcoarse"] + decom_test_data_catlst["shfine"] * 20e-6
-    )
-    np.testing.assert_array_equal(decom_test_data_catlst.epoch, expected_epoch)
+    for ds in decom_test_data_catlst:
+        assert "shcoarse" in ds
+        assert "shfine" in ds
+        # Assert epoch is calculated using fine-grained clock ticks
+        expected_epoch = met_to_ttj2000ns(ds["shcoarse"] + ds["shfine"] * 20e-6)
+        np.testing.assert_array_equal(ds.epoch, expected_epoch)
     # Assert that the dataset can be written to a CDF file
-    filename = write_cdf(decom_test_data_catlst)
+    filename_l1a = write_cdf(decom_test_data_catlst[0])
+    assert filename_l1a.name == "imap_idex_l1a_catlst_20241206_v999.cdf"
 
-    assert filename.name == "imap_idex_l1a_catlst_20241206_v999.cdf"
+    filename_l1b = write_cdf(decom_test_data_catlst[1])
+    assert filename_l1b.name == "imap_idex_l1b_catlst_20241206_v999.cdf"
 
 
-def test_evt_dataset(decom_test_data_evt: xr.Dataset):
+def test_evt_dataset(decom_test_data_evt: list[xr.Dataset]):
     """Verify that the dataset contains what we expect and can be written to a cdf.
 
     Parameters
     ----------
-    decom_test_data_evt : xarray.Dataset
-        The dataset to test with
+    decom_test_data_evt : list[xarray.Dataset]
+        The raw and derived (l1a and l1b) datasets to test with.
     """
-    assert "elid_evtpkt" in decom_test_data_evt
-    assert "shcoarse" in decom_test_data_evt
-    assert "shfine" in decom_test_data_evt
-    # Assert epoch is calculated using fine grained clock ticks
-    expected_epoch = met_to_ttj2000ns(
-        decom_test_data_evt["shcoarse"] + decom_test_data_evt["shfine"] * 20e-6
-    )
-    np.testing.assert_array_equal(decom_test_data_evt.epoch, expected_epoch)
+    for ds in decom_test_data_evt:
+        assert "shcoarse" in ds
+        assert "shfine" in ds
+        # Assert epoch is calculated using fine grained clock ticks
+        expected_epoch = met_to_ttj2000ns(ds["shcoarse"] + ds["shfine"] * 20e-6)
+        np.testing.assert_array_equal(ds.epoch, expected_epoch)
+    assert decom_test_data_evt[0]["elid_evtpkt"][9] == 192
+    assert decom_test_data_evt[1]["elid_evtpkt"][9] == "SCI_STE"
     # Assert that the dataset can be written to a CDF file
-    filename = write_cdf(decom_test_data_evt)
+    filename_l1a = write_cdf(decom_test_data_evt[0])
+    assert filename_l1a.name == "imap_idex_l1a_evt_20250108_v999.cdf"
 
-    assert filename.name == "imap_idex_l1a_evt_20250108_v999.cdf"
+    filename_l1b = write_cdf(decom_test_data_evt[1])
+    assert filename_l1b.name == "imap_idex_l1b_evt_20250108_v999.cdf"
