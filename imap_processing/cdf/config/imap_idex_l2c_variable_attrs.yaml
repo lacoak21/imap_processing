@@ -39,10 +39,10 @@ pixel_label:
   VAR_TYPE: metadata
 
 pixel_index:
-  CATDESC: HEALPix pixel index for IDEX SkyMap
-  FIELDNAM: HEALPix Index
+  CATDESC: "HEALPix pixel index for IDEX SkyMap"
+  FIELDNAM: "HEALPix Index"
   FORMAT: I4
-  LABLAXIS: HEALPix Index
+  LABLAXIS: "HEALPix Index"
   VAR_TYPE: support_data
   UNITS: " "
   VALIDMIN: 0
