@@ -120,3 +120,56 @@ def round_spin_phases(spin_phases: xr.DataArray) -> xr.DataArray:
     # Calculate nearest quadrant value.
     # Use mod to wrap values > 315 to 0.
     return (quadrant_size * (shifted_spin_phases / quadrant_size).astype(int)) % 360
+
+
+#
+# def sci_state_16_dictionary(p1, p2):
+#     """
+#     Translate state codes into human-readable strings.
+#
+#     Args:
+#         p1: First parameter (will be left-shifted by 8 bits)
+#         p2: Second parameter
+#
+#     Returns
+#     -------
+#         str: Human-readable state description
+#     """
+#     # decom_test_data_evt[1]["el1par_evtpkt"][0].data << 8 | \
+#     # decom_test_data_evt[1]["el2par_evtpkt"][0].data
+#
+#     # also for params 3 and 4
+#     # decom_test_data_evt[1]["el3par_evtpkt"][9].data << 8 |
+#     decom_test_data_evt[1]["el4par_evtpkt"][9].data
+#     # 192 first check if decom_test_data_evt[1]["el3par_evtpkt"][9].data == SCI_STE
+#     # look at epochs 10-11
+#     p1_shift = p1 << 8
+#     val = p1_shift | p2
+#
+#     state_dict = {
+#         0x0: "IDLE",
+#         0x1: "ACQCLEANUP",
+#         0x2: "ACQSETUP",
+#         0x3: "ACQ",
+#         0x4: "CAL",
+#         0x5: "CHILL",
+#         0x6: "CLKPATTERN",
+#         0x7: "CLK",
+#         0x8: "DUMPADCSPI",
+#         0x9: "MEMCOPY",
+#         0xA: "FETCHEVT",
+#         0xB: "MEMFIND",
+#         0xC: "MEMGETCAT",
+#         0xD: "MEMSAVCAT",
+#         0xE: "PARSE",
+#         0xF: "PROCESS",
+#         0x10: "SEND",
+#         0x11: "READSPI",
+#         0x12: "TRANSMIT",
+#         0x13: "ADCINIT",
+#     }
+#
+#     if val in state_dict:
+#         return state_dict[val]
+#     else:
+#         return f"NA: raw value = 0x{p1:02x}{p2:02x}"
