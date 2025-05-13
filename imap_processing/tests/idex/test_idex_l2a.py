@@ -56,7 +56,7 @@ def test_idex_cdf_file(l2a_dataset: xr.Dataset):
         The dataset to test with
     """
 
-    file_name = write_cdf(l2a_dataset)
+    file_name = write_cdf(l2a_dataset, istp=True)
 
     assert file_name.exists()
     assert file_name.name == "imap_idex_l2a_sci-1week_20231218_v999.cdf"
