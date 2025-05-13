@@ -32,8 +32,6 @@ from imap_processing import imap_module_directory
 from imap_processing.idex import idex_constants
 from imap_processing.idex.idex_constants import SPICE_ARRAYS
 from imap_processing.idex.idex_utils import get_idex_attrs, setup_dataset
-from imap_processing.idex.idex_utils import setup_dataset
-from imap_processing.idex.idex_utils import setup_dataset, get_idex_attrs
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +95,7 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
         name="mass_scale",
         data=mass_scales,
         dims=("epoch", "time_high_sample_rate_index"),
-        attrs=idex_attrs.get_variable_attributes("mass_scale", check_schema=False),
+        attrs=idex_attrs.get_variable_attributes("mass_scale"),
     )
     snr = calculate_snr(tof_high, hs_time)
     # Find peaks for each event. The peaks represent a TOF of an ion.
@@ -129,16 +127,14 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
         keep_attrs=True,
     )
     peak_fits_params.attrs = idex_attrs.get_variable_attributes(
-        "tof_peak_fit_parameters", check_schema=False
+        "tof_peak_fit_parameters"
     )
     area_under_fits.attrs = idex_attrs.get_variable_attributes(
-        "tof_peak_area_under_fit", check_schema=False
+        "tof_peak_area_under_fit"
     )
-    fit_chisqr.attrs = idex_attrs.get_variable_attributes(
-        "tof_peak_chi_squared", check_schema=False
-    )
+    fit_chisqr.attrs = idex_attrs.get_variable_attributes("tof_peak_chi_squared")
     fit_redchi.attrs = idex_attrs.get_variable_attributes(
-        "tof_peak_reduced_chi_squared", check_schema=False
+        "tof_peak_reduced_chi_squared"
     )
 
     area_under_fits.rename("tof_peak_area_under_fit")
@@ -193,9 +189,7 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
         # Add variables to dataset with attrs
         for name, data in output_vars.items():
             l2a_dataset[name] = data
-            l2a_dataset[name].attrs = idex_attrs.get_variable_attributes(
-                name, check_schema=False
-            )
+            l2a_dataset[name].attrs = idex_attrs.get_variable_attributes(name)
 
     l2a_dataset["mass"] = mass_scales_da
     # Update global attributes
@@ -204,12 +198,12 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
     l2a_dataset["tof_peak_kappa"] = xr.DataArray(
         kappa,
         dims="epoch",
-        attrs=idex_attrs.get_variable_attributes("tof_peak_kappa", check_schema=False),
+        attrs=idex_attrs.get_variable_attributes("tof_peak_kappa"),
     )
     l2a_dataset["tof_snr"] = xr.DataArray(
         snr,
         dims="epoch",
-        attrs=idex_attrs.get_variable_attributes("tof_snr", check_schema=False),
+        attrs=idex_attrs.get_variable_attributes("tof_snr"),
     )
     # Add index and label arrays
     l2a_dataset["mass_index"] = xr.DataArray(
@@ -265,6 +259,7 @@ def idex_l2a(l1b_dataset: xr.Dataset) -> xr.Dataset:
         ),
     )
     logger.info("IDEX L2A science data processing completed.")
+    l2a_dataset.attrs.update(idex_attrs.get_global_attributes("imap_idex_l2a_sci"))
     return l2a_dataset
 
 

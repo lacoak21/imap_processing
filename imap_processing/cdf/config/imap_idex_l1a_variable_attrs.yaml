@@ -10,7 +10,6 @@ data_max: &data_max 4096
 sample_rate_min: &sample_rate_min -130
 sample_rate_max: &sample_rate_max 130
 
-int_maxval: &int_maxval 9223372036854775807
 
 # <=== Base Attributes ===>
 string_base_attrs: &string_base
@@ -119,7 +118,7 @@ time_high_sample_rate_index:
   CATDESC: High sampling rate time index
   FIELDNAM: High sample rate
   FILLVAL: *int_fillval
-  FORMAT: I3
+  FORMAT: I4
   LABLAXIS: Sample Rate
   SCALE_TYP: linear
   UNITS: " "

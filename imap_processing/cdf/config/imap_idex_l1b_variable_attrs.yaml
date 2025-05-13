@@ -1,6 +1,5 @@
 int_fillval: &int_fillval -9223372036854775808
 double_fillval: &double_fillval -1.0E31
-max_uint16: &max_uint16 65535
 
 data_min: &data_min 0
 data_max: &data_max 4095
@@ -47,8 +46,6 @@ trigger_base: &trigger_base
 spice_base: &spice_base
   <<: *l1b_data_base
   VAR_TYPE: data
-  VALIDMIN: -180
-  VALIDMAX: 360
   DISPLAY_TYPE: time_series
   UNITS: Degrees
 
@@ -407,6 +404,8 @@ spin_phase:
   FIELDNAM: Spin Phase
   CATDESC: IMAP Spin Phase
   LABLAXIS: Spin Phase
+  FORMAT: I8
+  FILLVAL: *int_fillval
 
 solar_longitude:
   <<: *spice_base

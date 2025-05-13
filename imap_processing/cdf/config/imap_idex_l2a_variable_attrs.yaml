@@ -12,9 +12,9 @@ fit_parameter_base: &fit_parameter_base
   DEPEND_1: target_fit_parameter_index
   LABL_PTR_1: target_fit_parameter_labels
   VALIDMIN: 0
-  VALIDMAX: *data_max
+  VALIDMAX: *int_maxval
   LABLAXIS: "Fit Parameters"
-  FORMAT: F12.6
+  FORMAT: F20.6
   FILLVAL: *double_fillval
   DISPLAY_TYPE: no_plot
   DICT_KEY: SPASE>Particle>ParticleType:Dust>ParticleQuantity:Current>Qualifier:Fit # TODO quantity should be charge but there is no SPASE charge
@@ -26,7 +26,7 @@ impact_charge_base: &impact_charge_base
   VAR_TYPE: data
   DEPEND_0: epoch
   DISPLAY_TYPE: time_series
-  FORMAT: F12.4
+  FORMAT: F20.4
   FILLVAL: *double_fillval
   LABLAXIS: "Impact Charge"
   DICT_KEY: SPASE>Particle>ParticleType:Dust>ParticleQuantity:Current>Qualifier:Derived # TODO quantity should be charge but there is no SPASE charge
@@ -38,7 +38,7 @@ mass_estimate_base: &mass_estimate_base
   VAR_TYPE: data
   DEPEND_0: epoch
   DISPLAY_TYPE: time_series
-  FORMAT: F10.4
+  FORMAT: F20.4
   FILLVAL: *double_fillval
   LABLAXIS: "Dust Mass Estimate"
   DICT_KEY: SPASE>Particle>ParticleType:Dust>ParticleQuantity:Mass>Qualifier:Derived
@@ -50,7 +50,7 @@ chi_square_base: &chi_square_base
   VAR_TYPE: data
   DEPEND_0: epoch
   DISPLAY_TYPE: time_series
-  FORMAT: F12.5
+  FORMAT: F20.4
   FILLVAL: *double_fillval
   LABLAXIS: "Chi Square"
   DICT_KEY: SPASE>Support>SupportQuantity:DataQuality
@@ -64,7 +64,7 @@ fit_results_base: &fit_results_base
   DEPEND_1: time_low_sample_rate_index
   LABL_PTR_1: time_low_sample_rate_label
   DISPLAY_TYPE: time_series
-  FORMAT: F12.6
+  FORMAT: F20.4
   FILLVAL: *double_fillval
   DICT_KEY: SPASE>Particle>ParticleType:Dust>ParticleQuantity:Current>Qualifier:Derived # TODO quantity should be charge but there is no SPASE charge
 
@@ -86,7 +86,6 @@ mass_labels:
   FIELDNAM: "Mass Labels"
   VAR_TYPE: metadata
   FORMAT: A8
-  FILLVAL: " "
 
 # <=== Index Attributes ===>
 peak_fit_parameter_index:
@@ -98,19 +97,19 @@ peak_fit_parameter_index:
   VALIDMIN: 0
   VALIDMAX: 2
   FILLVAL: *int_fillval
-  DISPLAY_TYPE: no_plot
+  LABL_PTR_1: peak_fit_parameter_labels
   DICT_KEY: SPASE>Support>SupportQuantity:Other # TODO what to do for indices?
 
 target_fit_parameter_index:
   CATDESC: "Target fit parameter index"
   FIELDNAM: "Target Fit Parameter Index"
   UNITS: " "
-  FORMAT: I5
+  FORMAT: I4
   VAR_TYPE: support_data
   VALIDMIN: 0
-  VALIDMAX: 2
+  VALIDMAX: 4
   FILLVAL: *int_fillval
-  DISPLAY_TYPE: no_plot
+  LABL_PTR_1: target_fit_parameter_labels
   DICT_KEY: SPASE>Support>SupportQuantity:Other # TODO what to do for indices?
 
 mass_index:
@@ -122,7 +121,7 @@ mass_index:
   VALIDMIN: 0
   VALIDMAX: 500
   FILLVAL: *int_fillval
-  DISPLAY_TYPE: no_plot
+  LABL_PTR_1: mass_labels
   DICT_KEY: SPASE>Support>SupportQuantity:Other # TODO what to do for indices?
 
 # <=== Data Attributes ===>
@@ -132,11 +131,11 @@ tof_snr:
   FIELDNAM: "TOF Signal to Noise Ratio"
   UNITS: pC
   VALIDMIN: 0.0
-  VALIDMAX: *data_max # Max value
+  VALIDMAX: *int_maxval
   VAR_TYPE: data
   DEPEND_0: epoch
   DISPLAY_TYPE: time_series
-  FORMAT: F10.3
+  FORMAT: F20.3
   FILLVAL: *double_fillval
   LABLAXIS: "TOF High SNR"
   DICT_KEY: SPASE>Support>SupportQuantity:DataQuality
@@ -166,9 +165,9 @@ tof_peak_fit_parameters:
   LABL_PTR_1: mass_labels
   LABL_PTR_2: peak_fit_parameter_labels
   VALIDMIN: 0
-  VALIDMAX: *data_max
+  VALIDMAX: *int_maxval
   LABLAXIS: "Fit Parameters"
-  FORMAT: F12.6
+  FORMAT: F20.6
   FILLVAL: *double_fillval
   DISPLAY_TYPE: no_plot
   DICT_KEY: SPASE>Particle>ParticleType:Ion>ParticleQuantity:Current>Qualifier:Fit # TODO quantity should be charge but there is no SPASE charge
@@ -183,9 +182,9 @@ tof_peak_area_under_fit:
   LABL_PTR_1: mass_labels
   LABLAXIS: "Area Under Peak"
   VALIDMIN: 0
-  VALIDMAX: *int_fillval
+  VALIDMAX: *int_maxval
   DISPLAY_TYPE: spectrogram
-  FORMAT: F12.6
+  FORMAT: F20.6
   FILLVAL: *double_fillval
   DICT_KEY: SPASE>Particle>ParticleType:Ion>ParticleQuantity:Current>Qualifier:Integral # TODO quantity should be charge but there is no SPASE charge
 
@@ -204,7 +203,7 @@ mass_scale:
   FIELDNAM: "Mass Scale"
   UNITS: amu
   VALIDMIN: 0.0
-  VALIDMAX: *int_fillval
+  VALIDMAX: *int_maxval
   FILLVAL: *double_fillval
   VAR_TYPE: data
   DEPEND_0: epoch
@@ -212,7 +211,7 @@ mass_scale:
   LABL_PTR_1: time_high_sample_rate_label
   LABLAXIS: "Mass Scale"
   DISPLAY_TYPE: spectrogram
-  FORMAT: F10.3
+  FORMAT: F20.6
   DICT_KEY: SPASE>Support>SupportQuantity:Temporal
 
 target_low_fit_parameters:
