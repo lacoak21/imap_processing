@@ -61,6 +61,8 @@ def idex_l2b(l2a_dataset: xr.Dataset) -> xr.Dataset:
         coords={"epoch": epoch_da},
         attrs=idex_attrs.get_global_attributes("imap_idex_l2b_sci"),
     )
+    l2b_dataset["longitude"] = l2a_dataset["longitude"]
+    l2b_dataset["latitude"] = l2a_dataset["latitude"]
 
     target_waveforms = ["target_high", "target_low", "ion_grid"]
     mass_name = "_dust_mass_estimate"

@@ -5,6 +5,7 @@ import pytest
 import xarray as xr
 from numpy.testing import assert_array_equal
 
+from imap_processing.cdf.utils import write_cdf
 from imap_processing.idex.idex_l2b import idex_l2b, round_spin_phases
 
 
@@ -32,6 +33,21 @@ def test_l2b_logical_source(l2b_dataset: xr.Dataset):
     """
     expected_src = "imap_idex_l2b_sci-1week"
     assert l2b_dataset.attrs["Logical_source"] == expected_src
+
+
+def test_idex_cdf_file(l2b_dataset: xr.Dataset):
+    """Verify the CDF file can be created with no errors.
+
+    Parameters
+    ----------
+    l2b_dataset : xarray.Dataset
+        The dataset to test with
+    """
+
+    file_name = write_cdf(l2b_dataset, istp=True)
+
+    assert file_name.exists()
+    assert file_name.name == "imap_idex_l2b_sci-1week_20231218_v999.cdf"
 
 
 def test_l2a_cdf_variables(l2b_dataset: xr.Dataset):
