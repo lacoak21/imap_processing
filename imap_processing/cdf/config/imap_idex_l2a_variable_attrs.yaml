@@ -17,7 +17,7 @@ fit_parameter_base: &fit_parameter_base
   FORMAT: F12.6
   FILLVAL: *double_fillval
   DISPLAY_TYPE: no_plot
-  DICT_KEY: SPASE>Particle>ParticleType:Dust>ParticleQuantity:ChargeState>Qualifier:Fit
+  DICT_KEY: SPASE>Particle>ParticleType:Dust>ParticleQuantity:Current>Qualifier:Fit # TODO quantity should be charge but there is no SPASE charge
 
 impact_charge_base: &impact_charge_base
   UNITS: C
@@ -29,7 +29,7 @@ impact_charge_base: &impact_charge_base
   FORMAT: F12.4
   FILLVAL: *double_fillval
   LABLAXIS: "Impact Charge"
-  DICT_KEY: SPASE>Particle>ParticleType:Dust>ParticleQuantity:ChargeState>Qualifier:Derived
+  DICT_KEY: SPASE>Particle>ParticleType:Dust>ParticleQuantity:Current>Qualifier:Derived # TODO quantity should be charge but there is no SPASE charge
 
 mass_estimate_base: &mass_estimate_base
   UNITS: kg
@@ -66,7 +66,7 @@ fit_results_base: &fit_results_base
   DISPLAY_TYPE: time_series
   FORMAT: F12.6
   FILLVAL: *double_fillval
-  DICT_KEY: SPASE>Particle>ParticleType:Dust>ParticleQuantity:ChargeState>Qualifier:Derived
+  DICT_KEY: SPASE>Particle>ParticleType:Dust>ParticleQuantity:Current>Qualifier:Derived # TODO quantity should be charge but there is no SPASE charge
 
 # <=== LABL_PTR_i Attributes ===>
 peak_fit_parameter_labels:
@@ -171,7 +171,7 @@ tof_peak_fit_parameters:
   FORMAT: F12.6
   FILLVAL: *double_fillval
   DISPLAY_TYPE: no_plot
-  DICT_KEY: SPASE>Particle>ParticleType:Ion>ParticleQuantity:ChargeState>Qualifier:Fit # TODO charge state?
+  DICT_KEY: SPASE>Particle>ParticleType:Ion>ParticleQuantity:Current>Qualifier:Fit # TODO quantity should be charge but there is no SPASE charge
 
 tof_peak_area_under_fit:
   CATDESC: "Area under the EMG curve for each mass peak."
@@ -187,7 +187,7 @@ tof_peak_area_under_fit:
   DISPLAY_TYPE: spectrogram
   FORMAT: F12.6
   FILLVAL: *double_fillval
-  DICT_KEY: SPASE>Particle>ParticleType:Ion>ParticleQuantity:ChargeState>Qualifier:Integral
+  DICT_KEY: SPASE>Particle>ParticleType:Ion>ParticleQuantity:Current>Qualifier:Integral # TODO quantity should be charge but there is no SPASE charge
 
 tof_peak_chi_squared:
   <<: *chi_square_base
