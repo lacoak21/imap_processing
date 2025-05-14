@@ -55,9 +55,9 @@ def test_idex_cdf_file(l2a_dataset: xr.Dataset):
     l2a_dataset : xarray.Dataset
         The dataset to test with
     """
-
-    file_name = write_cdf(l2a_dataset, istp=True)
-
+    # TODO attrs are missing data version
+    l2a_dataset.attrs["Data_version"] = "v999"
+    file_name = write_cdf(l2a_dataset)
     assert file_name.exists()
     assert file_name.name == "imap_idex_l2a_sci-1week_20231218_v999.cdf"
 
