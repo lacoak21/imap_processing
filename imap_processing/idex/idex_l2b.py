@@ -54,7 +54,7 @@ def idex_l2b(l2a_dataset: xr.Dataset) -> xr.Dataset:
         l2a_dataset["epoch"],
         name="epoch",
         dims=["epoch"],
-        attrs=idex_attrs.get_variable_attributes("epoch"),
+        attrs=idex_attrs.get_variable_attributes("epoch", check_schema=False),
     )
     # Create l2b Dataset
     l2b_dataset = xr.Dataset(

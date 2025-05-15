@@ -54,6 +54,7 @@ from imap_processing.hit.l2.hit_l2 import hit_l2
 from imap_processing.idex.idex_l1a import PacketParser
 from imap_processing.idex.idex_l1b import idex_l1b
 from imap_processing.idex.idex_l2a import idex_l2a
+from imap_processing.idex.idex_l2b import idex_l2b
 from imap_processing.lo.l1a import lo_l1a
 from imap_processing.lo.l1b import lo_l1b
 from imap_processing.lo.l1c import lo_l1c
@@ -828,6 +829,15 @@ class Idex(ProcessInstrument):
             science_files = dependencies.get_file_paths(source="idex")
             dependency = load_cdf(science_files[0])
             datasets = [idex_l2a(dependency)]
+        elif self.data_level == "l2b":
+            if len(dependency_list) > 2:
+                raise ValueError(
+                    f"Unexpected dependencies found for IDEX L2B:"
+                    f"{dependency_list}. Expected only one dependency."
+                )
+            science_files = dependencies.get_file_paths(source="idex")
+            dependency = load_cdf(science_files[0])
+            datasets = [idex_l2b(dependency)]
         return datasets
 
 

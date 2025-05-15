@@ -52,7 +52,6 @@ chi_square_base: &chi_square_base
   DISPLAY_TYPE: time_series
   FORMAT: F20.4
   FILLVAL: *double_fillval
-  LABLAXIS: "Chi Square"
   DICT_KEY: SPASE>Support>SupportQuantity:DataQuality
 
 fit_results_base: &fit_results_base
@@ -190,11 +189,15 @@ tof_peak_area_under_fit:
 
 tof_peak_chi_squared:
   <<: *chi_square_base
+  DEPEND_1: mass_index
+  LABL_PTR_1: mass_labels
   CATDESC: "Chi squared value for the TOF peak emg fits."
   FIELDNAM: "Chi Square (TOF peak fits))"
 
 tof_peak_reduced_chi_squared:
   <<: *chi_square_base
+  DEPEND_1: mass_index
+  LABL_PTR_1: mass_labels
   CATDESC: "Reduced chi squared value for the TOF peak emg fits."
   FIELDNAM: "Reduced Chi Square (TOF peak fits)"
 
@@ -231,10 +234,12 @@ target_low_dust_mass_estimate:
 
 target_low_chi_squared:
   <<: *chi_square_base
+  LABLAXIS: "Chi Square"
   CATDESC: "Chi squared value for the Target Low signal fit."
   FIELDNAM: "Chi Square (Target Low)"
 
 target_low_reduced_chi_squared:
+  LABLAXIS: "Reduced Chi Square"
   <<: *chi_square_base
   CATDESC: "Reduced chi squared value for the Target Low signal fit."
   FIELDNAM: "Reduced Chi Square (Target Low)"
@@ -261,11 +266,13 @@ target_high_dust_mass_estimate:
 
 target_high_chi_squared:
   <<: *chi_square_base
+  LABLAXIS: "Chi Square"
   CATDESC: "Reduced chi squared value for the Target High signal fit."
   FIELDNAM: "Chi Square (Target High)"
 
 target_high_reduced_chi_squared:
   <<: *chi_square_base
+  LABLAXIS: "Reduced Chi Square"
   CATDESC: "Reduced chi squared value for the Target Low signal fit."
   FIELDNAM: "Reduced Chi Square (Target High)"
 
@@ -291,11 +298,13 @@ ion_grid_dust_mass_estimate:
 
 ion_grid_chi_squared:
   <<: *chi_square_base
+  LABLAXIS: "Chi Square"
   CATDESC: "Chi squared value for the Ion Grid signal fit."
   FIELDNAM: "Chi Square (Ion Grid)"
 
 ion_grid_reduced_chi_squared:
   <<: *chi_square_base
+  LABLAXIS: "Reduced Chi Square"
   CATDESC: "Reduced chi squared value for the Ion Grid signal fit."
   FIELDNAM: "Reduced Chi Square (Ion Grid)"
 

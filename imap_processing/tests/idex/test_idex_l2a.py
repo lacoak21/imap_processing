@@ -247,13 +247,12 @@ def test_analyze_peaks_warning(caplog):
     assert any(
         "Failed to fit EMG curve" in message for message in caplog.text.splitlines()
     )
-
-    # The fit_params and area_under_curve arrays should be zero
-    assert np.all(fit_params == 0)
-    assert np.all(area_under_curve == 0)
-    # chi-square and reduced chi-square values should all be np.nan
-    np.testing.assert_array_equal(chisqr, np.nan)
-    np.testing.assert_array_equal(chisqr, np.nan)
+    # The fit_params, area_under_curve, chi square and reduced chi square arrays should
+    # be zero
+    np.testing.assert_array_equal(chisqr, np.zeros(chisqr.shape))
+    np.testing.assert_array_equal(redchi, np.zeros(redchi.shape))
+    np.testing.assert_array_equal(fit_params, np.zeros(fit_params.shape))
+    np.testing.assert_array_equal(area_under_curve, np.zeros(area_under_curve.shape))
 
 
 def test_analyze_peaks_perfect_fits():
@@ -292,8 +291,8 @@ def test_analyze_peaks_perfect_fits():
         # Test that there is a value greater than zero at this index
         assert area_under_curve[mass] > 0
         # Test the goodness of fit
-        assert chisqr < 1e-20
-        assert redchi < 1e-20
+        assert np.all(chisqr < 1e-20)
+        assert np.all(redchi < 1e-20)
 
 
 def test_estimate_dust_mass_no_noise_removal():
