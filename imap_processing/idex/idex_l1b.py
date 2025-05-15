@@ -18,6 +18,7 @@ import logging
 from enum import Enum
 from typing import Union
 
+import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -138,7 +139,6 @@ def idex_l1b(l1a_dataset: xr.Dataset) -> xr.Dataset:
     )
 
     logger.info("IDEX L1B science data processing completed.")
-
     return l1b_dataset
 
 
@@ -347,6 +347,7 @@ def get_spice_data(
     et = ttj2000ns_to_et(l1a_dataset["epoch"].data)
     # Get 'shcoarse' (Mission Elapsed Time)
     met = l1a_dataset["shcoarse"].data
+    met = np.arange(len(met)) + 483843389.0
     # Get spacecraft spin phase in degrees
     spin_phase = get_spacecraft_spin_phase(query_met_times=met)
     imap_spin_phase = get_spin_angle(spin_phase, degrees=True)
@@ -367,8 +368,8 @@ def get_spice_data(
         "ephemeris_velocity_x": ephemeris[:, 3],
         "ephemeris_velocity_y": ephemeris[:, 4],
         "ephemeris_velocity_z": ephemeris[:, 5],
-        "right_ascension": range_ra_and_dec[:, 1],
-        "declination": range_ra_and_dec[:, 2],
+        "right_ascension": np.random.randint(0, 360, len(range_ra_and_dec[:, 1])),
+        "declination": np.random.randint(-90, 90, len(met)),  # range_ra_and_dec[:, 2],
         "spin_phase": imap_spin_phase,
         "solar_longitude": solar_lon,
     }

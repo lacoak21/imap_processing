@@ -50,8 +50,8 @@ def get_spin_data() -> pd.DataFrame:
         comment="#",
         dtype={
             "spin_number": int,
-            "spin_start_sec_sclk": int,
-            "spin_start_subsec_sclk": int,
+            "spin_start_sec": int,
+            "spin_start_subsec": int,
             "spin_start_utc": str,
             "spin_period_sec": float,
             "spin_period_valid": bool,
@@ -62,7 +62,7 @@ def get_spin_data() -> pd.DataFrame:
     # Combine spin_start_sec_sclk and spin_start_subsec_sclk to get the spin start
     # time in seconds. The spin start subseconds are in microseconds.
     spin_df["spin_start_met"] = (
-        spin_df["spin_start_sec_sclk"] + spin_df["spin_start_subsec_sclk"] / 1e6
+        spin_df["spin_start_sec"] + spin_df["spin_start_subsec"] / 1e6
     )
 
     return spin_df
@@ -136,7 +136,7 @@ def interpolate_spin_data(query_met_times: Union[float, npt.NDArray]) -> pd.Data
     #   spin_period_valid columns.
     invalid_spin_phase_range = (spin_phases < 0) | (spin_phases >= 1)
 
-    invalid_spins = (out_df["spin_phase_valid"].values == 0) | (
+    invalid_spins = (out_df["spin_phas_valid"].values == 0) | (
         out_df["spin_period_valid"].values == 0
     )
     bad_spin_phases = invalid_spin_phase_range | invalid_spins
