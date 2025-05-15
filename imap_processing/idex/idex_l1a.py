@@ -163,7 +163,7 @@ class PacketParser:
         data["time_low_sample_rate_index"] = xr.DataArray(
             np.arange(len(data["time_low_sample_rate"][0])),
             name="time_low_sample_rate_index",
-            dims=["time_low_sample_rate_index"],
+            dims="time_low_sample_rate_index",
             attrs=self.idex_attrs.get_variable_attributes(
                 "time_low_sample_rate_index", check_schema=False
             ),
@@ -172,7 +172,7 @@ class PacketParser:
         data["time_high_sample_rate_index"] = xr.DataArray(
             np.arange(len(data["time_high_sample_rate"][0])),
             name="time_high_sample_rate_index",
-            dims=["time_high_sample_rate_index"],
+            dims="time_high_sample_rate_index",
             attrs=self.idex_attrs.get_variable_attributes(
                 "time_high_sample_rate_index", check_schema=False
             ),
@@ -181,7 +181,7 @@ class PacketParser:
         data["time_low_sample_rate_label"] = xr.DataArray(
             data.time_low_sample_rate_index.values.astype(str),
             name="time_low_sample_rate_label",
-            dims=["time_low_sample_rate_index"],
+            dims="time_low_sample_rate_index",
             attrs=self.idex_attrs.get_variable_attributes(
                 "time_low_sample_rate_label", check_schema=False
             ),
@@ -190,7 +190,7 @@ class PacketParser:
         data["time_high_sample_rate_label"] = xr.DataArray(
             data.time_high_sample_rate_index.values.astype(str),
             name="time_high_sample_rate_label",
-            dims=["time_high_sample_rate_index"],
+            dims="time_high_sample_rate_index",
             attrs=self.idex_attrs.get_variable_attributes(
                 "time_high_sample_rate_label", check_schema=False
             ),

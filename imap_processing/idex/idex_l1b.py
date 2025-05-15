@@ -26,9 +26,8 @@ from imap_processing import imap_module_directory
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
 from imap_processing.idex.idex_constants import ConversionFactors
 from imap_processing.idex.idex_utils import get_idex_attrs, setup_dataset
+from imap_processing.spice import SpiceBody, SpiceFrame
 from imap_processing.spice.geometry import (
-    SpiceBody,
-    SpiceFrame,
     cartesian_to_spherical,
     imap_state,
     instrument_pointing,
@@ -368,8 +367,8 @@ def get_spice_data(
         "ephemeris_velocity_x": ephemeris[:, 3],
         "ephemeris_velocity_y": ephemeris[:, 4],
         "ephemeris_velocity_z": ephemeris[:, 5],
-        "right_ascension": np.random.randint(0, 360, len(range_ra_and_dec[:, 1])),
-        "declination": np.random.randint(-90, 90, len(met)),  # range_ra_and_dec[:, 2],
+        "right_ascension": range_ra_and_dec[:, 1],
+        "declination": range_ra_and_dec[:, 2],
         "spin_phase": imap_spin_phase,
         "solar_longitude": solar_lon,
     }

@@ -10,6 +10,9 @@ string_base_attrs: &string_base
   FIELDNAM: " "
   FORMAT: A3
   LABLAXIS: "none"
+  VALIDMIN: " "
+  VALIDMAX: " "
+  FILLVAL: " "
   VAR_TYPE: metadata
   DISPLAY_TYPE: no_plot
   DEPEND_0: epoch
@@ -173,7 +176,7 @@ current_1p9v_pol:
 
 temperature_1:
   <<: *trigger_base
-  FORMAT: I4
+  FORMAT: F12.6
   FIELDNAM: ProcBd Temp1
   CATDESC: Temperature reading near high speed ADCs on Processor Board (ADC channel 2)
   LABLAXIS: Temperature
@@ -181,7 +184,7 @@ temperature_1:
 
 temperature_2:
   <<: *trigger_base
-  FORMAT: I4
+  FORMAT: F12.6
   FIELDNAM: ProcBd Temp2
   CATDESC: Temperature reading near center of Processor Board (ADC channel 3)
   LABLAXIS: Temperature
@@ -391,12 +394,17 @@ right_ascension:
   FIELDNAM: Right Ascension
   CATDESC: Right ascension of the IMAP spacecraft position as observed from Earth in the ECLIPJ2000 reference frame.
   LABLAXIS: Right Ascension
+  FORMAT: I8
+  FILLVAL: *int_fillval
 
 declination:
   <<: *spice_base
   FIELDNAM: Declination
   CATDESC: Declination of the IMAP spacecraft position as observed from Earth in the ECLIPJ2000 reference frame.
   LABLAXIS: Declination
+  FORMAT: I8
+  FILLVAL: *int_fillval
+
 
 spin_phase:
   <<: *spice_base
@@ -404,8 +412,7 @@ spin_phase:
   FIELDNAM: Spin Phase
   CATDESC: IMAP Spin Phase
   LABLAXIS: Spin Phase
-  FORMAT: I8
-  FILLVAL: *int_fillval
+  FILLVAL: *double_fillval
 
 solar_longitude:
   <<: *spice_base
