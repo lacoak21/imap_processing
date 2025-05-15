@@ -26,12 +26,12 @@ from imap_processing import imap_module_directory
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
 from imap_processing.idex.idex_constants import ConversionFactors
 from imap_processing.idex.idex_utils import get_idex_attrs, setup_dataset
-from imap_processing.spice import SpiceBody, SpiceFrame
 from imap_processing.spice.geometry import (
+    SpiceBody,
+    SpiceFrame,
     cartesian_to_spherical,
     imap_state,
     instrument_pointing,
-    solar_longitude,
 )
 from imap_processing.spice.spin import get_spacecraft_spin_phase, get_spin_angle
 from imap_processing.spice.time import ttj2000ns_to_et
@@ -356,7 +356,7 @@ def get_spice_data(
     idex_pointing = instrument_pointing(
         et, SpiceFrame.IMAP_IDEX, SpiceFrame.J2000, cartesian=True
     )
-    solar_lon = solar_longitude(et, degrees=True)
+    # solar_lon = solar_longitude(et, degrees=True)
 
     range_ra_and_dec = cartesian_to_spherical(idex_pointing)
 
@@ -370,7 +370,7 @@ def get_spice_data(
         "right_ascension": range_ra_and_dec[:, 1],
         "declination": range_ra_and_dec[:, 2],
         "spin_phase": imap_spin_phase,
-        "solar_longitude": solar_lon,
+        # "solar_longitude": solar_lon,
     }
 
     for name, array in spice_data.items():
