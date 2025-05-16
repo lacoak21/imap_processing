@@ -6,7 +6,11 @@ import xarray as xr
 from numpy.testing import assert_array_equal
 
 from imap_processing.cdf.utils import write_cdf
-from imap_processing.idex.idex_l2b import idex_l2b, round_spin_phases
+from imap_processing.idex.idex_l2b import (
+    get_science_acquire_timestamps,
+    idex_l2b,
+    round_spin_phases,
+)
 
 
 @pytest.fixture
@@ -46,7 +50,7 @@ def test_idex_cdf_file(l2b_dataset: xr.Dataset):
         The dataset to test with
     """
 
-    file_name = write_cdf(l2b_dataset, istp=True)
+    file_name = write_cdf(l2b_dataset)
 
     assert file_name.exists()
     assert file_name.name == "imap_idex_l2b_sci-1week_20231218_v999.cdf"
@@ -63,6 +67,8 @@ def test_l2a_cdf_variables(l2b_dataset: xr.Dataset):
     """
     expected_vars = [
         "epoch",
+        "science_acquisition_messages",
+        "science_acquisition_times",
         "impact_day_of_year",
         "spin_phase_quadrants",
         "target_low_impact_charge",
@@ -109,3 +115,21 @@ def test_round_spin_phases_warning(caplog):
         f"Spin phase angles, {spin_phase_angles.data} "
         f"are outside of the expected spin phase angle range, [0, 360)."
     ) in caplog.text
+
+
+def test_science_acquisition_times(decom_test_data_evt: list[xr.Dataset]):
+    """Tests that the expected science acquisition times and messages are present.
+
+    Parameters
+    ----------
+    decom_test_data_evt : list[xr.Dataset]
+        A ``xarray`` dataset containing the test data
+    """
+    logs, times = get_science_acquire_timestamps(decom_test_data_evt[1])
+    # For this example event message dataset we expect science acquisition events.
+    assert len(logs) == 2
+    assert len(times) == 2
+    # The first event message is the start of the science acquisition.
+    assert logs[0] == "SCI state change: ACQSETUP to ACQ"
+    # The second event message is the end of the science acquisition.
+    assert logs[1] == "SCI state change: ACQ to CHILL"

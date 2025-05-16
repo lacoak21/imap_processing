@@ -58,7 +58,7 @@ def idex_l2b(l2a_dataset: xr.Dataset, evt_datasets: list[xr.Dataset]) -> xr.Data
     # Create l2b Dataset
     prefixes = ["latitude", "longitude", "_dust_mass_estimate", "_impact_charge"]
     l2b_dataset = setup_dataset(l2a_dataset, prefixes, idex_attrs)
-    l2b_dataset.attrs = idex_attrs.get_global_attributes("imap_idex_l1b_sci")
+    l2b_dataset.attrs = idex_attrs.get_global_attributes("imap_idex_l2b_sci")
 
     # Get science acquisition start and stop times from evnt dataset
     evt_logs, evt_time = get_science_acquire_timestamps(evt_dataset)
@@ -161,7 +161,7 @@ def get_science_acquire_timestamps(
         evt_dataset["el3par_evtpkt"].data[sc_indices] << 8
         | evt_dataset["el4par_evtpkt"].data[sc_indices]
     )
-    epochs = evt_dataset["epochs"].data[sc_indices]
+    epochs = evt_dataset["epoch"].data[sc_indices]
     # Now the state change values and check if it is either a science
     # acquisition start or science acquisition stop event.
     for v1, v2, epoch in zip(val1, val2, epochs):
@@ -172,8 +172,8 @@ def get_science_acquire_timestamps(
             (IDEXEvtAcquireCodes.ACQ, IDEXEvtAcquireCodes.CHILL),
         ]:
             message = (
-                f"SCI state change: {IDEXEvtAcquireCodes(val1).name} to"
-                f" {IDEXEvtAcquireCodes(val2).name}"
+                f"SCI state change: {IDEXEvtAcquireCodes(v1).name} to"
+                f" {IDEXEvtAcquireCodes(v2).name}"
             )
             event_logs.append(message)
             event_timestamps.append(epoch)
