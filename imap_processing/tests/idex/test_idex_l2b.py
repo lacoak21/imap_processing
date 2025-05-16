@@ -10,7 +10,9 @@ from imap_processing.idex.idex_l2b import idex_l2b, round_spin_phases
 
 
 @pytest.fixture
-def l2b_dataset(l2a_dataset: xr.Dataset) -> xr.Dataset:
+def l2b_dataset(
+    l2a_dataset: xr.Dataset, decom_test_data_evt: list[xr.Dataset]
+) -> xr.Dataset:
     """Return a ``xarray`` dataset containing test data.
 
     Returns
@@ -18,7 +20,7 @@ def l2b_dataset(l2a_dataset: xr.Dataset) -> xr.Dataset:
     dataset : xr.Dataset
         A ``xarray`` dataset containing the test data
     """
-    dataset = idex_l2b(l2a_dataset)
+    dataset = idex_l2b(l2a_dataset, [decom_test_data_evt[1], decom_test_data_evt[1]])
     return dataset
 
 
