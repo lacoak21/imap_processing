@@ -854,8 +854,8 @@ class Idex(ProcessInstrument):
             sci_files = dependencies.get_file_paths(
                 source="idex", descriptor="sci-1week"
             )
-            dependency = load_cdf(sci_files[0])
-            # TODO update l2b to use hk files
+            # Load the most recent file
+            dependency = load_cdf(sorted(sci_files, key=lambda x: x.start_date)[-1])
             hk_files = dependencies.get_file_paths(source="idex", descriptor="evt")
             hk_dependencies = [load_cdf(dep) for dep in hk_files]
             datasets = [idex_l2b(dependency, hk_dependencies)]
