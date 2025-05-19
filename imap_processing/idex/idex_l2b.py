@@ -64,22 +64,22 @@ def idex_l2b(l2a_dataset: xr.Dataset, evt_datasets: list[xr.Dataset]) -> xr.Data
     evt_logs, evt_time = get_science_acquire_timestamps(evt_dataset)
     l2b_dataset["science_acquisition_messages"] = xr.DataArray(
         name="science_acquisition_messages",
-        data=evt_logs,
-        dims="sci_acquisition_events",
+        data=evt_logs.astype(str),
+        dims="science_acquisition_events",
         attrs=idex_attrs.get_variable_attributes("science_acquisition_messages"),
     )
     l2b_dataset["science_acquisition_times"] = xr.DataArray(
         name="science_acquisition_times",
-        data=evt_logs,
+        data=evt_time,
         dims="sci_acquisition_events",
         attrs=idex_attrs.get_variable_attributes("science_acquisition_times"),
     )
-    l2b_dataset["sci_acquisition_events"] = xr.DataArray(
-        name="sci_acquisition_events",
+    l2b_dataset["science_acquisition_events"] = xr.DataArray(
+        name="science_acquisition_events",
         data=np.arange(len(evt_logs)),
-        dims="sci_acquisition_events",
+        dims="science_acquisition_events",
         attrs=idex_attrs.get_variable_attributes(
-            "sci_acquisition_events", check_schema=False
+            "science_acquisition_events", check_schema=False
         ),
     )
     spin_phase_quadrants = round_spin_phases(l2a_dataset["spin_phase"])
