@@ -856,9 +856,9 @@ class Idex(ProcessInstrument):
             )
             dependency = load_cdf(sci_files[0])
             # TODO update l2b to use hk files
-            # hk_files = dependencies.get_file_paths(source="idex", descriptor="evt")
-            # hk_dependency = [load_cdf(dep) for dep in hk_files]
-            datasets = [idex_l2b(dependency)]
+            hk_files = dependencies.get_file_paths(source="idex", descriptor="evt")
+            hk_dependencies = [load_cdf(dep) for dep in hk_files]
+            datasets = [idex_l2b(dependency, hk_dependencies)]
         return datasets
 
 
