@@ -133,7 +133,7 @@ def get_science_acquire_timestamps(
     evt_dataset: xr.Dataset,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
-    Get the science acquisition start and stop times from the event dataset.
+    Get the science acquisition start and stop times and messages from the event data.
 
     Parameters
     ----------
@@ -165,8 +165,8 @@ def get_science_acquire_timestamps(
     # Now the state change values and check if it is either a science
     # acquisition start or science acquisition stop event.
     for v1, v2, epoch in zip(val1, val2, epochs):
-        # A acquire start will have val1=ACQSETUP and val2=ACQ
-        # A acquire stop will have val1=ACQ and val2=CHILL
+        # An "acquire" start will have val1=ACQSETUP and val2=ACQ
+        # An "acquire" stop will have val1=ACQ and val2=CHILL
         if (v1, v2) in [
             (IDEXEvtAcquireCodes.ACQSETUP, IDEXEvtAcquireCodes.ACQ),
             (IDEXEvtAcquireCodes.ACQ, IDEXEvtAcquireCodes.CHILL),
