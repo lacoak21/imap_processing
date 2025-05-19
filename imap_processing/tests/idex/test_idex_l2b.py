@@ -49,7 +49,7 @@ def test_idex_cdf_file(l2b_dataset: xr.Dataset):
     l2b_dataset : xarray.Dataset
         The dataset to test with
     """
-
+    l2b_dataset.attrs["Data_version"] = "v999"
     file_name = write_cdf(l2b_dataset)
 
     assert file_name.exists()

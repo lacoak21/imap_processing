@@ -32,16 +32,15 @@ science_acquisition_messages:
     CATDESC: The IDEX science acquisition start and stop messages.
     FIELDNAM: Science Acquisition Messages
     LABLAXIS: Science Acquisition Messages
-    DEPEND_0: science_acquisition_events
+    DEPEND_0: science_acquisition_epoch
     FORMAT: A40
     VAR_TYPE: metadata
     DICT_KEY: SPASE>SupportQuantity:Housekeeping,Qualifier:Array
 
-science_acquisition_times:
-    CATDESC: The IDEX science acquisition start and stop times.
-    FIELDNAM: Science Acquisition Times
-    LABLAXIS: Science Acquisition Times
-    DEPEND_0: science_acquisition_events
+science_acquisition_epoch:
+    CATDESC: Time (number of nanoseconds since J2000) of IDEX science acquisition start and stop messages.
+    FIELDNAM: Science Acquisition Epoch
+    LABLAXIS: Science Acquisition Epoch
     FILLVAL: *int_fillval
     FORMAT: " "
     VALIDMIN: *int_fillval
@@ -49,22 +48,10 @@ science_acquisition_times:
     UNITS: ns
     VAR_TYPE: support_data
     SCALETYP: linear
+    MONOTON: INCREASE
     TIME_BASE: J2000
     TIME_SCALE: Terrestrial Time
     REFERENCE_POSITION: Rotating Earth Geoid
     RESOLUTION: ' '
     DISPLAY_TYPE: time_series
     DICT_KEY: SPASE>SupportQuantity:Temporal,Qualifier:Array
-
-science_acquisition_events:
-    CATDESC: The IDEX science acquisition event index.
-    FIELDNAM: Acquisition Event Index
-    FORMAT: I4
-    LABLAXIS: Acquisition Event Index
-    VAR_TYPE: support_data
-    DISPLAY_TYPE: no_plot
-    UNITS: ""
-    VALIDMIN: 0
-    VALIDMAX: 100
-    FILLVAL: *int_fillval
-    DICT_KEY: SPASE>Support>SupportQuantity:Other
