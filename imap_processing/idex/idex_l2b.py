@@ -38,7 +38,7 @@ def idex_l2b(l2a_dataset: xr.Dataset, evt_datasets: list[xr.Dataset]) -> xr.Data
     ----------
     l2a_dataset : xarray.Dataset
         IDEX L2a dataset to process.
-    evt_datasets : list[xr.Dataset]
+    evt_datasets : list[xarray.Dataset]
         List of IDEX housekeeping event message datasets.
 
     Returns
