@@ -826,10 +826,10 @@ class Idex(ProcessInstrument):
             science_files = dependencies.get_file_paths(source="idex")
             datasets = PacketParser(science_files[0]).data
         elif self.data_level == "l1b":
-            if len(dependency_list) > 3:
+            if len(dependency_list) > 2:
                 raise ValueError(
                     f"Unexpected dependencies found for IDEX L1B:"
-                    f"{dependency_list}. Expected only three dependencies."
+                    f"{dependency_list}. Expected only two dependencies."
                 )
             # get CDF file
             science_files = dependencies.get_file_paths(source="idex")
@@ -846,15 +846,16 @@ class Idex(ProcessInstrument):
             dependency = load_cdf(science_files[0])
             datasets = [idex_l2a(dependency)]
         elif self.data_level == "l2b":
-            if len(dependency_list) > 2:
+            if len(dependency_list) > 3:
                 raise ValueError(
                     f"Unexpected dependencies found for IDEX L2B:"
-                    f"{dependency_list}. Expected only two dependency."
+                    f"{dependency_list}. Expected only three dependency."
                 )
             sci_files = dependencies.get_file_paths(
                 source="idex", descriptor="sci-1week"
             )
-            # Load the most recent file
+            # There should only be one file in the list but just in case sort them
+            # by the start date and load the most recent.
             dependency = load_cdf(sorted(sci_files, key=lambda x: x.start_date)[-1])
             hk_files = dependencies.get_file_paths(source="idex", descriptor="evt")
             hk_dependencies = [load_cdf(dep) for dep in hk_files]
