@@ -31,9 +31,9 @@ spin_phase_quadrants:
 science_acquisition_messages:
     CATDESC: The IDEX science acquisition start and stop messages.
     FIELDNAM: Science Acquisition Messages
-    LABLAXIS: Science Acquisition Messages
     DEPEND_0: science_acquisition_epoch
-    FORMAT: A40
+    FORMAT: A30
+    FILLVAL: " "
     VAR_TYPE: metadata
     DICT_KEY: SPASE>SupportQuantity:Housekeeping,Qualifier:Array
 

@@ -28,7 +28,7 @@ def l2b_dataset(
     return dataset
 
 
-def test_l2b_logical_source(l2b_dataset: xr.Dataset):
+def test_l2b_logical_source_and_cdf(l2b_dataset: xr.Dataset):
     """Tests that the ``idex_l2b`` function generates datasets
     with the expected logical source.
 
@@ -39,16 +39,7 @@ def test_l2b_logical_source(l2b_dataset: xr.Dataset):
     """
     expected_src = "imap_idex_l2b_sci-1week"
     assert l2b_dataset.attrs["Logical_source"] == expected_src
-
-
-def test_idex_cdf_file(l2b_dataset: xr.Dataset):
-    """Verify the CDF file can be created with no errors.
-
-    Parameters
-    ----------
-    l2b_dataset : xarray.Dataset
-        The dataset to test with
-    """
+    # Verify the CDF file can be created with no errors.
     l2b_dataset.attrs["Data_version"] = "v999"
     file_name = write_cdf(l2b_dataset)
 
@@ -68,7 +59,7 @@ def test_l2a_cdf_variables(l2b_dataset: xr.Dataset):
     expected_vars = [
         "epoch",
         "science_acquisition_messages",
-        "science_acquisition_times",
+        "science_acquisition_epoch",
         "impact_day_of_year",
         "spin_phase_quadrants",
         "target_low_impact_charge",
