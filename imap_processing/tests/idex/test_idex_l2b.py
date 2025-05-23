@@ -59,7 +59,8 @@ def test_l2a_cdf_variables(l2b_dataset: xr.Dataset):
     expected_vars = [
         "epoch",
         "science_acquisition_messages",
-        "science_acquisition_epoch",
+        "epoch_science_acquisition",
+        "science_acquisition_values",
         "impact_day_of_year",
         "spin_phase_quadrants",
         "target_low_impact_charge",
