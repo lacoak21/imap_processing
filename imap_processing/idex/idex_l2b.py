@@ -68,26 +68,23 @@ def idex_l2b(l2a_dataset: xr.Dataset, evt_datasets: list[xr.Dataset]) -> xr.Data
     l2b_dataset["science_acquisition_messages"] = xr.DataArray(
         name="science_acquisition_messages",
         data=evt_logs.astype(str),
-        dims="science_acquisition_epoch",
+        dims="epoch_science_acquisition",
         attrs=idex_attrs.get_variable_attributes("science_acquisition_messages"),
     )
-    l2b_dataset["science_acquisition_epoch"] = xr.DataArray(
-        name="science_acquisition_epoch",
+    l2b_dataset["epoch_science_acquisition"] = xr.DataArray(
+        name="epoch_science_acquisition",
         data=evt_time,
-        dims="science_acquisition_epoch",
+        dims="epoch_science_acquisition",
         attrs=idex_attrs.get_variable_attributes(
-            "science_acquisition_epoch", check_schema=False
+            "epoch_science_acquisition", check_schema=False
         ),
     )
     l2b_dataset["science_acquisition_values"] = xr.DataArray(
         name="science_acquisition_values",
         data=evt_values,
-        dims="science_acquisition_epoch",
-        attrs=idex_attrs.get_variable_attributes(
-            "science_acquisition_values", check_schema=False
-        ),
+        dims="epoch_science_acquisition",
+        attrs=idex_attrs.get_variable_attributes("science_acquisition_values"),
     )
-
     spin_phase_quadrants = round_spin_phases(l2a_dataset["spin_phase"])
     spin_phase_quadrants.attrs.update(
         idex_attrs.get_variable_attributes("spin_phase_quadrants")
@@ -156,6 +153,8 @@ def get_science_acquisition_timestamps(
         Array containing values indicating if the event is a start (1) or
         stop (0).
     """
+    # Sort the event dataset by the epoch time. Drop duplicates
+    evt_dataset = evt_dataset.sortby("epoch").drop_duplicates("epoch")
     # First find indices of the state change events
     sc_indices = np.where(evt_dataset["elid_evtpkt"].data == "SCI_STE")[0]
     event_logs = []
@@ -170,7 +169,7 @@ def get_science_acquisition_timestamps(
         evt_dataset["el3par_evtpkt"].data[sc_indices] << 8
         | evt_dataset["el4par_evtpkt"].data[sc_indices]
     )
-    epochs = evt_dataset["epoch"].data[sc_indices]
+    epochs = evt_dataset["epoch"][sc_indices]
     # Now the state change values and check if it is either a science
     # acquisition start or science acquisition stop event.
     for v1, v2, epoch in zip(val1, val2, epochs):
