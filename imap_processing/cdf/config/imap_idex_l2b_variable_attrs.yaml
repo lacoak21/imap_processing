@@ -37,6 +37,19 @@ science_acquisition_messages:
     VAR_TYPE: metadata
     DICT_KEY: SPASE>SupportQuantity:Housekeeping,Qualifier:Array
 
+science_acquisition_values:
+    CATDESC: Values indicating if the event is a science start (1) or stop (0).
+    FIELDNAM: Science Acquisition Value
+    DEPEND_0: science_acquisition_epoch
+    DISPLAY_TYPE: time_series
+    FILLVAL: -1
+    FORMAT: I1
+    VALIDMIN: 0
+    VALIDMAX: 1
+    UNITS: " "
+    VAR_TYPE: support_data
+    DICT_KEY: SPASE>SupportQuantity:Housekeeping,Qualifier:Array
+
 science_acquisition_epoch:
     CATDESC: Time (number of nanoseconds since J2000) of IDEX science acquisition start and stop messages.
     FIELDNAM: Science Acquisition Epoch

@@ -7,7 +7,7 @@ from numpy.testing import assert_array_equal
 
 from imap_processing.cdf.utils import write_cdf
 from imap_processing.idex.idex_l2b import (
-    get_science_acquire_timestamps,
+    get_science_acquisition_timestamps,
     idex_l2b,
     round_spin_phases,
 )
@@ -116,11 +116,15 @@ def test_science_acquisition_times(decom_test_data_evt: list[xr.Dataset]):
     decom_test_data_evt : list[xr.Dataset]
         A ``xarray`` dataset containing the test data
     """
-    logs, times = get_science_acquire_timestamps(decom_test_data_evt[1])
+    logs, times, vals = get_science_acquisition_timestamps(decom_test_data_evt[1])
     # For this example event message dataset we expect science acquisition events.
     assert len(logs) == 2
     assert len(times) == 2
+    assert len(vals) == 2
     # The first event message is the start of the science acquisition.
     assert logs[0] == "SCI state change: ACQSETUP to ACQ"
     # The second event message is the end of the science acquisition.
     assert logs[1] == "SCI state change: ACQ to CHILL"
+
+    # assert the values are correct
+    np.testing.assert_array_equal(vals, [1, 0])

@@ -826,7 +826,7 @@ class Idex(ProcessInstrument):
             science_files = dependencies.get_file_paths(source="idex")
             datasets = PacketParser(science_files[0]).data
         elif self.data_level == "l1b":
-            if len(dependency_list) > 2:
+            if len(dependency_list) != 2:
                 raise ValueError(
                     f"Unexpected dependencies found for IDEX L1B:"
                     f"{dependency_list}. Expected only two dependencies."
@@ -837,7 +837,7 @@ class Idex(ProcessInstrument):
             dependency = load_cdf(science_files[0])
             datasets = [idex_l1b(dependency)]
         elif self.data_level == "l2a":
-            if len(dependency_list) > 1:
+            if len(dependency_list) != 1:
                 raise ValueError(
                     f"Unexpected dependencies found for IDEX L2A:"
                     f"{dependency_list}. Expected only one dependency."
@@ -846,17 +846,15 @@ class Idex(ProcessInstrument):
             dependency = load_cdf(science_files[0])
             datasets = [idex_l2a(dependency)]
         elif self.data_level == "l2b":
-            if len(dependency_list) > 3:
+            if len(dependency_list) != 3:
                 raise ValueError(
                     f"Unexpected dependencies found for IDEX L2B:"
-                    f"{dependency_list}. Expected only three dependency."
+                    f"{dependency_list}. Expected only three dependencies."
                 )
             sci_files = dependencies.get_file_paths(
                 source="idex", descriptor="sci-1week"
             )
-            # There should only be one file in the list but just in case sort them
-            # by the start date and load the most recent.
-            dependency = load_cdf(sorted(sci_files, key=lambda x: x.start_date)[-1])
+            dependency = load_cdf(sci_files[0])
             hk_files = dependencies.get_file_paths(source="idex", descriptor="evt")
             hk_dependencies = [load_cdf(dep) for dep in hk_files]
             datasets = [idex_l2b(dependency, hk_dependencies)]
