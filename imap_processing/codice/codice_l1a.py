@@ -11,7 +11,6 @@ Notes
 
 from __future__ import annotations
 
-import ast
 import logging
 from pathlib import Path
 from typing import Any
@@ -93,9 +92,11 @@ class CoDICEL1aPipeline:
         Calculate and return the values to be used for `epoch`.
 
         On CoDICE, the epoch values are derived from the `acq_start_seconds` and
-        `acq_start_subseconds` fields in the packet. Note that the
-        `acq_start_subseconds` field needs to be converted from microseconds to
-        seconds
+        `acq_start_subseconds` fields in the packet. The exception to this is
+        the I-ALiRT packets, which use "acquisition_time".
+
+        Note that the `acq_start_subseconds` field needs to be converted from
+        microseconds to seconds.
 
         Returns
         -------
@@ -103,12 +104,13 @@ class CoDICEL1aPipeline:
             List of epoch values.
         """
         epoch = met_to_ttj2000ns(
-            self.dataset.acq_start_seconds + self.dataset.acq_start_subseconds / 1e6
+            self.dataset["acq_start_seconds"]
+            + self.dataset["acq_start_subseconds"] / 1e6
         )
 
         return epoch
 
-    def decompress_data(self, science_values: list[str]) -> None:
+    def decompress_data(self, science_values: list[NDArray[str]] | list[str]) -> None:
         """
         Perform decompression on the data.
 
@@ -118,9 +120,9 @@ class CoDICEL1aPipeline:
 
         Parameters
         ----------
-        science_values : list[str]
-            A list of byte strings representing the science values of the data
-            for each packet.
+        science_values : list[NDArray[str]] | list[str]
+            A list of byte strings (or bit strings, in the case of I-ALiRT)
+            representing the science values of the data for each packet.
         """
         # The compression algorithm depends on the instrument and view ID
         if self.config["instrument"] == "lo":
@@ -129,18 +131,31 @@ class CoDICEL1aPipeline:
             compression_algorithm = constants.HI_COMPRESSION_ID_LOOKUP[self.view_id]
 
         self.raw_data = []
-        for packet_data, byte_count in zip(
-            science_values, self.dataset.byte_count.data
-        ):
-            # Convert from numpy array to byte object
-            values = ast.literal_eval(str(packet_data))
 
-            # Only use the values up to the byte count. Bytes after this are
-            # used as padding and are not needed
-            values = values[:byte_count]
+        # I-ALiRT data already has byte count cut-off applied, so treat
+        # it slightly differently
+        if self.config["dataset_name"] == "imap_codice_l1a_lo-ialirt":
+            for packet_data in science_values:
+                # Convert from bit string to byte object
+                values = int(packet_data, 2).to_bytes(
+                    len(packet_data) // 8, byteorder="big"
+                )
+                decompressed_values = decompress(values, compression_algorithm)
+                self.raw_data.append(decompressed_values)
 
-            decompressed_values = decompress(values, compression_algorithm)
-            self.raw_data.append(decompressed_values)
+        else:
+            for packet_data, byte_count in zip(
+                science_values, self.dataset.byte_count.data
+            ):
+                # Convert from numpy array to byte object
+                values = packet_data[()]
+
+                # Only use the values up to the byte count. Bytes after this are
+                # used as padding and are not needed
+                values = values[:byte_count]
+
+                decompressed_values = decompress(values, compression_algorithm)
+                self.raw_data.append(decompressed_values)
 
     def define_coordinates(self) -> None:
         """
@@ -571,6 +586,45 @@ class CoDICEL1aPipeline:
         self.cdf_attrs.add_instrument_variable_attrs("codice", "l1a")
 
 
+def group_ialirt_data(packets: xr.Dataset, data_field_range: range) -> list[bytearray]:
+    """
+    Group together the individual I-ALiRT data fields.
+
+    Parameters
+    ----------
+    packets : xarray.Dataset
+        The dataset containing the I-ALiRT data packets.
+    data_field_range : range
+        The range of the individual data fields (15 or lo, 6 for hi).
+
+    Returns
+    -------
+    grouped_data : list[bytearray]
+        The list of grouped I-ALiRT data.
+    """
+    current_data_stream = bytearray()
+    grouped_data = []
+
+    # When a counter value of 255 is encountered, this signifies the
+    # end of the data stream
+    for packet_num in range(0, len(packets.acquisition_time.data)):
+        counter = packets.counter.data[packet_num]
+        if counter != 255:
+            for field in data_field_range:
+                current_data_stream.extend(
+                    bytearray([packets[f"data_{field:02}"].data[packet_num]])
+                )
+        else:
+            # At this point, if there are data, the data stream is ready
+            # to be processed like an SW Species product (for lo) or an
+            # Omni Species product (for hi)
+            if len(current_data_stream) > 0:
+                grouped_data.append(current_data_stream)
+            current_data_stream = bytearray()
+
+    return grouped_data
+
+
 def create_binned_dataset(apid: int, dataset: xr.Dataset) -> xr.Dataset:
     """
     Create dataset for data that is binned by energy.
@@ -732,7 +786,7 @@ def create_direct_event_dataset(apid: int, packets: xr.Dataset) -> xr.Dataset:
     apid : int
         The APID of the packet.
     packets : xarray.Dataset
-        The packets to process..
+        The packets to process.
 
     Returns
     -------
@@ -858,6 +912,87 @@ def create_hskp_dataset(packet: xr.Dataset) -> xr.Dataset:
         dataset[variable] = xr.DataArray(
             packet[variable].data, dims=["epoch"], attrs=attrs
         )
+
+    return dataset
+
+
+def create_ialirt_dataset(apid: int, packets: xr.Dataset) -> xr.Dataset:
+    """
+    Create dataset for lo- and hi-ialirt data.
+
+    I-ALiRT data are packed identically to regular science data
+    (``lo-sw-species`` for CoDICE-lo, and ``hi-omni`` for CoDICE-hi), except
+    for some slight differences in the metadata that are transmitted.
+    Additionally, data are transmitted in separate, individual single-byte
+    fields (there are 15 of these for CoDICE-lo and 6 for CoDICE-hi).
+
+    This function will process these I-ALiRT data while using some of the same
+    code used for processing the ``lo-sw-species`` and ``hi-omni`` L1a data
+    products.
+
+    Parameters
+    ----------
+    apid : int
+        The APID of the packet.
+    packets : xarray.Dataset
+        The packets to process.
+
+    Returns
+    -------
+    dataset : xarray.Dataset
+        Xarray dataset containing the direct event data.
+
+    References
+    ----------
+    See section 9.4 of the CoDICE algorithm document for further details.
+    """
+    # I-ALiRT packet data gets split up into multiple data fields,
+    # specific to lo- and hi-
+    # See sections 10.4.1 and 10.4.2 in the algorithm document
+    if apid == CODICEAPID.COD_LO_IAL:
+        data_field_range = range(0, 15)
+    elif apid == CODICEAPID.COD_HI_IAL:
+        data_field_range = range(0, 5)
+
+    # Group together packets of I-ALiRT data to form complete data sets
+    grouped_data = group_ialirt_data(packets, data_field_range)
+
+    science_values, metadata_values = process_ialirt_data_streams(grouped_data)
+
+    # Run the pipeline to create a dataset for the product
+    pipeline = CoDICEL1aPipeline(
+        metadata_values["TABLE_ID"][0],
+        metadata_values["PLAN_ID"][0],
+        metadata_values["PLAN_STEP"][0],
+        metadata_values["VIEW_ID"][0],
+    )
+    pipeline.set_data_product_config(apid, packets)
+    pipeline.decompress_data(science_values)
+    pipeline.reshape_data()
+
+    # The calculate_epoch_values method needs acq_start_seconds and
+    # acq_start_subseconds attributes on the dataset
+    pipeline.dataset["acq_start_seconds"] = ("_", metadata_values["ACQ_START_SECONDS"])
+    pipeline.dataset["acq_start_subseconds"] = (
+        "_",
+        metadata_values["ACQ_START_SUBSECONDS"],
+    )
+
+    pipeline.define_coordinates()
+
+    # The dataset also needs the metadata that will be carried through
+    # to the final data product
+    for field in [
+        "spin_period",
+        "suspect",
+        "st_bias_gain_mode",
+        "sw_bias_gain_mode",
+        "rgfo_half_spin",
+        "nso_half_spin",
+    ]:
+        pipeline.dataset[field] = ("_", metadata_values[field.upper()])
+
+    dataset = pipeline.define_data_variables()
 
     return dataset
 
@@ -1023,6 +1158,70 @@ def log_dataset_info(datasets: dict[int, xr.Dataset]) -> None:
         )
 
 
+def process_ialirt_data_streams(
+    grouped_data: list[bytearray],
+) -> tuple[list[str], dict[str, list[int]]]:
+    """
+    Process each I-ALiRT science data stream to extract individual data fields.
+
+    Each data stream is converted to binary so that each metadata and science
+    data field and their values can be separated out. These fields and values
+    eventually will be stored in CDF data/support variables.
+
+    Parameters
+    ----------
+    grouped_data : list[bytearray]
+        A list of grouped I-ALiRT data.
+
+    Returns
+    -------
+    science_values : list[str]
+        The science values / data array portion of the I-ALiRT data in the form
+        of a binary string.
+    metadata_values : dict[str, list[int]]
+        The extracted metadata fields and their values.
+    """
+    # Initialize placeholders for the processed data
+    science_values = []
+    metadata_values: dict[str, list[int]] = {}
+    for field in constants.IAL_BIT_STRUCTURE:
+        metadata_values[field] = []
+
+    # Process each complete data stream
+    for data_stream in grouped_data:
+        try:
+            # Convert the data to binary
+            bit_string = "".join(f"{byte:08b}" for byte in data_stream)
+
+            # Separate the data into its individual fields
+            bit_position = 0
+            for field in constants.IAL_BIT_STRUCTURE:
+                # Convert from binary to integer
+                value = int(
+                    bit_string[
+                        bit_position : bit_position + constants.IAL_BIT_STRUCTURE[field]
+                    ],
+                    2,
+                )
+
+                # If we encounter an SHCOARSE of 0, the packet is bad
+                if field == "SHCOARSE" and value == 0:
+                    raise ValueError("Bad packet encountered")
+
+                metadata_values[field].append(value)
+                bit_position += constants.IAL_BIT_STRUCTURE[field]
+                if field == "BYTE_COUNT":
+                    byte_count = value * 8  # Convert from bytes to number of bits
+
+            # The rest is the data field, up to the byte count
+            data_field = bit_string[bit_position : bit_position + byte_count]
+            science_values.append(data_field)
+        except ValueError:
+            pass
+
+    return science_values, metadata_values
+
+
 def reshape_de_data(
     packets: xr.Dataset, decompressed_data: list[list[int]], apid: int
 ) -> dict[str, np.ndarray]:
@@ -1179,6 +1378,11 @@ def process_codice_l1a(file_path: Path) -> list[xr.Dataset]:
             processed_dataset = create_direct_event_dataset(apid, dataset)
             logger.info(f"\nFinal data product:\n{processed_dataset}\n")
 
+        # I-ALiRT data
+        elif apid in [CODICEAPID.COD_LO_IAL]:
+            processed_dataset = create_ialirt_dataset(apid, dataset)
+            logger.info(f"\nFinal data product:\n{processed_dataset}\n")
+
         # hi-omni data
         elif apid == CODICEAPID.COD_HI_OMNI_SPECIES_COUNTS:
             processed_dataset = create_binned_dataset(apid, dataset)
@@ -1202,11 +1406,8 @@ def process_codice_l1a(file_path: Path) -> list[xr.Dataset]:
 
             logger.info(f"\nFinal data product:\n{processed_dataset}\n")
 
-        # TODO: Still need to implement I-ALiRT data products
-        elif apid in [
-            CODICEAPID.COD_HI_IAL,
-            CODICEAPID.COD_LO_IAL,
-        ]:
+        # TODO: Still need to implement hi-ialirt
+        elif apid == CODICEAPID.COD_HI_IAL:
             logger.info("\tStill need to properly implement")
             processed_dataset = None
 

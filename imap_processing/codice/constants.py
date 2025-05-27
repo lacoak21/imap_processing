@@ -100,6 +100,17 @@ LO_NSW_SPECIES_VARIABLE_NAMES = [
     "heplus",
     "cnoplus",
 ]
+LO_IALIRT_VARIABLE_NAMES = [
+    "heplusplus",
+    "cplus5",
+    "cplus6",
+    "oplus6",
+    "oplus7",
+    "oplus8",
+    "mg",
+    "fe_loq",
+    "fe_hiq",
+]
 
 # CDF variable names used for hi data products
 HI_COUNTERS_SINGLES_VARIABLE_NAMES = ["tcr", "ssdo", "stssd"]
@@ -113,6 +124,7 @@ HI_PRIORITY_VARIABLE_NAMES = [
     "Priority5",
 ]
 HI_SECTORED_VARIABLE_NAMES = ["h", "he3he4", "cno", "fe"]
+HI_IALIRT_VARIABLE_NAMES = ["h"]
 
 # CDF variable names used for direct event data products
 HI_PHA_CDF_FIELDS = [
@@ -367,6 +379,21 @@ SECTORED_ENERGY_TABLE = {
 # Much of these are described in the algorithm document in chapter 10 ("Data
 # Level 1A")
 DATA_PRODUCT_CONFIGURATIONS: dict[CODICEAPID | int, dict] = {
+    CODICEAPID.COD_HI_IAL: {
+        "dataset_name": "imap_codice_l1a_hi-ialirt",
+        "energy_table": OMNI_ENERGY_TABLE,
+        "input_dims": {"esa_step": 15, "inst_az": 4},
+        "instrument": "hi",
+        "num_counters": 1,
+        "num_spins": 4,
+        "output_dims": {"esa_step": 15, "inst_az": 4},
+        "support_variables": [
+            "data_quality",
+            "spin_period",
+            "energy_h",
+        ],
+        "variable_names": HI_IALIRT_VARIABLE_NAMES,
+    },
     CODICEAPID.COD_HI_INST_COUNTS_AGGREGATED: {
         "dataset_name": "imap_codice_l1a_hi-counters-aggregated",
         "input_dims": {},
@@ -448,6 +475,24 @@ DATA_PRODUCT_CONFIGURATIONS: dict[CODICEAPID | int, dict] = {
             "energy_fe",
         ],
         "variable_names": HI_SECTORED_VARIABLE_NAMES,
+    },
+    CODICEAPID.COD_LO_IAL: {
+        "dataset_name": "imap_codice_l1a_lo-ialirt",
+        "input_dims": {"spin_sector": 1, "esa_step": 128},
+        "instrument": "lo",
+        "num_counters": 9,
+        "output_dims": {"spin_sector": 1, "esa_step": 128},
+        "support_variables": [
+            "energy_table",
+            "acquisition_time_per_step",
+            "rgfo_half_spin",
+            "nso_half_spin",
+            "sw_bias_gain_mode",
+            "st_bias_gain_mode",
+            "data_quality",
+            "spin_period",
+        ],
+        "variable_names": LO_IALIRT_VARIABLE_NAMES,
     },
     CODICEAPID.COD_LO_INST_COUNTS_AGGREGATED: {
         "dataset_name": "imap_codice_l1a_lo-counters-aggregated",
@@ -721,6 +766,29 @@ DE_DATA_PRODUCT_CONFIGURATIONS: dict[Any, dict[str, Any]] = {
 
 # Define the packet fields needed to be stored in segmented data and their
 # corresponding bit lengths for direct event data products
+IAL_BIT_STRUCTURE = {
+    "SHCOARSE": 32,
+    "PACKET_VERSION": 16,
+    "SPIN_PERIOD": 16,
+    "ACQ_START_SECONDS": 32,
+    "ACQ_START_SUBSECONDS": 20,
+    "SPARE_00": 8,
+    "ST_BIAS_GAIN_MODE": 2,
+    "SW_BIAS_GAIN_MODE": 2,
+    "TABLE_ID": 32,
+    "PLAN_ID": 16,
+    "PLAN_STEP": 4,
+    "VIEW_ID": 4,
+    "RGFO_HALF_SPIN": 6,
+    "NSO_HALF_SPIN": 6,
+    "SPARE_01": 1,
+    "SUSPECT": 1,
+    "COMPRESSION": 3,
+    "BYTE_COUNT": 23,
+}
+
+# Define the packet fields needed to be stored in segmented data and their
+# corresponding bit lengths for direct event data products
 DE_METADATA_FIELDS = {
     "packet_version": 16,
     "spin_period": 16,
@@ -742,7 +810,7 @@ DE_METADATA_FIELDS = {
 # These are defined in the "Views" tab of the "*-SCI-LUT-*.xml" spreadsheet that
 # largely defines CoDICE processing.
 LO_COMPRESSION_ID_LOOKUP = {
-    0: CoDICECompression.LOSSY_A_LOSSLESS,
+    0: CoDICECompression.PACK_24_BIT,
     1: CoDICECompression.LOSSY_B_LOSSLESS,
     2: CoDICECompression.LOSSY_B_LOSSLESS,
     3: CoDICECompression.LOSSY_A_LOSSLESS,
