@@ -473,7 +473,15 @@ class ProcessInstrument(ABC):
         """
         logger.info(f"dep_str: {self.dependency_str}")
         dependencies = ProcessingInputCollection()
-        logger.info(f"dependencies loaded: {json.loads(self.dependency_str)}")
+        try:
+            test_parse = json.loads(self.dependency_str)
+            logger.info(f"Test parse successful: {type(test_parse)}")
+            logger.info(f"Test parse content: {test_parse}")
+            if isinstance(test_parse, list):
+                for i, item in enumerate(test_parse):
+                    logger.info(f"Test item {i}: {type(item)} - {item}")
+        except Exception as e:
+            logger.error(f"Test parse failed: {e}")
         dependencies.deserialize(self.dependency_str)
         dependencies.download_all_files()
 
