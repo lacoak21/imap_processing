@@ -13,6 +13,7 @@ Examples
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import re
 import sys
@@ -266,7 +267,7 @@ def _parse_args() -> argparse.Namespace:
         dependency_filepath = download(args.dependency)
         with open(dependency_filepath) as f:
             args.dependency = f.read()
-        print(args.dependency, "dependency args string")
+        logger.info(args.dependency, "dependency args string")
 
     return args
 
@@ -472,6 +473,7 @@ class ProcessInstrument(ABC):
         """
         logger.info(f"dep_str: {self.dependency_str}")
         dependencies = ProcessingInputCollection()
+        logger.info(f"dependencies loaded: {json.loads(self.dependency_str)}")
         dependencies.deserialize(self.dependency_str)
         dependencies.download_all_files()
 
