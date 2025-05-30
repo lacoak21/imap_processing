@@ -13,7 +13,6 @@ Examples
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import re
 import sys
@@ -473,7 +472,7 @@ class ProcessInstrument(ABC):
         """
         logger.info(f"dep_str: {self.dependency_str}")
         dependencies = ProcessingInputCollection()
-        dependencies.deserialize(json.loads(self.dependency_str))
+        dependencies.deserialize(self.dependency_str)
         dependencies.download_all_files()
 
         # Furnish spice kernels
