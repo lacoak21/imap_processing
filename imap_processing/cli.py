@@ -954,26 +954,21 @@ class Lo(ProcessInstrument):
 
         elif self.data_level == "l1b":
             data_dict = {}
-            # TODO: Check this and update with new features as needed.
-            for input_type in dependencies.processing_input:
-                science_files = dependencies.get_file_paths(
-                    source="lo", descriptor=input_type.descriptor
-                )
-                dataset = load_cdf(science_files[0])
+            science_files = dependencies.get_file_paths(source="lo", data_type="l1a")
+            for file in science_files:
+                dataset = load_cdf(file)
                 data_dict[dataset.attrs["Logical_source"]] = dataset
             datasets = lo_l1b.lo_l1b(data_dict)
 
         elif self.data_level == "l1c":
             data_dict = {}
-            for input_type in dependencies.processing_input:
-                science_files = dependencies.get_file_paths(
-                    source="lo", descriptor=input_type.descriptor
-                )
-                dataset = load_cdf(science_files[0])
+            anc_depedencies: list = dependencies.get_file_paths(
+                source="lo", descriptor="goodtimes"
+            )
+            science_files = dependencies.get_file_paths(source="lo", descriptor="de")
+            for file in science_files:
+                dataset = load_cdf(file)
                 data_dict[dataset.attrs["Logical_source"]] = dataset
-                # TODO: add dependencies to S3 and dependency tree
-                #  setting to empty for now
-            anc_depedencies: list = []
             datasets = lo_l1c.lo_l1c(data_dict, anc_depedencies)
 
         return datasets
