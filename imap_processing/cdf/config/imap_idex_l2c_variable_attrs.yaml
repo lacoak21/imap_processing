@@ -80,7 +80,8 @@ counts: &counts
   FORMAT: I20
   UNITS: counts
   VAR_TYPE: data
-  DISPLAY_TYPE: time_series
+  LABLAXIS: Counts
+  DISPLAY_TYPE: spectrogram
   DEPEND_0: epoch
   VALIDMIN: 0
   VALIDMAX: *int_maxval

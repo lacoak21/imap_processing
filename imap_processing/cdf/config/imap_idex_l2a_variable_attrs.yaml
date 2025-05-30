@@ -117,6 +117,7 @@ mass_index:
   FORMAT: I4
   VAR_TYPE: support_data
   SCALETYP: linear
+  LABLAXIS: Mass Index
   VALIDMIN: 0
   VALIDMAX: 500
   FILLVAL: *int_fillval
