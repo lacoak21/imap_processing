@@ -166,19 +166,17 @@ class CoDICEL1aPipeline:
         """
         self.coords = {}
 
-        coord_names = ["epoch", *list(self.config["output_dims"].keys())]
-
-        # These are labels unique to lo-counters products coordinates
-        if self.config["dataset_name"] in [
-            "imap_codice_l1a_lo-counters-aggregated",
-            "imap_codice_l1a_lo-counters-singles",
-        ]:
-            coord_names.append("spin_sector_pairs_label")
+        coord_names = [
+            "epoch",
+            *self.config["output_dims"].keys(),
+            *[key + "_label" for key in self.config["output_dims"].keys()],
+        ]
 
         # Define the values for the coordinates
         for name in coord_names:
             if name == "epoch":
                 values = self.calculate_epoch_values()
+                dims = [name]
             elif name in [
                 "esa_step",
                 "inst_az",
@@ -188,6 +186,7 @@ class CoDICEL1aPipeline:
                 "ssd_index",
             ]:
                 values = np.arange(self.config["output_dims"][name])
+                dims = [name]
             elif name == "spin_sector_pairs_label":
                 values = np.array(
                     [
@@ -199,11 +198,22 @@ class CoDICEL1aPipeline:
                         "150-180 deg",
                     ]
                 )
+                dims = [name]
+            elif name in [
+                "spin_sector_label",
+                "esa_step_label",
+                "inst_az_label",
+                "spin_sector_index_label",
+                "ssd_index_label",
+            ]:
+                key = name.removesuffix("_label")
+                values = np.arange(self.config["output_dims"][key]).astype(str)
+                dims = [key]
 
             coord = xr.DataArray(
                 values,
                 name=name,
-                dims=[name],
+                dims=dims,
                 attrs=self.cdf_attrs.get_variable_attributes(name),
             )
 
@@ -928,7 +938,13 @@ def create_hskp_dataset(packet: xr.Dataset) -> xr.Dataset:
         if variable in exclude_variables:
             continue
 
-        attrs = cdf_attrs.get_variable_attributes(variable)
+        # The housekeeping spin_period variable has different values than
+        # the spin_value attribute in other datasets, so it gets special
+        # treatment
+        if variable == "spin_period":
+            attrs = cdf_attrs.get_variable_attributes("spin_period_hskp")
+        else:
+            attrs = cdf_attrs.get_variable_attributes(variable)
 
         dataset[variable] = xr.DataArray(
             packet[variable].data, dims=["epoch"], attrs=attrs
