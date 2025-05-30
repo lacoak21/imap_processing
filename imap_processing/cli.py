@@ -266,7 +266,6 @@ def _parse_args() -> argparse.Namespace:
         dependency_filepath = download(args.dependency)
         with open(dependency_filepath) as f:
             args.dependency = f.read()
-        logger.info(args.dependency, "dependency args string")
 
     return args
 
@@ -470,7 +469,6 @@ class ProcessInstrument(ABC):
         dependencies : ProcessingInputCollection
             Object containing dependencies to process.
         """
-        logger.info(f"dep_str: {self.dependency_str}")
         dependencies = ProcessingInputCollection()
         dependencies.deserialize(self.dependency_str)
         dependencies.download_all_files()
