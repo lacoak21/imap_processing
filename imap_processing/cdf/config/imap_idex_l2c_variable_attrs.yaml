@@ -77,7 +77,7 @@ rectangular_lat_pixel:
 counts: &counts
   CATDESC: Number of raw dust events for each pixel
   FIELDNAM: Dust Counts
-  FORMAT: I12
+  FORMAT: I20
   UNITS: counts
   VAR_TYPE: data
   DISPLAY_TYPE: time_series
