@@ -149,7 +149,7 @@ def idex_healpix_map(
         "Sky_tiling_type": SkyTilingType.HEALPIX.value,
         "HEALPix_nside": str(nside),
         "HEALPix_nest": str(nested),
-        "Spice_reference_frame": str(IDEX_EVENT_REFERENCE_FRAME.value),
+        "Spice_reference_frame": IDEX_EVENT_REFERENCE_FRAME.name,
         "num_points": str(n_pix),
     } | idex_attrs.get_global_attributes("imap_idex_l2c_sci-healpix")
     l2c_dataset.attrs.update(map_attrs)
@@ -242,7 +242,7 @@ def idex_rectangular_map(
     map_attrs = {
         "sky_tiling_type": SkyTilingType.RECTANGULAR.value,
         "Spacing_degrees": str(spacing_deg),
-        "Spice_reference_frame": IDEX_EVENT_REFERENCE_FRAME.value,
+        "Spice_reference_frame": IDEX_EVENT_REFERENCE_FRAME.name,
         "num_points": str(counts.size),
     } | idex_attrs.get_global_attributes("imap_idex_l2c_sci-rectangular")
 
