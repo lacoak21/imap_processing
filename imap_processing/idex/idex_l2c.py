@@ -193,7 +193,7 @@ def idex_rectangular_map(
         longitude_wrapped, latitude, bins=[grid.az_bin_edges, grid.el_bin_edges]
     )
     counts_da = xr.DataArray(
-        counts[np.newaxis, :, :],
+        counts[np.newaxis, :, :].astype(np.int64),
         name="counts",
         dims=("epoch", "rectangular_lon_pixel", "rectangular_lat_pixel"),
         attrs=idex_attrs.get_variable_attributes("rectangular_counts"),
@@ -241,9 +241,9 @@ def idex_rectangular_map(
     )
     map_attrs = {
         "sky_tiling_type": SkyTilingType.RECTANGULAR.value,
-        "Spacing_degrees": spacing_deg,
-        "Spice_reference_frame": IDEX_EVENT_REFERENCE_FRAME,
-        "num_points": counts.size,
+        "Spacing_degrees": str(spacing_deg),
+        "Spice_reference_frame": IDEX_EVENT_REFERENCE_FRAME.value,
+        "num_points": str(counts.size),
     } | idex_attrs.get_global_attributes("imap_idex_l2c_sci-rectangular")
 
     l2c_dataset.attrs.update(map_attrs)

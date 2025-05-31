@@ -90,7 +90,7 @@ counts: &counts
 healpix_counts:
   <<: *counts
   DEPEND_1: pixel_index
-  LABL_PTR_1: pixel_label
+  LABLAXIS: Counts
 
 rectangular_counts:
   <<: *counts
