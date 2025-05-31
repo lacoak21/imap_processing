@@ -79,7 +79,7 @@ counts: &counts
   FIELDNAM: Dust Counts
   FORMAT: I20
   UNITS: counts
-  VAR_TYPE: datagi
+  VAR_TYPE: data
   DISPLAY_TYPE: spectrogram
   DEPEND_0: epoch
   VALIDMIN: 0
