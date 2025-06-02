@@ -125,7 +125,7 @@ def idex_healpix_map(
     counts = np.histogram(hpix_idx, bins=n_pix, range=(0, n_pix))[0]
     # Add epoch dimension
     counts_da = xr.DataArray(
-        counts[np.newaxis, :],
+        counts[np.newaxis, :].astype(np.int64),
         name="counts",
         dims=("epoch", CoordNames.HEALPIX_INDEX.value),
         attrs=idex_attrs.get_variable_attributes("healpix_counts"),
