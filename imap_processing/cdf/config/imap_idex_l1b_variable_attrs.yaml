@@ -397,6 +397,7 @@ latitude:
   <<: *spice_base
   FIELDNAM: Latitude
   CATDESC: Latitude of the dust event as observed from Earth in the ECLIPJ2000 frame.
+  LABLAXIS: Latitude
   DICT_KEY: SPASE>Support>SupportQuantity:Latitude
 
 spin_phase:
