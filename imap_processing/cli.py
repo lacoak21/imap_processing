@@ -419,7 +419,6 @@ class ProcessInstrument(ABC):
                     extension="cdf",
                     table="science",
                 )
-
                 if existing_file:
                     raise ProcessInstrument.ImapFileExistsError(
                         f"File {filename} already exists in the IMAP SDC. "
