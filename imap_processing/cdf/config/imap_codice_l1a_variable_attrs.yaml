@@ -35,15 +35,13 @@ hskp_attrs: &hskp_default
     VAR_TYPE: support_data
 
 hi_energies_attrs: &hi_energies_default
-    DEPEND_0: epoch
     DISPLAY_TYPE: no_plot
     FIELDNAM: Energy Table
     FILLVAL: *real_fillval
-    FORMAT: F10.7
-    LABLAXIS: MeV/n
+    FORMAT: F12.9
     SCALETYP: log
     UNITS: MeV/n
-    VALIDMIN: 0.05
+    VALIDMIN: 0.0
     VALIDMAX: 200.00
     VAR_TYPE: support_data
 
@@ -147,36 +145,42 @@ ssd_index:
 # <=== Labels ===>
 esa_step_label:
     CATDESC: ESA Step
+    DEPEND_1: esa_step
     FIELDNAM: ESA Step
     FORMAT: A3
     VAR_TYPE: metadata
 
 inst_az_label:
     CATDESC: Instrument Azimuth
+    DEPEND_1: inst_az
     FIELDNAM: Instrument Azimuth
     FORMAT: A2
     VAR_TYPE: metadata
 
 spin_sector_label:
     CATDESC: Spin Sector
+    DEPEND_1: spin_sector
     FIELDNAM: Spin Sector
     FORMAT: A2
     VAR_TYPE: metadata
 
 spin_sector_index_label:
     CATDESC: Spin Sector Index
+    DEPEND_1: spin_sector_index
     FIELDNAM: Spin Sector Index
     FORMAT: A2
     VAR_TYPE: metadata
 
 spin_sector_pairs_label:
     CATDESC: Spin Sector Pairs
+    DEPEND_1: spin_sector_pairs
     FIELDNAM: Spin Sector Pairs
     FORMAT: A11
     VAR_TYPE: metadata
 
 ssd_index_label:
     CATDESC: SSD Index
+    DEPEND_1: ssd_index
     FIELDNAM: SSD Index
     FORMAT: A2
     VAR_TYPE: metadata
@@ -185,7 +189,7 @@ ssd_index_label:
 # The following are set in multiple data products
 acquisition_time_per_step:
     CATDESC: Acquisition time for each step of energy
-    DEPEND_0: esa_step
+    DEPEND_1: esa_step
     FIELDNAM: Acquisition Time
     FILLVAL: *real_fillval
     FORMAT: F10.3
@@ -249,7 +253,7 @@ direct_events_attrs: &direct_events
 
 energy_table:
     CATDESC: ElectroStatic Analyzer Energy Values
-    DEPEND_0: esa_step
+    DEPEND_1: esa_step
     FIELDNAM: Energy Table
     FORMAT: F12.6
     LABLAXIS: eV
@@ -295,7 +299,7 @@ spin_period:
     DISPLAY_TYPE: time_series
     FIELDNAM: Spin Period
     FILLVAL: *real_fillval
-    FORMAT: F4.2
+    FORMAT: F10.3
     LABLAXIS: Spin Period
     SCALETYP: linear
     UNITS: s

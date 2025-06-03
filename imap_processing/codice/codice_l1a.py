@@ -292,7 +292,7 @@ class CoDICEL1aPipeline:
         if self.config["dataset_name"] == "imap_codice_l1a_hi-sectored":
             for species in self.config["energy_table"]:
                 dataset = self.define_energy_bins(dataset, species)
-            dataset = dataset.drop_vars("esa_step")
+            dataset = dataset.drop_vars(["esa_step", "esa_step_label"])
 
         return dataset
 
@@ -326,14 +326,16 @@ class CoDICEL1aPipeline:
             centers,
             dims=[energy_bin_name],
             attrs=self.cdf_attrs.get_variable_attributes(
-                f"{self.config['dataset_name'].split('_')[-1]}-{energy_bin_name}"
+                f"{self.config['dataset_name'].split('_')[-1]}-{energy_bin_name}",
+                check_schema=False,
             ),
         )
         dataset[f"{energy_bin_name}_delta"] = xr.DataArray(
             deltas,
             dims=[f"{energy_bin_name}_delta"],
             attrs=self.cdf_attrs.get_variable_attributes(
-                f"{self.config['dataset_name'].split('_')[-1]}-{energy_bin_name}_delta"
+                f"{self.config['dataset_name'].split('_')[-1]}-{energy_bin_name}_delta",
+                check_schema=False,
             ),
         )
 
