@@ -47,7 +47,7 @@ from imap_processing.cdf.utils import load_cdf, write_cdf
 #   from imap_processing import cdf
 # In code:
 #   call cdf.utils.write_cdf
-from imap_processing.codice import codice_l1a, codice_l1b
+from imap_processing.codice import codice_l1a, codice_l1b, codice_l2
 from imap_processing.glows.l1a.glows_l1a import glows_l1a
 from imap_processing.glows.l1b.glows_l1b import glows_l1b
 from imap_processing.glows.l2.glows_l2 import glows_l2
@@ -633,6 +633,15 @@ class Codice(ProcessInstrument):
                 )
             # process data
             datasets = [codice_l1b.process_codice_l1b(science_files[0])]
+
+        if self.data_level == "l2":
+            science_files = dependencies.get_file_paths(source="codice")
+            if len(science_files) != 1:
+                raise ValueError(
+                    f"CoDICE L2 requires exactly one input science file, received: "
+                    f"{science_files}."
+                )
+            datasets = [codice_l2.process_codice_l2(science_files[0])]
 
         return datasets
 
