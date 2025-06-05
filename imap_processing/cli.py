@@ -791,25 +791,23 @@ class Hit(ProcessInstrument):
 
         dependency_list = dependencies.processing_input
         if self.data_level == "l1a":
-            if len(dependency_list) > 1:
+            # 1 science files and 2 spice files
+            if len(dependency_list) > 3:
                 raise ValueError(
                     f"Unexpected dependencies found for HIT L1A:"
                     f"{dependency_list}. Expected only one dependency."
                 )
             # process data to L1A products
-            science_files = dependencies.get_file_paths(source="hit")
+            science_files = dependencies.get_file_paths(source="hit", descriptor="raw")
             datasets = hit_l1a(science_files[0])
 
         elif self.data_level == "l1b":
-            if len(dependency_list) > 1:
-                raise ValueError(
-                    f"Unexpected dependencies found for HIT L1B:"
-                    f"{dependency_list}. Expected only one dependency."
-                )
             data_dict = {}
-            # TODO: Check this and update with new features as needed.
+            # TODO: Sean removed the file number error handling to work with the
+            #  new SPICE dependencies for SIT-4. Need to review and make changes
+            #  if needed.
             l0_files = dependencies.get_file_paths(source="hit", descriptor="raw")
-            l1a_files = dependencies.get_file_paths(source="hit")
+            l1a_files = dependencies.get_file_paths(source="hit", data_type="l1a")
             if len(l0_files) > 0:
                 # Add path to CCSDS file to process housekeeping
                 data_dict["imap_hit_l0_raw"] = l0_files[0]
@@ -948,21 +946,21 @@ class Lo(ProcessInstrument):
         """
         print(f"Processing IMAP-Lo {self.data_level}")
         datasets: list[xr.Dataset] = []
-        dependency_list = dependencies.processing_input
         if self.data_level == "l1a":
             # L1A packet / products are 1 to 1. Should only have
             # one dependency file
-            if len(dependency_list) > 1:
+            science_files = dependencies.get_file_paths(source="lo", data_type="l0")
+            if len(science_files) > 1:
                 raise ValueError(
                     f"Unexpected dependencies found for IMAP-Lo L1A:"
-                    f"{dependency_list}. Expected only one dependency."
+                    f"{science_files}. Expected only one dependency."
                 )
-            science_files = dependencies.get_file_paths(source="lo")
             datasets = lo_l1a.lo_l1a(science_files[0])
 
         elif self.data_level == "l1b":
             data_dict = {}
             science_files = dependencies.get_file_paths(source="lo", data_type="l1a")
+            logger.info(f"Science files for L1B: {science_files}")
             for file in science_files:
                 dataset = load_cdf(file)
                 data_dict[dataset.attrs["Logical_source"]] = dataset
