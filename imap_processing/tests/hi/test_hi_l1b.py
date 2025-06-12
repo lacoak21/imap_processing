@@ -7,7 +7,7 @@ import pytest
 import xarray as xr
 
 from imap_processing.cdf.utils import load_cdf
-from imap_processing.hi.l1b.hi_l1b import (
+from imap_processing.hi.hi_l1b import (
     compute_coincidence_type_and_tofs,
     compute_hae_coordinates,
     de_esa_energy_step,
@@ -19,7 +19,7 @@ from imap_processing.spice.geometry import SpiceFrame
 
 
 def test_hi_l1b_hk(hi_l0_test_data_path):
-    """Test coverage for imap_processing.hi.hi_l1b.hi_l1b() with
+    """Test coverage for imap_processing.hi.hi_l1b() with
     housekeeping L1A as input"""
     # TODO: once things are more stable, check in an L1A HK file as test data
     bin_data_path = hi_l0_test_data_path / "H90_NHK_20241104.bin"
@@ -35,7 +35,7 @@ def test_hi_l1b_hk(hi_l0_test_data_path):
 def test_hi_l1b_de(
     hi_l1_test_data_path, spice_test_data_path, use_fake_spin_data_for_time
 ):
-    """Test coverage for imap_processing.hi.hi_l1b.hi_l1b() with
+    """Test coverage for imap_processing.hi_l1b.hi_l1b() with
     direct events L1A as input"""
     # Start MET time of spin for simulated input data is 482372988
     use_fake_spin_data_for_time(482372987.999)
@@ -154,9 +154,9 @@ def test_compute_coincidence_type_and_time_deltas(synthetic_trigger_id_and_tof_d
     )
 
 
-@mock.patch("imap_processing.hi.l1b.hi_l1b.parse_sensor_number", return_value=90)
-@mock.patch("imap_processing.hi.l1b.hi_l1b.get_instrument_spin_phase")
-@mock.patch("imap_processing.hi.l1b.hi_l1b.get_spacecraft_spin_phase")
+@mock.patch("imap_processing.hi.hi_l1b.parse_sensor_number", return_value=90)
+@mock.patch("imap_processing.hi.hi_l1b.get_instrument_spin_phase")
+@mock.patch("imap_processing.hi.hi_l1b.get_spacecraft_spin_phase")
 def test_de_nominal_bin_and_spin_phase(
     spacecraft_phase_moc, instrument_phase_mock, parse_sensor_number_mock
 ):
@@ -202,7 +202,7 @@ def test_de_nominal_bin_and_spin_phase(
 
 
 @pytest.mark.parametrize("sensor_number", [45, 90])
-@mock.patch("imap_processing.hi.l1b.hi_l1b.instrument_pointing")
+@mock.patch("imap_processing.hi.hi_l1b.instrument_pointing")
 def test_compute_hae_coordinates(mock_instrument_pointing, sensor_number):
     """Test coverage for compute_hae_coordinates function."""
 
