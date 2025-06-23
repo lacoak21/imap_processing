@@ -205,9 +205,12 @@ def update_ccsds_header_dims(sci_dataset: xr.Dataset) -> xr.Dataset:
     it will be updated later in the process to represent
     time per science frame, so another time dimension is
     needed for the ccsds header fields.This function
-    updates the dimension for these fields to use sc_tick
-    instead of epoch. sc_tick is the time the packet was
-    created.
+    updates the dimension for all data vars to use sc_tick
+    instead of epoch. It also temporarily sets sc_tick as the
+    dimension for the epoch coordinate (to be updated later
+    in the assemble_science_frames function).
+
+    Note: sc_tick is the time the packet was created.
 
     Parameters
     ----------
@@ -297,7 +300,7 @@ def assemble_science_frames(sci_dataset: xr.Dataset) -> xr.Dataset:
     # Extract data per science frame and organize by L1A data products
     count_rates = []
     pha = []
-    epoch_per_science_frame = np.array([])
+    epoch_per_science_frame = []
     for idx in starting_indices:
         # Data from 20 packets in a science frame
         science_data_frame = science_data[idx : idx + FRAME_SIZE]
@@ -305,12 +308,15 @@ def assemble_science_frames(sci_dataset: xr.Dataset) -> xr.Dataset:
         count_rates.append("".join(science_data_frame[:6]))
         # Last 14 packets contain pulse height event data in binary
         pha.append("".join(science_data_frame[6:]))
-        # Get first packet's epoch for the science frame
-        epoch_per_science_frame = np.append(epoch_per_science_frame, epoch_data[idx])
+        # Get the mean epoch in the frame to use as the data collection time
+        epoch_per_science_frame.append(
+            calculate_epoch_mean(epoch_data, idx, FRAME_SIZE)
+        )
 
-    # Add new data variables to the dataset
-    sci_dataset = sci_dataset.drop_vars("epoch")
-    sci_dataset.coords["epoch"] = epoch_per_science_frame
+    # Add new data variables to the dataset and update epoch coordinate
+    sci_dataset.coords["epoch"] = xr.DataArray(
+        np.array(epoch_per_science_frame, dtype=np.int64), dims=["epoch"]
+    )
     sci_dataset["count_rates_raw"] = xr.DataArray(
         count_rates, dims=["epoch"], name="count_rates_raw"
     )
@@ -374,6 +380,31 @@ def decompress_rates_16_to_32(packed: int) -> int:
         decompressed_int = packed
 
     return decompressed_int
+
+
+def calculate_epoch_mean(
+    epoch_data: np.ndarray, idx: int, frame_size: int
+) -> np.floating:
+    """
+    Calculate the mean epoch for a science frame.
+
+    This function is used to get the center collection time for science data.
+
+    Parameters
+    ----------
+    epoch_data : np.ndarray
+        Array of epoch values for every science packet.
+    idx : int
+        Starting index of the science frame.
+    frame_size : int
+        Number of packets in the science frame.
+
+    Returns
+    -------
+    float
+        Mean epoch value for the science frame.
+    """
+    return np.mean([epoch_data[idx], epoch_data[idx + frame_size - 1]])
 
 
 def decom_hit(sci_dataset: xr.Dataset) -> xr.Dataset:
