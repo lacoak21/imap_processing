@@ -1122,6 +1122,11 @@ class Mag(ProcessInstrument):
                 mode=DataMode(descriptor_no_frame.upper()),
             )
 
+        for ds in datasets:
+            if not np.all(ds["epoch"].values[1:] > ds["epoch"].values[:-1]):
+                raise ValueError(
+                    "Timestamps for output file are not monotonically increasing."
+                )
         return datasets
 
 
