@@ -16,6 +16,7 @@ from imap_processing.ultra.l0.decom_ultra import (
 from imap_processing.ultra.l0.ultra_utils import (
     ULTRA_AUX,
     ULTRA_CMD_TEXT,
+    ULTRA_ENERGY_EVENTS,
     ULTRA_ENERGY_RATES,
     ULTRA_EVENTS,
     ULTRA_HK,
@@ -27,7 +28,7 @@ from imap_processing.utils import packet_file_to_datasets
 logger = logging.getLogger(__name__)
 
 
-def ultra_l1a(packet_file: str, apid_input: Optional[int] = None) -> list[xr.Dataset]:
+def ultra_l1a(packet_file: str, apid_input: Optional[int] = None) -> list[xr.Dataset]:  # noqa: PLR0912
     """
     Will process ULTRA L0 data into L1A CDF files at output_filepath.
 
@@ -84,8 +85,16 @@ def ultra_l1a(packet_file: str, apid_input: Optional[int] = None) -> list[xr.Dat
                 ULTRA_ENERGY_RATES.apid.index(apid)
             ]
         elif apid in ULTRA_EVENTS.apid:
-            decom_ultra_dataset = process_ultra_events(datasets_by_apid[apid])
+            decom_ultra_dataset = process_ultra_events(datasets_by_apid[apid], apid)
             gattr_key = ULTRA_EVENTS.logical_source[ULTRA_EVENTS.apid.index(apid)]
+            # Add coordinate attributes
+            attrs = attr_mgr.get_variable_attributes("event_id")
+            decom_ultra_dataset.coords["event_id"].attrs.update(attrs)
+        elif apid in ULTRA_ENERGY_EVENTS.apid:
+            decom_ultra_dataset = process_ultra_events(datasets_by_apid[apid], apid)
+            gattr_key = ULTRA_ENERGY_EVENTS.logical_source[
+                ULTRA_ENERGY_EVENTS.apid.index(apid)
+            ]
             # Add coordinate attributes
             attrs = attr_mgr.get_variable_attributes("event_id")
             decom_ultra_dataset.coords["event_id"].attrs.update(attrs)

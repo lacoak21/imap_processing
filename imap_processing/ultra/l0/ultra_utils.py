@@ -73,6 +73,18 @@ ULTRA_EVENTS = PacketProperties(
     len_array=None,
     mantissa_bit_length=None,
 )
+ULTRA_ENERGY_EVENTS = PacketProperties(
+    apid=[897, 961],
+    logical_source=[
+        "imap_ultra_l1a_45sensor-energy-de",
+        "imap_ultra_l1a_90sensor-energy-de",
+    ],
+    addition_to_logical_desc="Single Energy Events",
+    width=None,
+    block=None,
+    len_array=None,
+    mantissa_bit_length=None,
+)
 ULTRA_HK = PacketProperties(
     apid=[
         866,
@@ -218,6 +230,18 @@ EVENT_FIELD_RANGES = {
     "phase_angle": (156, 166),
 }
 
+# Module-level constant for event field ranges
+ENERGY_EVENT_FIELD_RANGES = {
+    # Stop Type
+    "stop_type": (0, 4),
+    # Energy/Pulse Height
+    "energy_ph": (4, 16),
+    # Pulse Width
+    "pulse_width": (16, 27),
+    # Bin
+    "bin": (27, 33),
+}
+
 
 RATES_KEYS = [
     # Start Right Full Constant Fraction Discriminator (CFD) Pulses
@@ -335,7 +359,6 @@ RATES_KEYS = [
     # "discarded_events"
 ]
 
-
 ENERGY_RATES_KEYS = [
     # SSD0 Energy LED
     "ssd0_energy_led",
@@ -362,7 +385,7 @@ ENERGY_RATES_KEYS = [
 ]
 
 
-def parse_event(event_binary: str) -> dict:
+def parse_event(event_binary: str, field_ranges: dict) -> dict:
     """
     Parse a binary string representing a single event.
 
@@ -370,6 +393,8 @@ def parse_event(event_binary: str) -> dict:
     ----------
     event_binary : str
         Event binary string.
+    field_ranges : dict
+        The field ranges for the event data.
 
     Returns
     -------
@@ -377,7 +402,7 @@ def parse_event(event_binary: str) -> dict:
         Dict of the fields for a single event.
     """
     fields_dict = {}
-    for field, (start, end) in EVENT_FIELD_RANGES.items():
+    for field, (start, end) in field_ranges.items():
         field_value = int(event_binary[start:end], 2)
         fields_dict[field] = field_value
     return fields_dict

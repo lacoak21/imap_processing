@@ -15,10 +15,13 @@ from imap_processing.ultra.l0.decom_tools import (
     read_image_raw_events_binary,
 )
 from imap_processing.ultra.l0.ultra_utils import (
+    ENERGY_EVENT_FIELD_RANGES,
     ENERGY_RATES_KEYS,
     EVENT_FIELD_RANGES,
     RATES_KEYS,
+    ULTRA_ENERGY_EVENTS,
     ULTRA_ENERGY_RATES,
+    ULTRA_EVENTS,
     ULTRA_RATES,
     ULTRA_TOF,
 )
@@ -138,7 +141,7 @@ def get_event_id(shcoarse: NDArray) -> NDArray:
     return np.array(event_ids, dtype=np.int64)
 
 
-def process_ultra_events(ds: xr.Dataset) -> xr.Dataset:
+def process_ultra_events(ds: xr.Dataset, apid: int) -> xr.Dataset:
     """
     Unpack and decode Ultra EVENTS packets.
 
@@ -146,12 +149,21 @@ def process_ultra_events(ds: xr.Dataset) -> xr.Dataset:
     ----------
     ds : xarray.Dataset
         Events dataset.
+    apid : int
+        APID of the events dataset.
 
     Returns
     -------
     ds : xarray.Dataset
         Dataset containing the decoded and decompressed data.
     """
+    if apid in ULTRA_EVENTS.apid:
+        field_ranges = EVENT_FIELD_RANGES
+    elif apid in ULTRA_ENERGY_EVENTS.apid:
+        field_ranges = ENERGY_EVENT_FIELD_RANGES
+    else:
+        raise ValueError(f"APID {apid} not recognized for Ultra events processing.")
+
     all_events = []
     all_indices = []
 
@@ -162,7 +174,7 @@ def process_ultra_events(ds: xr.Dataset) -> xr.Dataset:
         field: attrs.get_variable_attributes(field).get(
             "FILLVAL", np.iinfo(np.int64).min
         )
-        for field in EVENT_FIELD_RANGES
+        for field in field_ranges
     }
 
     counts = ds["count"].values
@@ -175,7 +187,9 @@ def process_ultra_events(ds: xr.Dataset) -> xr.Dataset:
         else:
             # Here there are multiple images in a single packet,
             # so we need to loop through each image and decompress it.
-            event_data_list = read_image_raw_events_binary(eventdata_array[i], count)
+            event_data_list = read_image_raw_events_binary(
+                eventdata_array[i], count, field_ranges
+            )
             all_events.extend(event_data_list)
             # Keep track of how many times does the event occurred at this epoch.
             all_indices.extend([i] * count)
@@ -191,7 +205,7 @@ def process_ultra_events(ds: xr.Dataset) -> xr.Dataset:
     }
 
     # Add the event data to the expanded dataset.
-    for key in EVENT_FIELD_RANGES:
+    for key in field_ranges:
         expanded_data[key] = np.array([event[key] for event in all_events])
 
     event_ids = get_event_id(expanded_data["shcoarse"])
