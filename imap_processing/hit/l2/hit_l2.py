@@ -137,7 +137,7 @@ def add_cdf_attributes(
             label_array = xr.DataArray(
                 dataset[dim].values.astype(str),
                 name=f"{dim}_label",
-                dims=[dim],
+                dims=[f"{dim}_label"],
                 attrs=attr_mgr.get_variable_attributes(
                     f"{dim}_label", check_schema=False
                 ),
@@ -312,6 +312,7 @@ def calculate_intensities_for_a_species(
         The updated dataset with intensities calculated for the given species.
     """
     updated_ds = l2_dataset.copy()
+    # Get the dynamic threshold state for the species variable
     dynamic_threshold_states = updated_ds["dynamic_threshold_state"].values
     unique_states = np.unique(dynamic_threshold_states)
     species_name = (
