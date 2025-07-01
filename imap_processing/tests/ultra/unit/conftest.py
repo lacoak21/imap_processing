@@ -16,6 +16,10 @@ from imap_processing.ultra.l0.ultra_utils import (
     ULTRA_ENERGY_EVENTS,
     ULTRA_ENERGY_RATES,
     ULTRA_EVENTS,
+    ULTRA_PRI_1_EVENTS,
+    ULTRA_PRI_2_EVENTS,
+    ULTRA_PRI_3_EVENTS,
+    ULTRA_PRI_4_EVENTS,
     ULTRA_RATES,
     ULTRA_TOF,
 )
@@ -103,6 +107,19 @@ def ccsds_path_functional():
 
 
 @pytest.fixture
+def ccsds_path_extra():
+    """Returns the ccsds directory."""
+    return (
+        imap_module_directory
+        / "tests"
+        / "ultra"
+        / "data"
+        / "l0"
+        / "FM45_UltraFM45Extra_TV_Tests_2024-01-22T0930_20240122T093008.CCSDS"
+    )
+
+
+@pytest.fixture
 def xtce_path():
     """Returns the xtce image rates directory."""
     return (
@@ -178,6 +195,14 @@ def decom_test_data(request, xtce_path):
         ULTRA_ENERGY_EVENTS.apid[1]: lambda ds, apid: process_ultra_events(ds, apid),
         ULTRA_EVENTS.apid[0]: lambda ds, apid: process_ultra_events(ds, apid),
         ULTRA_EVENTS.apid[1]: lambda ds, apid: process_ultra_events(ds, apid),
+        ULTRA_PRI_1_EVENTS.apid[0]: lambda ds, apid: process_ultra_events(ds, apid),
+        ULTRA_PRI_1_EVENTS.apid[1]: lambda ds, apid: process_ultra_events(ds, apid),
+        ULTRA_PRI_2_EVENTS.apid[0]: lambda ds, apid: process_ultra_events(ds, apid),
+        ULTRA_PRI_2_EVENTS.apid[1]: lambda ds, apid: process_ultra_events(ds, apid),
+        ULTRA_PRI_3_EVENTS.apid[0]: lambda ds, apid: process_ultra_events(ds, apid),
+        ULTRA_PRI_3_EVENTS.apid[1]: lambda ds, apid: process_ultra_events(ds, apid),
+        ULTRA_PRI_4_EVENTS.apid[0]: lambda ds, apid: process_ultra_events(ds, apid),
+        ULTRA_PRI_4_EVENTS.apid[1]: lambda ds, apid: process_ultra_events(ds, apid),
         ULTRA_RATES.apid[0]: lambda ds, apid: process_ultra_rates(ds),
         ULTRA_RATES.apid[1]: lambda ds, apid: process_ultra_rates(ds),
         ULTRA_ENERGY_RATES.apid[0]: lambda ds, apid: process_ultra_energy_rates(ds),
