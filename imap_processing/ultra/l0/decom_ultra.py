@@ -21,6 +21,7 @@ from imap_processing.ultra.l0.ultra_utils import (
     RATES_KEYS,
     ULTRA_ENERGY_EVENTS,
     ULTRA_ENERGY_RATES,
+    ULTRA_ENERGY_SPECTRA,
     ULTRA_EVENTS,
     ULTRA_PRI_1_EVENTS,
     ULTRA_PRI_2_EVENTS,
@@ -302,5 +303,44 @@ def process_ultra_energy_rates(ds: xr.Dataset) -> xr.Dataset:
 
     for key, values in decom_data.items():
         ds[key] = xr.DataArray(np.array(values), dims=["epoch"])
+
+    return ds
+
+
+def process_ultra_energy_spectra(ds: xr.Dataset) -> xr.Dataset:
+    """
+    Unpack and decode Ultra ENERGY SPECTRA packets.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+       Energy rates dataset.
+
+    Returns
+    -------
+    dataset : xarray.Dataset
+        Dataset containing the decoded and decompressed data.
+    """
+    energy_spectra = []
+
+    for rate in ds["compdata"]:
+        raw_binary_string = convert_to_binary_string(rate.item())
+        decompressed_data = decompress_binary(
+            raw_binary_string,
+            cast(int, ULTRA_ENERGY_SPECTRA.width),
+            cast(int, ULTRA_ENERGY_SPECTRA.block),
+            cast(int, ULTRA_ENERGY_SPECTRA.len_array),
+            cast(int, ULTRA_ENERGY_SPECTRA.mantissa_bit_length),
+        )
+
+        energy_spectra.append(decompressed_data)
+
+    energy_spectra = np.array(energy_spectra)
+
+    ds["ssd_sum"] = xr.DataArray(
+        energy_spectra,
+        dims=["epoch", "energyspectrastate"],
+        coords={"epoch": ds["epoch"], "energyspectrastate": np.arange(16)},
+    )
 
     return ds
