@@ -1564,7 +1564,6 @@ diagnosticmode:
   DEPEND_0: epoch
 
 dumpdata:
-  <<: *default_float32
   CATDESC: Dumpdata
   FIELDNAM: dumpdata
   LABLAXIS: dumpdata
@@ -2787,7 +2786,6 @@ macroblocks:
   DEPEND_0: epoch
 
 macrodata:
-  <<: *default_float32
   CATDESC: Macrodata
   FIELDNAM: macrodata
   LABLAXIS: macrodata
