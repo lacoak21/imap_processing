@@ -78,5 +78,47 @@ EXTERNAL_TEST_DATA = [
     ("imap_ultra_l1c-90sensor-efficiencies_20250101_v000.csv", "ultra/data/l1/"),
     ("imap_ultra_l1c-90sensor-gf_20250101_v000.csv", "ultra/data/l1/"),
     ("imap_ultra_l1c-90sensor-dps-exposure_20250101_v000.csv", "ultra/data/l1/"),
-    ("imap_ultra_l1b-45sensor-logistic-interpolation_20250101_v000.csv", "ultra/data/l1/")
+    ("imap_ultra_l1b-45sensor-logistic-interpolation_20250101_v000.csv",
+     "ultra/data/l1/"),
+
+    # MAG
+    ("mag-l1b-l1c-t013-magi-burst-in.csv",
+     "mag/validation/L1c/T013/",
+     ),
+    (
+        "mag-l1b-l1c-t013-mago-burst-in.csv",
+        "mag/validation/L1c/T013/",
+    ),
+    (
+        "mag-l1b-l1c-t014-mago-burst-in.csv",
+        "mag/validation/L1c/T014/",
+    ),
+    (
+        "mag-l1b-l1c-t014-magi-burst-in.csv",
+        "mag/validation/L1c/T014/",
+    ),
+    (
+        "mag-l1b-l1c-t015-mago-burst-in.csv",
+        "mag/validation/L1c/T015/",
+    ),
+    (
+        "mag-l1b-l1c-t016-mago-burst-in.csv",
+        "mag/validation/L1c/T016/",
+    ),
+    (
+        "imap_mag_l2_burst_20250506_v007.csv",
+        "mag/validation/L2/T021/",
+    ),
+    (
+        "mag-l1bc-l2-t021-mago-burst-in.csv",
+        "mag/validation/L2/T021/",
+    ),
+    (
+        "imap_mag_l2_burst-offsets_20250506_v006.cdf",
+        "mag/validation/L2/T021/",
+    ),
+    (
+        "mag-l1bc-l2-t021-magi-burst-in.csv",
+        "mag/validation/L2/T021/",
+    )
 ]  # fmt: skip
