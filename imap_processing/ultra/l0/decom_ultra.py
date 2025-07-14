@@ -56,22 +56,33 @@ def process_ultra_tof(ds: xr.Dataset, packet_props: PacketProperties) -> xr.Data
     """
     scalar_keys = [key for key in ds.data_vars if key not in ("packetdata", "sid")]
 
-    image_panes = packet_props.image_panes
+    image_planes = packet_props.image_planes
     rows = packet_props.pixel_window_rows
     cols = packet_props.pixel_window_columns
+    planes_per_packet = packet_props.image_planes_per_packet
 
-    if image_panes is None or rows is None or cols is None:
+    if (
+        image_planes is None
+        or rows is None
+        or cols is None
+        or planes_per_packet is None
+    ):
         raise ValueError(
             "Packet properties must specify pixel window dimensions, "
-            "width bit, and image panes for this packet type."
+            "width bit, image planes, and image planes per packet for this packet type."
         )
+    # Calculate the number of image packets based on the number of image panes and
+    # planes per packet.
+    num_image_packets = image_planes // planes_per_packet
 
     decom_data: defaultdict[str, list[np.ndarray]] = defaultdict(list)
     decom_data["packetdata"] = []
     valid_epoch = []
 
     for val, group in ds.groupby("epoch"):
-        if set(group["sid"].values) >= set(range(image_panes)):
+        if set(group["sid"].values) >= set(
+            np.arange(0, image_planes, planes_per_packet)
+        ):
             valid_epoch.append(val)
             group.sortby("sid")
 
@@ -79,7 +90,7 @@ def process_ultra_tof(ds: xr.Dataset, packet_props: PacketProperties) -> xr.Data
                 decom_data[key].append(group[key].values)
 
             image = []
-            for i in range(image_panes):
+            for i in range(num_image_packets):
                 binary = convert_to_binary_string(group["packetdata"].values[i])
                 decompressed = decompress_image(
                     group["p00"].values[i],
@@ -97,7 +108,7 @@ def process_ultra_tof(ds: xr.Dataset, packet_props: PacketProperties) -> xr.Data
 
     coords = {
         "epoch": np.array(valid_epoch, dtype=np.uint64),
-        "sid": xr.DataArray(np.arange(image_panes), dims=["sid"], name="sid"),
+        "sid": xr.DataArray(np.arange(num_image_packets), dims=["sid"], name="sid"),
         "row": xr.DataArray(np.arange(rows), dims=["row"], name="row"),
         "column": xr.DataArray(np.arange(cols), dims=["column"], name="column"),
     }

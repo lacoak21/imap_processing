@@ -10,7 +10,7 @@ class PacketProperties(NamedTuple):
     logical_source: list  # List of logical sources
     addition_to_logical_desc: str  # Description of the logical source
     width: Union[int, None]  # Width of binary data (could be None).
-    # Block, image_panes, pixel_window_rows, and pixel_window_columns are important for
+    # Block, image_planes, pixel_window_rows, and pixel_window_columns are important for
     # decompressing the images and a description is available on page 171 of IMAP-Ultra
     # Flight Software Specification document (7523-9009_Rev_-.pdf).
     block: Union[int, None]  # Number of values in each block (could be None).
@@ -19,9 +19,14 @@ class PacketProperties(NamedTuple):
     ]  # Length of the array to be decompressed (could be None).
     mantissa_bit_length: Union[int, None]  # used to determine the level of
     # precision that can be recovered from compressed data (could be None).
-    image_panes: Union[int, None] = None  # number of images
-    pixel_window_rows: Union[int, None] = None  # number of rows in each image
-    pixel_window_columns: Union[int, None] = None  # number of columns in each image
+    image_planes: Union[int, None] = None
+    # number of images. See table 11 in the FSSD.
+    pixel_window_rows: Union[int, None] = None
+    # number of rows in each image. See table 49 in the FSSD.
+    pixel_window_columns: Union[int, None] = None
+    # number of columns in each image. See table 49 in the FSSD.
+    image_planes_per_packet: Union[int, None] = None
+    # number of image planes in each packet. See table 52 in the FSSD.
 
 
 # Define PacketProperties instances directly in the module namespace
@@ -76,9 +81,10 @@ ULTRA_TOF_HIGH_ANGULAR = PacketProperties(
     addition_to_logical_desc="Time of Flight High Angular Images",
     width=4,
     block=15,
-    image_panes=8,
+    image_planes=8,
     pixel_window_rows=54,
     pixel_window_columns=180,
+    image_planes_per_packet=1,
     len_array=None,
     mantissa_bit_length=4,
 )
@@ -91,12 +97,31 @@ ULTRA_TOF_HIGH_ENERGY = PacketProperties(
     addition_to_logical_desc="Time of Flight High Energy Images",
     width=4,
     block=15,
-    image_panes=28,
+    image_planes=28,
     pixel_window_rows=27,
     pixel_window_columns=90,
+    image_planes_per_packet=1,
     len_array=None,
     mantissa_bit_length=4,
 )
+
+ULTRA_TOF_HIGH_TIME = PacketProperties(
+    apid=[885, 949],
+    logical_source=[
+        "imap_ultra_l1a_45sensor-histogram-ena-phxtof-hi-time",
+        "imap_ultra_l1a_90sensor-histogram-ena-phxtof-hi-time",
+    ],
+    addition_to_logical_desc="Time of Flight High Time Images",
+    width=4,
+    block=15,
+    image_planes=8,
+    pixel_window_rows=18,
+    pixel_window_columns=60,
+    image_planes_per_packet=2,
+    len_array=None,
+    mantissa_bit_length=4,
+)
+
 ULTRA_EVENTS = PacketProperties(
     apid=[896, 960],
     logical_source=["imap_ultra_l1a_45sensor-de", "imap_ultra_l1a_90sensor-de"],
