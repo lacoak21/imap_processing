@@ -98,8 +98,8 @@ def mag_l2(
         input_data["epoch"].data,
         input_data["vectors"].data[:, 3],
         {},
-        np.zeros(len(input_data["epoch"].data)),
-        np.zeros(len(input_data["epoch"].data)),
+        offsets_dataset["quality_flag"].data,
+        offsets_dataset["quality_bitmask"].data,
         mode,
         offsets=offsets_dataset["offsets"].data,
         timedelta=offsets_dataset["timedeltas"].data,
@@ -108,6 +108,8 @@ def mag_l2(
     attributes.add_instrument_global_attrs("mag")
     attributes.add_instrument_variable_attrs("mag", "l2")
 
+    # Rotate from the MAG frame into the SRF frame
+    l2_data.rotate_frame(ValidFrames.SRF)
     imap_srf = l2_data.generate_dataset(attributes, day)
     l2_data.rotate_frame(ValidFrames.DSRF)
     imap_dsrf = l2_data.generate_dataset(attributes, day)

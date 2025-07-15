@@ -18,6 +18,7 @@ from imap_processing.spice.time import (
 class ValidFrames(Enum):
     """SPICE reference frames for output."""
 
+    MAG = SpiceFrame.IMAP_MAG
     DSRF = SpiceFrame.IMAP_DPS
     SRF = SpiceFrame.IMAP_SPACECRAFT
     # TODO: include RTN and GSE as valid frames
@@ -65,7 +66,7 @@ class MagL2:
     is_l1d: bool = False
     offsets: InitVar[np.ndarray] = None
     timedelta: InitVar[np.ndarray] = None
-    frame: ValidFrames = ValidFrames.SRF
+    frame: ValidFrames = ValidFrames.MAG
 
     def __post_init__(self, offsets: np.ndarray, timedelta: np.ndarray) -> None:
         """
@@ -240,8 +241,8 @@ class MagL2:
         )
 
         quality_bitmask = xr.DataArray(
-            self.quality_flags,
-            name="quality_flags",
+            self.quality_bitmask,
+            name="quality_bitmask",
             dims=["epoch"],
             attrs=attribute_manager.get_variable_attributes("qf"),
         )
@@ -303,7 +304,6 @@ class MagL2:
 
         day_start_index = np.searchsorted(self.epoch, start_timestamp_j2000)
         day_end_index = np.searchsorted(self.epoch, end_timestamp_j2000)
-
         self.epoch = self.epoch[day_start_index:day_end_index]
         self.vectors = self.vectors[day_start_index:day_end_index, :]
         self.range = self.range[day_start_index:day_end_index]
