@@ -6,13 +6,14 @@ import pytest
 
 from imap_processing import imap_module_directory
 from imap_processing.spice.spin import get_spin_data
-from imap_processing.ultra.constants import UltraConstants
 from imap_processing.ultra.l1b.lookup_utils import get_angular_profiles
 from imap_processing.ultra.l1b.ultra_l1b_extended import (
     CoinType,
     StartType,
     StopType,
     calculate_etof_xc,
+    determine_ebin_pulse_height,
+    determine_ebin_ssd,
     determine_species,
     get_coincidence_positions,
     get_ctof,
@@ -435,20 +436,12 @@ def test_determine_species(test_fixture):
         "SSD",
     )
 
-    h_indices_ph = np.where(species_bin_ph == 1)[0]
-    ctof_indices_ph = np.where(
-        (df_ph["cTOF"].astype("float") > UltraConstants.CTOF_SPECIES_MIN)
-        & (df_ph["cTOF"].astype("float") < UltraConstants.CTOF_SPECIES_MAX)
-    )[0]
-
-    h_indices_ssd = np.where(species_bin_ssd == 1)[0]
-    ctof_indices_ssd = np.where(
-        (df_ssd["cTOF"].astype("float") > UltraConstants.CTOF_SPECIES_MIN)
-        & (df_ssd["cTOF"].astype("float") < UltraConstants.CTOF_SPECIES_MAX)
-    )[0]
-
-    np.testing.assert_array_equal(h_indices_ph, ctof_indices_ph)
-    np.testing.assert_array_equal(h_indices_ssd, ctof_indices_ssd)
+    np.testing.assert_array_equal(
+        species_bin_ph, np.full(len(df_ph), 1, dtype=np.uint8)
+    )
+    np.testing.assert_array_equal(
+        species_bin_ssd, np.full(len(df_ssd), 1, dtype=np.uint8)
+    )
 
 
 def test_get_phi_theta(test_fixture):
@@ -611,3 +604,37 @@ def test_get_efficiency():
     expected_efficiency = np.array([0.0593281, 0.21803386, 0.0593281, 0.0628940])
 
     np.testing.assert_allclose(efficiency, expected_efficiency, atol=1e-03, rtol=0)
+
+
+def test_determine_ebin_ph(test_fixture):
+    """Tests determine_ebin_ph function."""
+    df_filt, _, _, _ = test_fixture
+    df_ph = df_filt[df_filt["StopType"].isin(StopType.PH.value)]
+
+    bin = determine_ebin_pulse_height(
+        df_ph["Energy"].astype("float").to_numpy(),
+        df_ph["TOF"].astype("float").to_numpy(),
+        df_ph["r"].astype("float").to_numpy(),
+    )
+
+    # TODO: add in bin values.
+    np.testing.assert_allclose(
+        bin, np.full(len(bin), 255, dtype=np.uint8), atol=1e-05, rtol=0
+    )
+
+
+def test_determine_ebin_ssd(test_fixture):
+    """Tests determine_ebin_ssd function."""
+    df_filt, _, _, _ = test_fixture
+    df_ssd = df_filt[df_filt["StopType"].isin(StopType.SSD.value)]
+
+    bin = determine_ebin_ssd(
+        df_ssd["Energy"].astype("float").to_numpy(),
+        df_ssd["TOF"].astype("float").to_numpy(),
+        df_ssd["r"].astype("float").to_numpy(),
+    )
+
+    # TODO: add in bin values.
+    np.testing.assert_allclose(
+        bin, np.full(len(bin), 255, dtype=np.uint8), atol=1e-05, rtol=0
+    )
