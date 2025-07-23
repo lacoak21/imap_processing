@@ -38,8 +38,9 @@ from imap_processing.ultra.l1b.ultra_l1b_extended import (
 TEST_PATH = imap_module_directory / "tests" / "ultra" / "data" / "l1"
 
 
+@pytest.mark.external_test_data
 @pytest.fixture
-def test_fixture(de_dataset, events_fsw_comparison_theta_0):
+def test_fixture(de_dataset, events_fsw_comparison_theta_0, ancillary_files):
     """Fixture to compute and return yf and related data."""
     # Remove start_type with fill values
     de_dataset = de_dataset.where(de_dataset["start_type"] != 255, drop=True)
@@ -48,15 +49,16 @@ def test_fixture(de_dataset, events_fsw_comparison_theta_0):
     df_filt = df[df["StartType"] != -1]
 
     d, yf = get_front_y_position(
-        de_dataset["start_type"].data, df_filt.Yb.values.astype("float")
+        de_dataset["start_type"].data,
+        df_filt.Yb.values.astype("float"),
+        ancillary_files,
     )
 
     return df_filt, d, yf, de_dataset
 
 
-def test_get_front_x_position(
-    test_fixture,
-):
+@pytest.mark.external_test_data
+def test_get_front_x_position(test_fixture, ancillary_files):
     """Tests get_front_x_position function."""
 
     df_filt, _, _, de_dataset = test_fixture
@@ -65,12 +67,14 @@ def test_get_front_x_position(
         de_dataset["start_type"].data,
         de_dataset["start_pos_tdc"].data,
         "ultra45",
+        ancillary_files,
     )
 
     assert xf == pytest.approx(df_filt["Xf"].astype("float"), 1e-5)
 
 
-def test_get_front_y_position(test_fixture):
+@pytest.mark.external_test_data
+def test_get_front_y_position(test_fixture, ancillary_files):
     """Tests get_front_y_position function."""
     df_filt, d, yf, _ = test_fixture
 
@@ -78,6 +82,7 @@ def test_get_front_y_position(test_fixture):
     assert d == pytest.approx(df_filt["d"].astype("float"), abs=1e-5)
 
 
+@pytest.mark.external_test_data
 def test_get_path_length(test_fixture):
     """Tests get_path_length function."""
 
@@ -92,15 +97,14 @@ def test_get_path_length(test_fixture):
     assert r == pytest.approx(df_filt["r"].astype("float"), abs=1e-5)
 
 
-def test_get_ph_tof_and_back_positions(
-    test_fixture,
-):
+@pytest.mark.external_test_data
+def test_get_ph_tof_and_back_positions(test_fixture, ancillary_files):
     """Tests get_ph_tof_and_back_positions function."""
 
     df_filt, _, _, de_dataset = test_fixture
 
     ph_tof, _, ph_xb, ph_yb = get_ph_tof_and_back_positions(
-        de_dataset, df_filt.Xf.astype("float").values, "ultra45"
+        de_dataset, df_filt.Xf.astype("float").values, "ultra45", ancillary_files
     )
 
     ph_indices = np.nonzero(
@@ -116,14 +120,14 @@ def test_get_ph_tof_and_back_positions(
     )
 
 
+@pytest.mark.external_test_data
 def test_get_ssd_back_position_and_tof_offset(
-    test_fixture,
-    events_fsw_comparison_theta_0,
+    test_fixture, events_fsw_comparison_theta_0, ancillary_files
 ):
     """Tests get_ssd_back_position function."""
     _, _, _, de_dataset = test_fixture
     yb, tof_offset, ssd_number = get_ssd_back_position_and_tof_offset(
-        de_dataset, "ultra45"
+        de_dataset, "ultra45", ancillary_files
     )
 
     df = pd.read_csv(events_fsw_comparison_theta_0)
@@ -159,12 +163,13 @@ def test_get_ssd_back_position_and_tof_offset(
     assert np.all(ssd_number_rt <= 7), "Values in ssd_number_rt out of range."
 
 
-def test_get_coincidence_positions(test_fixture):
+@pytest.mark.external_test_data
+def test_get_coincidence_positions(test_fixture, ancillary_files):
     """Tests get_coincidence_positions function."""
     df_filt, _, _, de_dataset = test_fixture
     # Get particle tof (t2).
     _, t2, _, _ = get_ph_tof_and_back_positions(
-        de_dataset, df_filt.Xf.astype("float").values, "ultra45"
+        de_dataset, df_filt.Xf.astype("float").values, "ultra45", ancillary_files
     )
 
     # Filter for stop type.
@@ -175,7 +180,7 @@ def test_get_coincidence_positions(test_fixture):
     rows = df_filt.iloc[indices]
 
     # Get coincidence position and eTOF.
-    etof, xc = get_coincidence_positions(de_filtered, t2, "ultra45")
+    etof, xc = get_coincidence_positions(de_filtered, t2, "ultra45", ancillary_files)
 
     np.testing.assert_allclose(xc, rows["Xc"].astype("float"), atol=1e-4, rtol=0)
     np.testing.assert_allclose(
@@ -183,12 +188,13 @@ def test_get_coincidence_positions(test_fixture):
     )
 
 
-def test_calculate_etof_xc(test_fixture):
+@pytest.mark.external_test_data
+def test_calculate_etof_xc(test_fixture, ancillary_files):
     """Tests calculate_etof_xc function."""
     df_filt, _, _, de_dataset = test_fixture
     # Get particle tof (t2).
     _, t2, _, _ = get_ph_tof_and_back_positions(
-        de_dataset, df_filt.Xf.astype("float").values, "ultra45"
+        de_dataset, df_filt.Xf.astype("float").values, "ultra45", ancillary_files
     )
     # Filter based on STOP_TYPE.
     indices = np.nonzero(
@@ -209,9 +215,11 @@ def test_calculate_etof_xc(test_fixture):
     df_bottom = df_filtered.iloc[index_bottom]
 
     # Calculate for Top and Bottom
-    etof_top, xc_top = calculate_etof_xc(de_top, t2[index_top], "ultra45", "TP")
+    etof_top, xc_top = calculate_etof_xc(
+        de_top, t2[index_top], "ultra45", "TP", ancillary_files
+    )
     etof_bottom, xc_bottom = calculate_etof_xc(
-        de_bottom, t2[index_bottom], "ultra45", "BT"
+        de_bottom, t2[index_bottom], "ultra45", "BT", ancillary_files
     )
 
     # Assertions for Top
@@ -231,6 +239,7 @@ def test_calculate_etof_xc(test_fixture):
     )
 
 
+@pytest.mark.external_test_data
 def test_get_de_velocity(test_fixture):
     """Tests get_de_velocity function."""
     df_filt, _, _, _ = test_fixture
@@ -306,19 +315,21 @@ def test_get_de_velocity(test_fixture):
     )
 
 
-def test_get_ssd_tof(test_fixture):
+@pytest.mark.external_test_data
+def test_get_ssd_tof(test_fixture, ancillary_files):
     """Tests get_ssd_tof function."""
     df_filt, _, _, de_dataset = test_fixture
     df_ssd = df_filt[np.isin(df_filt["StopType"], [StopType.SSD.value])]
     test_xf = df_filt["Xf"].astype("float").values
 
-    ssd_tof = get_ssd_tof(de_dataset, test_xf, "ultra45")
+    ssd_tof = get_ssd_tof(de_dataset, test_xf, "ultra45", ancillary_files)
 
     np.testing.assert_allclose(
         ssd_tof, df_ssd["TOF"].astype("float"), atol=1e-05, rtol=0
     )
 
 
+@pytest.mark.external_test_data
 def test_get_de_energy_kev(test_fixture):
     """Tests get_de_energy_kev function."""
     df_filt, _, _, _ = test_fixture
@@ -350,18 +361,22 @@ def test_get_de_energy_kev(test_fixture):
     np.testing.assert_allclose(actual_energy, expected_energy, atol=1e-01, rtol=0)
 
 
-def test_get_energy_ssd(test_fixture):
+@pytest.mark.external_test_data
+def test_get_energy_ssd(test_fixture, ancillary_files):
     """Tests get_energy_ssd function."""
     df_filt, _, _, de_dataset = test_fixture
     df_ssd = df_filt[np.isin(df_filt["StopType"], [StopType.SSD.value])]
-    _, _, ssd_number = get_ssd_back_position_and_tof_offset(de_dataset, "ultra45")
-    energy = get_energy_ssd(de_dataset, ssd_number)
+    _, _, ssd_number = get_ssd_back_position_and_tof_offset(
+        de_dataset, "ultra45", ancillary_files
+    )
+    energy = get_energy_ssd(de_dataset, ssd_number, ancillary_files)
     test_energy = df_ssd["Energy"].astype("float")
 
     assert np.array_equal(test_energy, energy)
 
 
-def test_get_energy_pulse_height(test_fixture):
+@pytest.mark.external_test_data
+def test_get_energy_pulse_height(test_fixture, ancillary_files):
     """Tests get_energy_ssd function."""
     df_filt, _, _, de_dataset = test_fixture
     df_ph = df_filt[np.isin(df_filt["StopType"], [StopType.PH.value])]
@@ -378,12 +393,14 @@ def test_get_energy_pulse_height(test_fixture):
         test_xb,
         test_yb,
         "ultra45",
+        ancillary_files,
     )
     test_energy = df_ph["Energy"].astype("float")
 
     assert np.array_equal(test_energy, energy[ph_indices])
 
 
+@pytest.mark.external_test_data
 def test_get_ctof(test_fixture):
     """Tests get_ctof function."""
     df_filt, _, _, _ = test_fixture
@@ -419,6 +436,7 @@ def test_get_ctof(test_fixture):
     )
 
 
+@pytest.mark.external_test_data
 def test_determine_species(test_fixture):
     """Tests determine_species function."""
     df_filt, _, _, _ = test_fixture
@@ -444,6 +462,7 @@ def test_determine_species(test_fixture):
     )
 
 
+@pytest.mark.external_test_data
 def test_get_phi_theta(test_fixture):
     """Tests get_phi_theta function."""
     df_filt, d, _, _ = test_fixture
@@ -462,6 +481,7 @@ def test_get_phi_theta(test_fixture):
     np.testing.assert_allclose(theta, expected_theta, atol=1e-03, rtol=0)
 
 
+@pytest.mark.external_test_data
 def test_get_spin_number(test_fixture, use_fake_spin_data_for_time):
     """Tests that get_spin_number assigns the correct spin number."""
     df_filt, _, _, de_dataset = test_fixture
@@ -477,6 +497,7 @@ def test_get_spin_number(test_fixture, use_fake_spin_data_for_time):
     assert np.array_equal(spin_number & 0xFF, de_spin)
 
 
+@pytest.mark.external_test_data
 def test_get_eventtimes(test_fixture, use_fake_spin_data_for_time):
     """Tests get_eventtimes function."""
     df_filt, _, _, de_dataset = test_fixture
@@ -516,14 +537,15 @@ def test_get_eventtimes(test_fixture, use_fake_spin_data_for_time):
     assert event_times_max == event_times.max()
 
 
-def test_interpolate_fwhm():
+@pytest.mark.external_test_data
+def test_interpolate_fwhm(ancillary_files):
     """Tests interpolate_fwhm function."""
 
     # Test interpolation of FWHM values
     test_phi = np.linspace(1, 53, 40)
     test_theta = np.linspace(-44, 43, 40)
     test_energy = np.full(test_theta.shape, 10)
-    lt_table = get_angular_profiles("left", "ultra45")
+    lt_table = get_angular_profiles("left", "ultra45", ancillary_files)
 
     phi_interp, theta_interp = interpolate_fwhm(
         lt_table, test_energy, test_phi, test_theta
@@ -546,7 +568,8 @@ def test_interpolate_fwhm():
     assert theta_interp.size == 0
 
 
-def test_get_fwhm():
+@pytest.mark.external_test_data
+def test_get_fwhm(ancillary_files):
     """Tests get_fwhm function."""
 
     test_phi = np.linspace(1, 53, 40)
@@ -562,12 +585,13 @@ def test_get_fwhm():
         energy=test_energy,
         phi_inst=test_phi,
         theta_inst=test_theta,
+        ancillary_files=ancillary_files,
     )
 
     idx_left = test_start_type == StartType.Left.value
     test_phi_left = test_phi[idx_left]
 
-    lt_table = get_angular_profiles("left", "ultra45")
+    lt_table = get_angular_profiles("left", "ultra45", ancillary_files)
     lt_table_e10 = lt_table[lt_table.Energy == 10]
     lt_table_sorted = lt_table_e10.sort_values("phi_degrees")
 
@@ -606,6 +630,7 @@ def test_get_efficiency():
     np.testing.assert_allclose(efficiency, expected_efficiency, atol=1e-03, rtol=0)
 
 
+@pytest.mark.external_test_data
 def test_determine_ebin_ph(test_fixture):
     """Tests determine_ebin_ph function."""
     df_filt, _, _, _ = test_fixture
@@ -623,6 +648,7 @@ def test_determine_ebin_ph(test_fixture):
     )
 
 
+@pytest.mark.external_test_data
 def test_determine_ebin_ssd(test_fixture):
     """Tests determine_ebin_ssd function."""
     df_filt, _, _, _ = test_fixture
