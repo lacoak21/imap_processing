@@ -32,7 +32,7 @@ def test_hi_l1c(mock_generate_pset_dataset, hi_test_cal_prod_config_path):
 
 
 # TODO remove _download_external_kernels when marker is fixed
-# @pytest.mark.external_kernel
+@pytest.mark.external_kernel
 @pytest.mark.usefixtures("_download_external_kernels")
 @pytest.mark.external_test_data
 def test_generate_pset_dataset(
