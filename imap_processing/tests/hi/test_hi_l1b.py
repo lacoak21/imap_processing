@@ -29,7 +29,7 @@ def test_hi_l1b_hk(hi_l0_test_data_path):
 
 
 # TODO remove _download_external_kernels when marker is fixed
-# @pytest.mark.external_kernel
+@pytest.mark.external_kernel
 @pytest.mark.usefixtures("_download_external_kernels")
 @pytest.mark.external_test_data
 def test_hi_l1b_de(
