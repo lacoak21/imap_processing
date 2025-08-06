@@ -221,8 +221,10 @@ def lo_pset_cdf_path(imap_tests_path):
     return imap_tests_path / "hi/data/l1/imap_hi_l1c_45sensor-pset_20250415_v999.cdf"
 
 
+# TODO remove _download_external_kernels when marker is fixed
 @pytest.mark.external_kernel
 @pytest.mark.usefixtures("imap_ena_sim_metakernel")
+@pytest.mark.usefixtures("_download_external_kernels")
 class TestLoPointingSet:
     """Test suite for LoPointingSet class."""
 
