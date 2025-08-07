@@ -515,3 +515,4 @@ if __name__ == "__main__":
     # This is to enable downloading files easier by letting us
     # run this file directly
     _download_external_data()
+    _download_external_kernels(spice_test_data_path)
