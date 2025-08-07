@@ -462,7 +462,7 @@ def use_fake_repoint_data_for_time(use_test_repoint_data_csv, tmp_path):
 
 
 @pytest.fixture
-def imap_ena_sim_metakernel(furnish_kernels):
+def imap_ena_sim_metakernel(furnish_kernels, _download_external_kernels):
     kernels = [
         "imap_sclk_0000.tsc",
         "naif0012.tls",

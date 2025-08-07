@@ -28,9 +28,6 @@ def test_hi_l1b_hk(hi_l0_test_data_path):
     assert l1b_datasets[0].attrs["Logical_source"] == "imap_hi_l1b_90sensor-hk"
 
 
-# TODO remove _download_external_kernels when marker is fixed
-@pytest.mark.external_kernel
-@pytest.mark.usefixtures("_download_external_kernels")
 @pytest.mark.external_test_data
 def test_hi_l1b_de(
     hi_l1_test_data_path,
