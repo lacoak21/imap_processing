@@ -90,7 +90,6 @@ EXTERNAL_TEST_DATA = [
     ("imap_ultra_l1b-sensor-gf-noblades_20250101_v000.csv", "ultra/data/l1/"),
     ("imap_ultra_l1b-45sensor-leftslit-lookup_20250101_v000.csv", "ultra/data/l1/"),
     ("imap_ultra_l1b-45sensor-rightslit-lookup_20250101_v000.csv", "ultra/data/l1/"),
-    ("imap_ultra_l1b-45sensor-imgparams-lookup_20250101_v000.csv", "ultra/data/l1/"),
     ("imap_ultra_l1b-45sensor-tdc-norm-lookup_20250101_v000.csv", "ultra/data/l1/"),
     ("imap_ultra_l1b-45sensor-back-pos-lookup_20250101_v000.csv", "ultra/data/l1/"),
     ("imap_ultra_l1b-egynorm-lookup_20250101_v000.csv", "ultra/data/l1/"),
@@ -101,6 +100,13 @@ EXTERNAL_TEST_DATA = [
     ("imap_ultra_l1b-90sensor-spbtphcorr_20250101_v000.csv", "ultra/data/l1/"),
     ("ultra45_raw_sc_ultrarawimg_withFSWccs_FM45_40P_Phi28p5_BeamCal_LinearScan_"
      "phi2850_theta-000_20240207T102740_revised20250724.csv", "ultra/data/l1/"),
+    ("imap_ultra_l1b-45sensor-tofxeflat_20250101_v000.pgm", "ultra/data/l1/"),
+    ("imap_ultra_l1b-45sensor-tofxemedium_20250101_v000.pgm", "ultra/data/l1/"),
+    ("imap_ultra_l1b-45sensor-tofxesteep_20250101_v000.pgm", "ultra/data/l1/"),
+    ("imap_ultra_l1b-90sensor-tofxeflat_20250101_v000.pgm", "ultra/data/l1/"),
+    ("imap_ultra_l1b-90sensor-tofxemedium_20250101_v000.pgm", "ultra/data/l1/"),
+    ("imap_ultra_l1b-90sensor-tofxesteep_20250101_v000.pgm", "ultra/data/l1/"),
+    ("imap_ultra_l1b-tofxph_20250101_v000.pgm","ultra/data/l1/"),
 
     # MAG
     ("mag-l1b-l1c-t013-magi-burst-in.csv",
