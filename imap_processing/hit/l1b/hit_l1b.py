@@ -1,6 +1,7 @@
 """IMAP-HIT L1B data processing."""
 
 import logging
+from typing import Union
 
 import numpy as np
 import xarray as xr
@@ -26,7 +27,7 @@ logger = logging.getLogger(__name__)
 # TODO review logging levels to use (debug vs. info)
 
 
-def hit_l1b(dependencies: dict) -> list[xr.Dataset]:
+def hit_l1b(dependency: Union[str, xr.Dataset], l1b_descriptor: str) -> xr.Dataset:
     """
     Will process HIT data to L1B.
 
@@ -34,60 +35,56 @@ def hit_l1b(dependencies: dict) -> list[xr.Dataset]:
 
     Parameters
     ----------
-    dependencies : dict
-        Dictionary of dependencies that are L1A xarray datasets
-        for science data and a file path string to an L0 file
-        for housekeeping data.
+    dependency : Union[str, xr.Dataset]
+        Dependency is either an L1A xarray dataset to process
+        science data or a file path string to an L0 file to
+        process housekeeping data.
+    l1b_descriptor : str
+        The descriptor for the L1B dataset to create.
 
     Returns
     -------
-    processed_data : list[xarray.Dataset]
-        List of four L1B datasets.
+    l1b_dataset : xarray.Dataset
+        The processed L1B dataset.
     """
     # Create the attribute manager for this data level
     attr_mgr = get_attribute_manager("l1b")
 
+    l1b_dataset = None
+
     # Create L1B datasets
-    l1b_datasets: list = []
-    if "imap_hit_l0_raw" in dependencies:
+    if l1b_descriptor == "hk":
         # Unpack ccsds file to xarray datasets
-        packet_file = dependencies["imap_hit_l0_raw"]
+        packet_file = dependency
         datasets_by_apid = get_datasets_by_apid(packet_file, derived=True)
-        # TODO: update to raise error after all APIDs are included in the same
-        #  raw files. currently science and housekeeping are in separate files.
         if HitAPID.HIT_HSKP in datasets_by_apid:
             # Process housekeeping to L1B.
-            l1b_datasets.append(
-                process_housekeeping_data(
-                    datasets_by_apid[HitAPID.HIT_HSKP], attr_mgr, "imap_hit_l1b_hk"
-                )
+            l1b_dataset = process_housekeeping_data(
+                datasets_by_apid[HitAPID.HIT_HSKP], attr_mgr, "imap_hit_l1b_hk"
             )
             logger.info("HIT L1B housekeeping dataset created")
-    if "imap_hit_l1a_counts-standard" in dependencies:
+    elif l1b_descriptor in ["standard-rates", "summed-rates", "sectored-rates"]:
         # Process science data to L1B datasets
-        l1a_counts_dataset = dependencies["imap_hit_l1a_counts-standard"]
-        l1b_datasets.extend(process_science_data(l1a_counts_dataset, attr_mgr))
-        logger.info("HIT L1B science datasets created")
+        l1b_dataset = process_science_data(dependency, l1b_descriptor, attr_mgr)
+        logger.info("HIT L1B science dataset created")
+    else:
+        logger.error(f"Unsupported descriptor for L1B processing: {l1b_descriptor}")
+        raise ValueError(f"Unsupported descriptor: {l1b_descriptor}")
 
-    if "imap_hit_l1a_counts-sectored" in dependencies:
-        # Process science data to L1B datasets
-        l1a_counts_dataset = dependencies["imap_hit_l1a_counts-sectored"]
-        l1b_datasets.extend(process_science_data(l1a_counts_dataset, attr_mgr))
-        logger.info("HIT L1B science datasets created")
-
-    return l1b_datasets
+    return l1b_dataset
 
 
 def process_science_data(
-    l1a_counts_dataset: xr.Dataset, attr_mgr: ImapCdfAttributes
-) -> list[xr.Dataset]:
+    l1a_counts_dataset: xr.Dataset, descriptor: str, attr_mgr: ImapCdfAttributes
+) -> xr.Dataset:
     """
     Will create L1B science datasets for CDF products.
 
-    Process L1A raw counts data to create L1B science data for
-    CDF creation. This function will create three L1B science
+    This function processes L1A counts data to L1B science
+    data for CDF creation. There are three L1B science
     datasets: standard rates, summed rates, and sectored rates.
-    It will also update dataset attributes, coordinates and
+    This function creates one dataset based on the descriptor
+    provided. It will also update dataset attributes, coordinates and
     data variable dimensions according to specifications in
     a CDF yaml file.
 
@@ -95,50 +92,44 @@ def process_science_data(
     ----------
     l1a_counts_dataset : xr.Dataset
         The L1A counts dataset.
+    descriptor : str
+        The descriptor for the L1B dataset to create
+        (e.g., "standard-rates", "summed-rates", "sectored-rates").
     attr_mgr : AttributeManager
         The attribute manager for the L1B data level.
 
     Returns
     -------
-    dataset : list
-        The processed L1B science datasets as xarray datasets.
+    dataset : xarray.Dataset
+        A processed L1B science dataset.
     """
     logger.info("Creating HIT L1B science datasets")
 
-    # TODO: Write functions to create the following datasets
-    #  Process sectored rates dataset
+    dataset = None
+    logical_source = None
 
     # Calculate fractional livetime from the livetime counter
     livetime = l1a_counts_dataset["livetime_counter"] / LIVESTIM_PULSES
     livetime = livetime.rename("livetime")
 
-    l1b_datasets = {}
-
-    if "imap_hit_l1a_counts-standard" in l1a_counts_dataset.attrs["Logical_source"]:
-        # Process counts data to L1B datasets
-        l1b_datasets["imap_hit_l1b_standard-rates"] = process_standard_rates_data(
-            l1a_counts_dataset, livetime
-        )
-
-        l1b_datasets["imap_hit_l1b_summed-rates"] = process_summed_rates_data(
-            l1a_counts_dataset, livetime
-        )
-    elif "imap_hit_l1a_counts-sectored" in l1a_counts_dataset.attrs["Logical_source"]:
-        # Process counts data to L1B datasets
-        l1b_datasets["imap_hit_l1b_sectored-rates"] = process_sectored_rates_data(
-            l1a_counts_dataset, livetime
-        )
+    # Process counts data to an L1B dataset based on the descriptor
+    if descriptor == "standard-rates":
+        dataset = process_standard_rates_data(l1a_counts_dataset, livetime)
+        logical_source = "imap_hit_l1b_standard-rates"
+    elif descriptor == "summed-rates":
+        dataset = process_summed_rates_data(l1a_counts_dataset, livetime)
+        logical_source = "imap_hit_l1b_summed-rates"
+    elif descriptor == "sectored-rates":
+        dataset = process_sectored_rates_data(l1a_counts_dataset, livetime)
+        logical_source = "imap_hit_l1b_sectored-rates"
 
     # Update attributes and dimensions
-    for logical_source, dataset in l1b_datasets.items():
+    if dataset and logical_source:
         dataset.attrs = attr_mgr.get_global_attributes(logical_source)
-
-        # TODO: Add CDF attributes to yaml once they're defined for L1B science data
-        # Assign attributes and dimensions to each data array in the Dataset
+        # TODO: Add CDF attributes to yaml
         for field in dataset.data_vars.keys():
             try:
-                # Create a dict of dimensions using the DEPEND_I keys in the
-                # attributes
+                # Create a dict of dimensions using the DEPEND_I keys in the attributes
                 dims = {
                     key: value
                     for key, value in attr_mgr.get_variable_attributes(field).items()
@@ -147,7 +138,6 @@ def process_science_data(
                 dataset[field].attrs = attr_mgr.get_variable_attributes(field)
                 dataset[field].assign_coords(dims)
             except KeyError:
-                print(f"Field {field} not found in attribute manager.")
                 logger.warning(f"Field {field} not found in attribute manager.")
 
         # Skip schema check for epoch to prevent attr_mgr from adding the
@@ -155,10 +145,9 @@ def process_science_data(
         dataset.epoch.attrs = attr_mgr.get_variable_attributes(
             "epoch", check_schema=False
         )
-
         logger.info(f"HIT L1B dataset created for {logical_source}")
 
-    return list(l1b_datasets.values())
+    return dataset
 
 
 def initialize_l1b_dataset(l1a_counts_dataset: xr.Dataset, coords: list) -> xr.Dataset:

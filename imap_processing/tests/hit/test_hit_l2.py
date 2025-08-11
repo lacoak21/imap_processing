@@ -51,19 +51,24 @@ def packet_date():
 def dependencies(sci_packet_filepath, packet_date):
     """Get dependencies for L2 processing"""
     # Create dictionary of dependencies
-    data_dict = {}
+    dependencies = {}
+
+    # Get L1A datasets
     l1a_datasets = hit_l1a.hit_l1a(sci_packet_filepath, packet_date)
-    for l1a_dataset in l1a_datasets:
-        l1a_data_dict = {}
-        if l1a_dataset.attrs["Logical_source"] in [
-            "imap_hit_l1a_counts-standard",
-            "imap_hit_l1a_counts-sectored",
-        ]:
-            l1a_data_dict[l1a_dataset.attrs["Logical_source"]] = l1a_dataset
-        l1b_datasets = hit_l1b(l1a_data_dict)
-        for l1b_dataset in l1b_datasets:
-            data_dict[l1b_dataset.attrs["Logical_source"]] = l1b_dataset
-    return data_dict
+
+    # Get L1B datasets from L1A datasets
+    for dataset in l1a_datasets:
+        if dataset.attrs["Logical_source"] == "imap_hit_l1a_counts-standard":
+            # Standard and summed rates datasets are created from the same L1A dataset
+            dependencies["imap_hit_l1b_standard-rates"] = hit_l1b(
+                dataset, "standard-rates"
+            )
+            dependencies["imap_hit_l1b_summed-rates"] = hit_l1b(dataset, "summed-rates")
+        elif dataset.attrs["Logical_source"] == "imap_hit_l1a_counts-sectored":
+            dependencies["imap_hit_l1b_sectored-rates"] = hit_l1b(
+                dataset, "sectored-rates"
+            )
+    return dependencies
 
 
 @pytest.fixture
@@ -874,8 +879,7 @@ def test_hit_l2(
         Dictionary of ancillary file paths
     """
 
-    l2_datasets = hit_l2(
+    l2_dataset = hit_l2(
         dependencies[dataset_key], ancillary_dependencies[ancillary_key]
     )
-    assert len(l2_datasets) == 1
-    assert l2_datasets[0].attrs["Logical_source"] == expected_logical_source
+    assert l2_dataset.attrs["Logical_source"] == expected_logical_source
