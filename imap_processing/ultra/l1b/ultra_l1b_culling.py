@@ -10,12 +10,16 @@ from numpy.typing import NDArray
 
 from imap_processing.quality_flags import (
     ImapAttitudeUltraFlags,
+    ImapDEScatteringUltraFlags,
     ImapHkUltraFlags,
     ImapInstrumentUltraFlags,
     ImapRatesUltraFlags,
 )
 from imap_processing.spice.spin import get_spin_data
 from imap_processing.ultra.constants import UltraConstants
+from imap_processing.ultra.l1b.lookup_utils import (
+    get_scattering_coefficients,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -475,3 +479,57 @@ def get_pulses_per_spin(rates: xr.Dataset) -> RateResult:
         stop_pulses=stop_pulses,
         coin_pulses=coin_pulses,
     )
+
+
+def flag_scattering(
+    tof_energy: NDArray,
+    theta: NDArray,
+    phi: NDArray,
+    ancillary_files: dict,
+    sensor: str,
+    quality_flags: NDArray,
+) -> None:
+    """
+    Flag events where either theta or phi FWHM exceed the threshold or equal nan.
+
+    Parameters
+    ----------
+    tof_energy : NDArray
+        TOF energy for each event in keV.
+    theta : NDArray
+        Elevation angles in degrees.
+    phi : NDArray
+        Azimuth angles in degrees.
+    ancillary_files : dict[Path]
+        Ancillary files.
+    sensor : str
+        Sensor name: "ultra45" or "ultra90".
+    quality_flags : NDArray
+        Quality flags.
+    """
+    scattering_thresholds = UltraConstants.ULTRA_FWHM_SCATTERING_CULLING_THRESHOLDS
+
+    for (e_min, e_max), threshold in scattering_thresholds.items():
+        event_mask = (tof_energy >= e_min) & (tof_energy < e_max)
+        # Input the theta and phi values for the current energy range.
+        # Returns a_theta_val, g_theta_val, a_phi_val, g_phi_val
+        theta_coeffs, phi_coeffs = get_scattering_coefficients(
+            ancillary_files, int(sensor[-2:]), theta[event_mask], phi[event_mask]
+        )
+        # FWHM_PHI = A_PHI * E^G_PHI
+        # FWHM_THETA = A_THETA * E^G_THETA
+        fwhm_theta = theta_coeffs[:, 0] * tof_energy[event_mask] ** theta_coeffs[:, 1]
+        fwhm_phi = phi_coeffs[:, 0] * tof_energy[event_mask] ** phi_coeffs[:, 1]
+        is_nan = np.isnan(fwhm_theta) | np.isnan(fwhm_phi)
+        quality_flags[np.where(event_mask)[0][is_nan]] |= (
+            ImapDEScatteringUltraFlags.NAN_PHI_OR_THETA.value
+        )
+
+        theta_exceeds = fwhm_theta > threshold
+        phi_exceeds = fwhm_phi > threshold
+        either_exceeds = theta_exceeds | phi_exceeds
+
+        # Set flags for events where either theta or phi FWHM exceed the threshold
+        quality_flags[np.where(event_mask)[0][either_exceeds]] |= (
+            ImapDEScatteringUltraFlags.ABOVE_THRESHOLD.value
+        )
