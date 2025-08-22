@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 from imap_processing.ena_maps.ena_maps import (
@@ -152,12 +153,11 @@ def generate_hi_map(
     output_map.data_1d["obs_date_range"] = xr.zeros_like(output_map.data_1d["obs_date"])
 
     # Rename and convert coordinate from esa_energy_step energy
-    # TODO: the correct conversion from esa_energy_step to esa_energy
-    esa_energy_step_conversion = (np.arange(10, dtype=float) + 1) * 1000
-    output_map.data_1d = output_map.data_1d.rename({"esa_energy_step": "energy"})
-    output_map.data_1d = output_map.data_1d.assign_coords(
-        energy=esa_energy_step_conversion[output_map.data_1d["energy"].values]
+    esa_energies = esa_energy_lookup(
+        esa_energies_path, output_map.data_1d["esa_energy_step"].data
     )
+    output_map.data_1d = output_map.data_1d.rename({"esa_energy_step": "energy"})
+    output_map.data_1d = output_map.data_1d.assign_coords(energy=esa_energies)
     # Set the energy_step_delta values
     # TODO: get the correct energy delta values (they are set to NaN) in
     #    output_map.build_cdf_dataset()
@@ -237,19 +237,16 @@ def calculate_ena_intensity(
         np.ones((map_ds["esa_energy_step"].size, map_ds["calibration_prod"].size)),
         coords=[map_ds["esa_energy_step"], map_ds["calibration_prod"]],
     )
-    # TODO: Implement esa energies lookup
-    if esa_energies_path:
-        raise NotImplementedError
-    esa_energy = xr.ones_like(map_ds["esa_energy_step"])
+
+    esa_energy = esa_energy_lookup(esa_energies_path, map_ds["esa_energy_step"].data)
 
     # Convert ENA Signal Rate to Flux
+    flux_conversion_divisor = geometric_factor * esa_energy[:, np.newaxis]
     intensity_vars = {
-        "ena_intensity": map_ds["ena_signal_rates"] / (geometric_factor * esa_energy),
+        "ena_intensity": map_ds["ena_signal_rates"] / flux_conversion_divisor,
         "ena_intensity_stat_unc": map_ds["ena_signal_rate_stat_unc"]
-        / geometric_factor
-        / esa_energy,
-        "ena_intensity_sys_err": map_ds["bg_rates_unc"]
-        / (geometric_factor * esa_energy),
+        / flux_conversion_divisor,
+        "ena_intensity_sys_err": map_ds["bg_rates_unc"] / flux_conversion_divisor,
     }
 
     # TODO: Correctly implement combining of calibration products. For now, just sum
@@ -268,3 +265,30 @@ def calculate_ena_intensity(
     )
 
     return intensity_vars
+
+
+def esa_energy_lookup(
+    esa_energies_path: str | Path, esa_energy_steps: np.ndarray
+) -> np.ndarray:
+    """
+    Lookup the nominal central energy values for given esa energy steps.
+
+    Parameters
+    ----------
+    esa_energies_path : str or pathlib.Path
+        Location of the calibration csv file containing the lookup data.
+    esa_energy_steps : numpy.ndarray
+        The ESA energy steps to get energies for.
+
+    Returns
+    -------
+    esa_energies: numpy.ndarray
+        The nominal central energy for the given esa energy steps.
+    """
+    esa_energies_lut = pd.read_csv(
+        esa_energies_path, comment="#", index_col="esa_energy_step"
+    )
+    esa_energies = esa_energies_lut.loc[esa_energy_steps][
+        "nominal_central_energy"
+    ].values
+    return esa_energies
