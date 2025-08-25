@@ -40,7 +40,7 @@ from imap_processing.idex.idex_constants import (
     IDEXEvtAcquireCodes,
 )
 from imap_processing.idex.idex_utils import get_idex_attrs
-from imap_processing.spice.time import epoch_to_doy, et_to_datetime64, ttj2000ns_to_et
+from imap_processing.spice.time import epoch_to_doy, et_to_datetime64
 
 logger = logging.getLogger(__name__)
 # Bin edges
@@ -656,7 +656,7 @@ def get_science_acquisition_on_percentage(evt_dataset: xr.Dataset) -> dict:
     daily_totals: collections.defaultdict = defaultdict(timedelta)
     daily_on: collections.defaultdict = defaultdict(timedelta)
     # Convert epoch event times to datetime
-    dates = et_to_datetime64(ttj2000ns_to_et(evt_time)).astype(datetime)
+    dates = et_to_datetime64(evt_time).astype(datetime)
     # Simulate an event at the start of the first day.
     start_of_first_day = dates[0].replace(hour=0, minute=0, second=0, microsecond=0)
     # Assume that the state at the start of the day is the opposite of what the first
