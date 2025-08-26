@@ -651,29 +651,16 @@ class LoPointingSet(PointingSet):
     """
 
     def __init__(self, dataset: xr.Dataset):
-        super().__init__(dataset, spice_reference_frame=geometry.SpiceFrame.IMAP_DPS)
-        # TODO: Use spatial_utils.az_el_grid instead of
-        #  manually creating the lon/lat values
-        inferred_spacing_deg = 360 / dataset.longitude.size
-        longitude_bin_centers = np.arange(
-            0 + inferred_spacing_deg / 2, 360, inferred_spacing_deg
-        )
-        latitude_bin_centers = np.arange(
-            -2 + inferred_spacing_deg / 2, 2, inferred_spacing_deg
-        )
+        super().__init__(dataset, spice_reference_frame=geometry.SpiceFrame.IMAP_HAE)
 
-        # Could be wrong about the order here
-        longitude_grid, latitude_grid = np.meshgrid(
-            longitude_bin_centers,
-            latitude_bin_centers,
-            indexing="ij",
+        # The HAE centers are stored in the pset as (1, 3600, 40) arrays
+        self.az_el_points = np.column_stack(
+            (
+                np.squeeze(self.data["hae_longitude"]).values.ravel(),
+                np.squeeze(self.data["hae_latitude"]).values.ravel(),
+            )
         )
-
-        longitude = longitude_grid.ravel()
-        latitude = latitude_grid.ravel()
-
-        self.az_el_points = np.column_stack((longitude, latitude))
-        self.spatial_coords = ("longitude", "latitude")
+        self.spatial_coords = ("spin_angle", "off_angle")
 
 
 # Define the Map classes
