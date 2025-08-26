@@ -9,7 +9,9 @@ import xarray as xr
 from scipy.stats import binned_statistic_dd
 
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
-from imap_processing.spice.time import met_to_ttj2000ns
+from imap_processing.spice.repoint import get_pointing_times
+from imap_processing.spice.spin import get_spin_number
+from imap_processing.spice.time import met_to_ttj2000ns, ttj2000ns_to_met
 
 
 class FilterType(str, Enum):
@@ -52,10 +54,45 @@ def lo_l1c(sci_dependencies: dict, anc_dependencies: list) -> list[xr.Dataset]:
     if "imap_lo_l1b_de" in sci_dependencies:
         logical_source = "imap_lo_l1c_pset"
         l1b_de = sci_dependencies["imap_lo_l1b_de"]
-
         l1b_goodtimes_only = filter_goodtimes(l1b_de, anc_dependencies)
         pset = initialize_pset(l1b_goodtimes_only, attr_mgr, logical_source)
         full_counts = create_pset_counts(l1b_goodtimes_only)
+
+        # Set the pointing start and end times based on the first epoch
+        pointing_start_met, pointing_end_met = get_pointing_times(
+            ttj2000ns_to_met(l1b_goodtimes_only["epoch"][0].item())
+        )
+
+        pset["pointing_start_met"] = xr.DataArray(
+            np.array([pointing_start_met]),
+            dims="epoch",
+            # attrs=attr_mgr.get_variable_attributes("pointing_start_met)"
+        )
+        pset["pointing_end_met"] = xr.DataArray(
+            np.array([pointing_end_met]),
+            dims="epoch",
+            # attrs=attr_mgr.get_variable_attributes("pointing_start_met)"
+        )
+
+        # Set the epoch to the start of the pointing
+        pset["epoch"] = xr.DataArray(
+            met_to_ttj2000ns(pset["pointing_start_met"].values),
+            attrs=attr_mgr.get_variable_attributes("epoch"),
+        )
+
+        # Get the start and end spin numbers based on the pointing start and end MET
+        pset["start_spin_number"] = xr.DataArray(
+            [get_spin_number(pset["pointing_start_met"].item())],
+            dims="epoch",
+            # attrs=attr_mgr.get_variable_attributes("start_spin_number"),
+        )
+        pset["end_spin_number"] = xr.DataArray(
+            [get_spin_number(pset["pointing_end_met"].item())],
+            dims="epoch",
+            # attrs=attr_mgr.get_variable_attributes("end_spin_number"),
+        )
+
+        # Set the counts
         pset["triples_counts"] = create_pset_counts(
             l1b_goodtimes_only, FilterType.TRIPLES
         )
@@ -64,6 +101,8 @@ def lo_l1c(sci_dependencies: dict, anc_dependencies: list) -> list[xr.Dataset]:
         )
         pset["h_counts"] = create_pset_counts(l1b_goodtimes_only, FilterType.HYDROGEN)
         pset["o_counts"] = create_pset_counts(l1b_goodtimes_only, FilterType.OXYGEN)
+
+        # Set the exposure time
         pset["exposure_time"] = calculate_exposure_times(
             full_counts, l1b_goodtimes_only
         )
@@ -74,6 +113,7 @@ def lo_l1c(sci_dependencies: dict, anc_dependencies: list) -> list[xr.Dataset]:
 
     pset = pset.assign_coords(
         {
+            "epoch": pset["epoch"],
             "energy": np.arange(1, 8),
             "longitude": np.arange(3600),
             "latitude": np.arange(40),
