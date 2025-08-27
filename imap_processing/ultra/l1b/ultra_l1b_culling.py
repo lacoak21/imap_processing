@@ -19,6 +19,7 @@ from imap_processing.spice.spin import get_spin_data
 from imap_processing.ultra.constants import UltraConstants
 from imap_processing.ultra.l1b.lookup_utils import (
     get_scattering_coefficients,
+    get_scattering_thresholds,
 )
 from imap_processing.ultra.l1b.quality_flag_filters import DE_QUALITY_FLAG_FILTERS
 
@@ -508,7 +509,7 @@ def flag_scattering(
     quality_flags : NDArray
         Quality flags.
     """
-    scattering_thresholds = UltraConstants.ULTRA_FWHM_SCATTERING_CULLING_THRESHOLDS
+    scattering_thresholds = get_scattering_thresholds(ancillary_files)
 
     for (e_min, e_max), threshold in scattering_thresholds.items():
         event_mask = (tof_energy >= e_min) & (tof_energy < e_max)
