@@ -19,9 +19,8 @@ logger = logging.getLogger(__name__)
 def mask_below_fwhm_scattering_threshold(
     theta_coeffs: np.ndarray,
     phi_coeffs: np.ndarray,
-    energy: int,
-    ancillary_files: dict | None = None,
-    scattering_thresholds: dict | None = None,
+    energy: np.ndarray,
+    scattering_thresholds: np.ndarray,
 ) -> np.ndarray:
     """
     Determine indices of theta and phi values below the FWHM scattering threshold.
@@ -37,43 +36,29 @@ def mask_below_fwhm_scattering_threshold(
         Coefficients for theta FWHM calculation (a and g) for each pixel.
     phi_coeffs : NDArray
         Coefficients for phi FWHM calculation (a and g) for each pixel.
-    energy : int
-        Energy in keV.
-    ancillary_files : dict
-        Ancillary files.
+    energy : NDArray
+        Energy corresponding to each theta and phi val in keV.
     scattering_thresholds : dict
-        Scattering thresholds as a function of energy ranges.
+        Scattering thresholds corresponding to each energy.
 
     Returns
     -------
     numpy.ndarray
         Boolean array indicating indices below the scattering threshold.
     """
-    if scattering_thresholds is None:
-        if ancillary_files is None:
-            raise ValueError(
-                "Either ancillary_files or scattering_thresholds must be provided."
-            )
-        scattering_thresholds = get_scattering_thresholds(ancillary_files)
-    # Calculate FWHM for theta and phi
-    fwhm_theta = theta_coeffs[..., 0] * energy ** theta_coeffs[..., 1]
-    fwhm_phi = phi_coeffs[..., 0] * energy ** phi_coeffs[..., 1]
+    # Calculate FWHM for all pixels and all energies
+    fwhm_theta = theta_coeffs[..., 0:1] * (
+        energy ** theta_coeffs[..., 1:2]
+    )  # (npix, energy.shape[1])
+    fwhm_phi = phi_coeffs[..., 0:1] * (
+        energy ** phi_coeffs[..., 1:2]
+    )  # (npix, energy.shape[1])
 
-    try:
-        # Get the scattering threshold based on the energy
-        threshold = next(
-            threshold
-            for energy_range, threshold in scattering_thresholds.items()
-            if energy_range[0] <= energy < energy_range[1]
-        )
-    except StopIteration:
-        logger.warning(
-            f"Energy {energy} keV is out of bounds for scattering thresholds. Using "
-            f"zero for as threshold."
-        )
-        threshold = 0
-    # Combine conditions for both theta and phi
-    return np.logical_and(fwhm_theta <= threshold, fwhm_phi <= threshold)
+    thresholds = scattering_thresholds[np.newaxis, :]  # (1, energy.shape[1])
+
+    # Combine conditions for both theta and phi.
+    # shape = (npix, energy.shape[1])
+    return np.logical_and(fwhm_theta <= thresholds, fwhm_phi <= thresholds)
 
 
 def calculate_pixels_within_scattering_threshold(
@@ -111,12 +96,15 @@ def calculate_pixels_within_scattering_threshold(
     """
     # Load scattering coefficient lookup table
     scattering_luts = load_scattering_lookup_tables(ancillary_files, instrument_id)
-    # Load scattering thresholds
-    scattering_thresholds = get_scattering_thresholds(ancillary_files)
     pixels_below_scattering = []
     # Get energy bin geometric means
     energy_bin_geometric_means = build_energy_bins()[2]
+    # Load scattering thresholds for the energy bin geometric means
+    scattering_thresholds_for_energy_mean = get_scattering_thresholds_for_energy(
+        energy_bin_geometric_means, ancillary_files
+    )
     steps = for_indices_by_spin_phase.shape[1]
+    energies = energy_bin_geometric_means[np.newaxis, :]
     # The "for_indices_by_spin_phase" lookup table contains the boolean values of each
     # pixel at each spin phase step, indicating whether the pixel is inside the FOR.
     # It starts at Spin-phase = 0, and increments in fine steps (1 ms), spinning the
@@ -125,27 +113,39 @@ def calculate_pixels_within_scattering_threshold(
     for i in range(steps):
         # Calculate spin phase for the current iteration
         for_inds = for_indices_by_spin_phase[:, i]
+
+        # Skip if no pixels in FOR
+        if not np.any(for_inds):
+            logger.info(f"No pixels found in FOR at spin phase step {i}")
+            pixels_below_scattering.append(
+                [
+                    np.array([], dtype=int)
+                    for _ in range(len(energy_bin_geometric_means))
+                ]
+            )
+            continue
+        # Using the lookup table, get the indices of the pixels inside the FOR at
+        # the current spin phase step.
+        theta = theta_vals[for_inds, i]
+        phi = phi_vals[for_inds, i]
+        theta_coeffs, phi_coeffs = get_scattering_coefficients(
+            theta, phi, lookup_tables=scattering_luts
+        )
+        # Get a mask for pixels below the FWHM scattering threshold
+        scattering_mask = mask_below_fwhm_scattering_threshold(
+            theta_coeffs,
+            phi_coeffs,
+            energies,
+            scattering_thresholds=scattering_thresholds_for_energy_mean,
+        )
+        # Extract pixel indices for each energy
+        for_pixel_indices = np.where(for_inds)[0]
         pixels_below_scattering_for_energy = []
 
         for energy_idx in range(len(energy_bin_geometric_means)):
-            # Get a mask for pixels below the FWHM scattering threshold
-            energy = int(energy_bin_geometric_means[energy_idx])
-            # Using the lookup table, get the indices of the pixels inside the FOR at
-            # the current spin phase step.
-            theta = theta_vals[for_inds, i]
-            phi = phi_vals[for_inds, i]
-            theta_coeffs, phi_coeffs = get_scattering_coefficients(
-                theta, phi, lookup_tables=scattering_luts
-            )
-            scattering_mask = mask_below_fwhm_scattering_threshold(
-                theta_coeffs,
-                phi_coeffs,
-                energy,
-                scattering_thresholds=scattering_thresholds,
-            )
-            pixels_below_scattering_for_energy.append(
-                np.where(for_inds)[0][scattering_mask]
-            )
+            valid_pixels = scattering_mask[:, energy_idx]
+            pixels_below_scattering_for_energy.append(for_pixel_indices[valid_pixels])
+
         pixels_below_scattering.append(pixels_below_scattering_for_energy)
 
     return pixels_below_scattering
@@ -215,3 +215,42 @@ def get_spacecraft_pointing_lookup_tables(
         ra_and_dec,
         boundary_scale_factors,
     )
+
+
+def get_scattering_thresholds_for_energy(
+    energy: np.ndarray, ancillary_files: dict
+) -> np.ndarray:
+    """
+    Find the scattering thresholds for each energy bin.
+
+    Parameters
+    ----------
+    energy : np.ndarray
+        Array of energy values in keV.
+    ancillary_files : dict
+        Dictionary containing ancillary files.
+
+    Returns
+    -------
+    np.ndarray
+        Array of scattering thresholds for each energy bin.
+    """
+    scattering_thresholds = get_scattering_thresholds(ancillary_files)
+    # Get thresholds for all energies
+    thresholds = []
+    for e in energy:
+        try:
+            threshold = next(
+                threshold
+                for energy_range, threshold in scattering_thresholds.items()
+                if energy_range[0] <= e < energy_range[1]
+            )
+        except StopIteration:
+            logger.warning(
+                f"Energy {e} keV is out of bounds for scattering thresholds. Using"
+                f" zero for as threshold."
+            )
+
+            threshold = 0
+        thresholds.append(threshold)
+    return np.array(thresholds)

@@ -1,6 +1,5 @@
 from unittest import mock
 
-import astropy_healpix.healpy as hp
 import numpy as np
 import pandas as pd
 import pytest
@@ -21,43 +20,6 @@ from imap_processing.ultra.l1c.ultra_l1c import ultra_l1c
 from imap_processing.ultra.utils.ultra_l1_utils import create_dataset
 
 TEST_PATH = imap_module_directory / "tests" / "ultra" / "data" / "l1"
-
-
-@pytest.fixture
-def mock_spacecraft_pointing_lookups():
-    """Test lookup tables fixture."""
-    pix = hp.nside2npix(8)  # Reduced for testing
-    steps = 5  # Reduced for testing
-    for_indices_by_spin_phase = np.random.choice(
-        [True, False], size=(pix, steps), p=[0.1, 0.9]
-    )
-    theta_vals = np.random.uniform(-60, 60, size=(pix, steps))
-    phi_vals = np.random.uniform(-60, 60, size=(pix, steps))
-    ra_and_dec = np.random.uniform(-80, 80, size=(hp.nside2npix(128), 2))
-    boundary_scale_factors = np.ones((pix, steps))
-    with (
-        mock.patch(
-            "imap_processing.ultra.l1c.spacecraft_pset.get_spacecraft_pointing_lookup_tables"
-        ) as mock_lookup,
-        mock.patch(
-            "imap_processing.ultra.l1c.helio_pset.get_spacecraft_pointing_lookup_tables"
-        ) as mock_lookup_helio,
-    ):
-        mock_lookup.return_value = (
-            for_indices_by_spin_phase,
-            theta_vals,
-            phi_vals,
-            ra_and_dec,
-            boundary_scale_factors,
-        )
-        mock_lookup_helio.return_value = (
-            for_indices_by_spin_phase,
-            theta_vals,
-            phi_vals,
-            ra_and_dec,
-            boundary_scale_factors,
-        )
-        yield mock_lookup
 
 
 @pytest.fixture
@@ -265,13 +227,10 @@ def test_calculate_helio_pset_with_cdf(
     mock_spacecraft_pointing_lookups,
     deadtime_datasets,
     use_fake_spin_data_for_time,
-    use_fake_repoint_data_for_time,
 ):
     """Tests ultra_l1c function with imported test data."""
-
     # Simulate a spin table from MET = 0 to MET = 141 * 15 seconds
     use_fake_spin_data_for_time(start_met=0, end_met=141 * 15)
-    use_fake_repoint_data_for_time(np.arange(4.32374e08, 4.99374e08 + 10, 10))
     df = pd.read_csv(TEST_PATH / "IMAP-Ultra45_r1_L1_V0_shortened.csv")
 
     # Select a single pointing number
@@ -325,8 +284,11 @@ def test_calculate_helio_pset_with_cdf(
         "imap_ultra_l1a_45sensor-rates": deadtime_datasets["rates"],
         "imap_ultra_l1a_45sensor-params": deadtime_datasets["params"],
     }
-
-    output_datasets = ultra_l1c(data_dict, ancillary_files, has_spice=True)
+    with mock.patch(
+        "imap_processing.ultra.l1c.helio_pset.get_pointing_times",
+        return_value=(482374890.0, 482374000.0),
+    ):
+        output_datasets = ultra_l1c(data_dict, ancillary_files, has_spice=True)
     output_datasets[0].attrs["Data_version"] = "999"
     output_datasets[0].attrs["Repointing"] = f"repoint{pointing + 1:05d}"
     test_data_path = write_cdf(output_datasets[0], istp=True)
