@@ -13,6 +13,7 @@ from imap_processing.idex.idex_l1a import PacketParser
 from imap_processing.idex.idex_l1b import idex_l1b
 from imap_processing.idex.idex_l2a import idex_l2a
 from imap_processing.idex.idex_l2b import idex_l2b
+from imap_processing.spice.time import et_to_ttj2000ns
 
 
 @pytest.fixture
@@ -132,7 +133,7 @@ def test_idex_l2b_validation(furnish_time_kernels):
         datetime.strptime(date, "%Y/%j-%H:%M:%S.%f").strftime("%Y-%m-%dT%H:%M:%S.%f")
         for date in times["timestamp"].values
     ]
-    epoch_vals = [utc2et(dt) for dt in dts]
+    epoch_vals = [et_to_ttj2000ns(utc2et(dt)) for dt in dts]
     with mock.patch(
         "imap_processing.idex.idex_l2b.get_science_acquisition_timestamps",
         return_value=(logs, epoch_vals, events),
