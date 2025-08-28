@@ -80,6 +80,14 @@ class UltraConstants:
 
     # Thresholds for culling based on counts (keV).
     CULLING_ENERGY_BIN_EDGES: ClassVar[list] = [
+        3.0,
+        10.0,
+        20.0,
+        50.0,
+        300.0,
+        1e5,
+    ]
+    PSET_ENERGY_BIN_EDGES: ClassVar[list] = [
         3.385,
         4.13722222222222,
         5.05660493827161,

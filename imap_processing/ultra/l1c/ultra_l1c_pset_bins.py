@@ -46,7 +46,7 @@ def build_energy_bins() -> tuple[list[tuple[float, float]], np.ndarray, np.ndarr
         Array of geometric means of energy bins.
     """
     # Create energy bins.
-    energy_bin_edges = np.array(UltraConstants.CULLING_ENERGY_BIN_EDGES)
+    energy_bin_edges = np.array(UltraConstants.PSET_ENERGY_BIN_EDGES)
     energy_midpoints = (energy_bin_edges[:-1] + energy_bin_edges[1:]) / 2
 
     intervals = [
@@ -664,7 +664,7 @@ def get_spacecraft_background_rates(
     sensor: str,
     ancillary_files: dict,
     energy_bin_edges: list[tuple[float, float]],
-    cullingmask_spin_number: NDArray,
+    goodtimes_spin_number: NDArray,
     nside: int = 128,
 ) -> NDArray:
     """
@@ -680,9 +680,9 @@ def get_spacecraft_background_rates(
         Ancillary files containing the lookup tables.
     energy_bin_edges : list[tuple[float, float]]
         Energy bin edges.
-    cullingmask_spin_number : NDArray
+    goodtimes_spin_number : NDArray
         Goodtime spins.
-        Ex. imap_ultra_l1b_45sensor-cullingmask[0]["spin_number"]
+        Ex. imap_ultra_l1b_45sensor-goodtimes[0]["spin_number"]
         This is used to determine the number of pulses per spin.
     nside : int, optional
         The nside parameter of the Healpix tessellation (default is 128).
@@ -714,7 +714,7 @@ def get_spacecraft_background_rates(
     background_rates = np.zeros((len(energy_bin_edges), n_pix))
 
     # Only select pulses from goodtimes.
-    goodtime_mask = np.isin(spin_number, cullingmask_spin_number)
+    goodtime_mask = np.isin(spin_number, goodtimes_spin_number)
     mean_start_pulses = np.mean(pulses.start_pulses[goodtime_mask])
     mean_stop_pulses = np.mean(pulses.stop_pulses[goodtime_mask])
     mean_coin_pulses = np.mean(pulses.coin_pulses[goodtime_mask])
