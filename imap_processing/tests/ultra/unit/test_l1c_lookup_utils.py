@@ -96,6 +96,7 @@ def test_get_mask_below_fwhm_scattering_threshold_zero(ancillary_files):
     np.testing.assert_array_equal(pixel_mask, expected_pixel_mask)
 
 
+@pytest.mark.external_test_data
 def test_calculate_fwhm_spun_scattering(ancillary_files):
     """Tests that FWHM scattering thresholding works as expected."""
     step = 1000
