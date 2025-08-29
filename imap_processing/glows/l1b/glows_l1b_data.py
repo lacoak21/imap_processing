@@ -681,7 +681,6 @@ class HistogramL1B:
     histogram: np.ndarray
     flight_software_version: str
     seq_count_in_pkts_file: int
-    # ancillary_data_files: np.ndarray TODO Add this
     first_spin_id: int
     last_spin_id: int
     flags_set_onboard: int  # TODO: this should be renamed in L1B
@@ -705,9 +704,7 @@ class HistogramL1B:
     imap_time_offset: np.double  # No conversion needed from l1a->l1b
     glows_start_time: np.double  # No conversion needed from l1a->l1b
     glows_time_offset: np.double  # No conversion needed from l1a->l1b
-    # unique_block_identifier: str = field(
-    #     init=False
-    # )  # Could be datetime TODO: Can't put a string in data
+    unique_block_identifier: str = field(init=False)
     imap_spin_angle_bin_cntr: np.ndarray = field(init=False)  # Same size as bins
     histogram_flag_array: np.ndarray = field(init=False)
     # These two are retrieved from spin data
@@ -724,10 +721,9 @@ class HistogramL1B:
     flags: np.ndarray = field(init=False)
     ancillary_exclusions: InitVar[AncillaryExclusions]
     ancillary_parameters: InitVar[AncillaryParameters]
+    pipeline_settings: InitVar[PipelineSettings]
     # TODO:
     # - Determine a good way to output flags as "human readable"
-    # - Add spice pieces
-    # - also unique identifiers
     # - Bad angle algorithm using SPICE locations
     # - Move ancillary file to AWS
 
@@ -739,6 +735,7 @@ class HistogramL1B:
         pulse_length_variance: np.double,
         ancillary_exclusions: AncillaryExclusions,
         ancillary_parameters: AncillaryParameters,
+        pipeline_settings: PipelineSettings,
     ) -> None:
         """
         Will process data.
@@ -759,6 +756,8 @@ class HistogramL1B:
             Ancillary exclusions data for bad-angle flag processing.
         ancillary_parameters : AncillaryParameters
             Ancillary parameters for decoding histogram data.
+        pipeline_settings : PipelineSettings
+            Pipeline settings for processing thresholds and flags.
         """
         # self.histogram_flag_array = np.zeros((2,))
         day = met_to_datetime64(self.imap_start_time)
@@ -804,9 +803,9 @@ class HistogramL1B:
         # is_inside_excluded_region, is_excluded_by_instr_team,
         # is_suspected_transient] x 3600 bins
         self.histogram_flag_array = self._compute_histogram_flag_array(day_exclusions)
-        # self.unique_block_identifier = np.datetime_as_string(
-        #     np.datetime64(int(self.imap_start_time), "ns"), "s"
-        # )
+        # Generate ISO datetime string using SPICE functions
+        datetime64_time = met_to_datetime64(self.imap_start_time)
+        self.unique_block_identifier = np.datetime_as_string(datetime64_time, "s")
         self.flags = np.ones((FLAG_LENGTH,), dtype=np.uint8)
 
     def update_spice_parameters(self) -> None:

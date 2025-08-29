@@ -14,7 +14,9 @@ from imap_processing.glows.l1b.glows_l1b_data import (
     AncillaryParameters,
     DirectEventL1B,
     HistogramL1B,
+    PipelineSettings,
 )
+from imap_processing.spice.time import et_to_datetime64, ttj2000ns_to_et
 
 
 def glows_l1b(
@@ -23,6 +25,7 @@ def glows_l1b(
     uv_sources: xr.Dataset,
     suspected_transients: xr.Dataset,
     exclusions_by_instr_team: xr.Dataset,
+    pipeline_settings_dataset: xr.Dataset,
 ) -> xr.Dataset:
     """
     Will process the GLOWS L1B data and format the output datasets.
@@ -43,6 +46,9 @@ def glows_l1b(
     exclusions_by_instr_team : xr.Dataset
         Dataset containing manual exclusions by instrument team with time-based masks.
         This is the output from GlowsAncillaryCombiner.
+    pipeline_settings_dataset : xr.Dataset
+        Dataset containing pipeline settings, including the L1B conversion table and
+        other ancillary parameters.
 
     Returns
     -------
@@ -53,12 +59,17 @@ def glows_l1b(
     cdf_attrs.add_instrument_global_attrs("glows")
     cdf_attrs.add_instrument_variable_attrs("glows", "l1b")
 
+    day = et_to_datetime64(ttj2000ns_to_et(input_dataset["epoch"].data[0]))
+
     # Create ancillary exclusions object from passed-in datasets
     ancillary_exclusions = AncillaryExclusions(
         excluded_regions=excluded_regions,
         uv_sources=uv_sources,
         suspected_transients=suspected_transients,
         exclusions_by_instr_team=exclusions_by_instr_team,
+    )
+    pipeline_settings = PipelineSettings(
+        pipeline_settings_dataset.sel(epoch=day, method="nearest"),
     )
 
     with open(
@@ -73,8 +84,11 @@ def glows_l1b(
     )
 
     if "hist" in logical_source:
+        output_dataarrays = process_histogram(
+            input_dataset, ancillary_exclusions, ancillary_parameters, pipeline_settings
+        )
         output_dataset = create_l1b_hist_output(
-            input_dataset, cdf_attrs, ancillary_parameters, ancillary_exclusions
+            output_dataarrays, input_dataset["epoch"], input_dataset["bins"], cdf_attrs
         )
 
     elif "de" in logical_source:
@@ -158,6 +172,7 @@ def process_histogram(
     l1a: xr.Dataset,
     ancillary_exclusions: AncillaryExclusions,
     ancillary_parameters: AncillaryParameters,
+    pipeline_settings: PipelineSettings,
 ) -> xr.Dataset:
     """
     Will process the histogram data from the L1A dataset and return the L1B dataset.
@@ -176,6 +191,8 @@ def process_histogram(
         The ancillary exclusions data for bad-angle flag processing.
     ancillary_parameters : AncillaryParameters
         The ancillary parameters for decoding histogram data.
+    pipeline_settings : PipelineSettings
+        The pipeline settings including flag activation.
 
     Returns
     -------
@@ -231,7 +248,7 @@ def process_histogram(
             Tuple of processed L1B data arrays from HistogramL1B.output_data().
         """
         return HistogramL1B(  # type: ignore[call-arg]
-            *args, ancillary_exclusions, ancillary_parameters
+            *args, ancillary_exclusions, ancillary_parameters, pipeline_settings
         ).output_data()
 
     l1b_fields = xr.apply_ufunc(
@@ -248,37 +265,39 @@ def process_histogram(
 
 
 def create_l1b_hist_output(
-    input_dataset: xr.Dataset,
+    l1b_dataarrays: tuple[xr.DataArray],
+    epoch: xr.DataArray,
+    bin_coord: xr.DataArray,
     cdf_attrs: ImapCdfAttributes,
-    ancillary_parameters: AncillaryParameters,
-    ancillary_exclusions: AncillaryExclusions,
 ) -> xr.Dataset:
     """
     Create the output dataset for the L1B histogram data.
 
-    This function processes the input dataset and creates a new dataset with the
-    appropriate attributes and data variables. It uses the `process_histogram` function
-    to process the histogram data.
+    This function takes in the output from `process_histogram`, which is a tuple of
+    DataArrays matching the output L1B data variables, and assembles them into a
+    Dataset with the appropriate coordinates.
 
     Parameters
     ----------
-    input_dataset : xr.Dataset
-        The input L1A GLOWS Histogram dataset to process.
+    l1b_dataarrays : tuple[xr.DataArray]
+        The DataArrays for each variable in the L1B dataset. These align with the
+        fields in the HistogramL1B dataclass, which also describes each variable.
+    epoch : xr.DataArray
+        The epoch DataArray to use as a coordinate in the output dataset. Generally
+        equal to the L1A epoch.
+    bin_coord : xr.DataArray
+        An arange DataArray for the bins coordinate. Nominally expected to be equal to
+        `xr.DataArray(np.arange(number_of_bins_per_histogram), name="bins",
+        dims=["bins"])`. Pulled up from L1A.
     cdf_attrs : ImapCdfAttributes
         The CDF attributes to use for the output dataset.
-    ancillary_parameters : AncillaryParameters
-        The ancillary parameters to use for the output dataset. Generated from the
-        l1b conversion table and pipeline setting ancillary files.
-    ancillary_exclusions : AncillaryExclusions
-        The ancillary exclusions to use for the output dataset. Generated from
-        ancillary files.
 
     Returns
     -------
     output_dataset : xr.Dataset
         The output dataset with the processed histogram data and all attributes.
     """
-    data_epoch = input_dataset["epoch"]
+    data_epoch = epoch
     data_epoch.attrs = cdf_attrs.get_variable_attributes("epoch", check_schema=False)
 
     flag_data = xr.DataArray(
@@ -318,7 +337,7 @@ def create_l1b_hist_output(
     )
 
     bin_data = xr.DataArray(
-        input_dataset["bins"].data,
+        bin_coord.data,
         name="bins",
         dims=["bins"],
         attrs=cdf_attrs.get_variable_attributes("bins_attrs", check_schema=False),
@@ -329,10 +348,6 @@ def create_l1b_hist_output(
         name="bins_label",
         dims=["bins_label"],
         attrs=cdf_attrs.get_variable_attributes("bins_label", check_schema=False),
-    )
-
-    output_dataarrays = process_histogram(
-        input_dataset, ancillary_exclusions, ancillary_parameters
     )
 
     output_dataset = xr.Dataset(
@@ -352,7 +367,7 @@ def create_l1b_hist_output(
     # HistogramL1B dataclass, we can use dataclasses.fields to get the field names.
 
     fields = dataclasses.fields(HistogramL1B)
-    for index, dataarray in enumerate(output_dataarrays):
+    for index, dataarray in enumerate(l1b_dataarrays):
         # Dataarray is already an xr.DataArray type, so we can just assign it
         output_dataset[fields[index].name] = dataarray
         output_dataset[fields[index].name].attrs = cdf_attrs.get_variable_attributes(
