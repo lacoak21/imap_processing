@@ -89,6 +89,7 @@ class ImapPSETUltraFlags(FlagNameMixin):
 
     NONE = CommonFlags.NONE
     EARTH_FOV = 2**0  # bit 0
+    SCATTERING = 2**1  # bit 1
 
 
 class ImapInstrumentUltraFlags(FlagNameMixin):

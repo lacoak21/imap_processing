@@ -132,7 +132,7 @@ def create_dataset(  # noqa: PLR0912
                 dims=["energy_bin_geometric_mean", "spin_number"],
                 attrs=cdf_manager.get_variable_attributes(key, check_schema=False),
             )
-        elif key in {"quality_flags", "latitude", "longitude"}:
+        elif key in {"latitude", "longitude"}:
             dataset[key] = xr.DataArray(
                 data,
                 dims=["epoch", "pixel_index"],
@@ -141,6 +141,7 @@ def create_dataset(  # noqa: PLR0912
         elif key in {
             "counts",
             "background_rates",
+            "quality_flags",
         }:
             dataset[key] = xr.DataArray(
                 data,

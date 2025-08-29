@@ -87,6 +87,6 @@ def compute_culling_mask(
     # mask.shape = (len(et), npix)
     mask = sep_angle > keepout_angle[:, np.newaxis]
     culled_any_time = np.any(~mask, axis=0)  # shape: (npix,)
-    pset_quality_flags[culled_any_time] |= ImapPSETUltraFlags.EARTH_FOV.value
+    pset_quality_flags[:, culled_any_time] |= ImapPSETUltraFlags.EARTH_FOV.value
 
     return mask, unit_target_vecs

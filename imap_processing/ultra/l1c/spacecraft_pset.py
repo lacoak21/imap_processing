@@ -146,9 +146,6 @@ def calculate_spacecraft_pset(
         goodtimes_dataset["spin_number"].values,
         nside=nside,
     )
-    spacecraft_pset_quality_flags = np.full(
-        n_pix, ImapPSETUltraFlags.NONE.value, dtype=np.uint16
-    )
 
     start: float = np.min(de_dataset["event_times"].values)
     end: float = np.max(de_dataset["event_times"].values)

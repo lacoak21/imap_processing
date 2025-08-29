@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from numpy._typing import NDArray
 
+from imap_processing.quality_flags import ImapPSETUltraFlags
 from imap_processing.ultra.l1b.lookup_utils import (
     get_scattering_coefficients,
     get_scattering_thresholds,
@@ -70,6 +71,7 @@ def calculate_fwhm_spun_scattering(
     for_indices_by_spin_phase: np.ndarray,
     theta_vals: np.ndarray,
     phi_vals: np.ndarray,
+    quality_flags: np.ndarray,
     ancillary_files: dict,
     instrument_id: int,
 ) -> tuple[list, NDArray, NDArray, NDArray]:
@@ -88,6 +90,8 @@ def calculate_fwhm_spun_scattering(
         A 2D array of theta values for each HEALPix pixel at each spin phase step.
     phi_vals : np.ndarray
          A 2D array of phi values for each HEALPix pixel at each spin phase step.
+    quality_flags : np.ndarray
+        A 2D array of quality flags for each HEALPix pixel at each energy bin.
     ancillary_files : dict
         Dictionary containing ancillary files.
     instrument_id : int,
@@ -167,6 +171,11 @@ def calculate_fwhm_spun_scattering(
         for energy_idx in range(len(energy_bin_geometric_means)):
             valid_pixels = scattering_mask[:, energy_idx]
             pixels_below_scattering_for_energy.append(for_pixel_indices[valid_pixels])
+
+            # Update quality flags for pixels that above the scattering threshold
+            quality_flags[energy_idx, for_pixel_indices[~valid_pixels]] |= (
+                ImapPSETUltraFlags.SCATTERING.value
+            )
 
         pixels_below_scattering.append(pixels_below_scattering_for_energy)
         # Accumulate FWHM values for averaging

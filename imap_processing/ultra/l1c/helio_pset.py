@@ -107,6 +107,11 @@ def calculate_helio_pset(
             instrument_id,
         )
     )
+    helio_pset_quality_flags = np.full(
+        (len(energy_bin_geometric_means), n_pix),
+        ImapPSETUltraFlags.NONE.value,
+        dtype=np.uint16,
+    )
 
     nside = hp.npix2nside(for_indices_by_spin_phase.shape[0])
     counts, latitude, longitude, n_pix = get_spacecraft_histogram(

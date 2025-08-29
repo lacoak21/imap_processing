@@ -281,7 +281,7 @@ def test_get_spacecraft_exposure_times(
     spin_phase_steps = np.random.randint(0, 2, (pix, steps)).astype(
         bool
     )  # Spin phase steps, random 0 or 1
-
+    quality_flags = np.zeros((24, pix)).astype(np.uint16)
     pixels_below_threshold, fwhm_theta, fwhm_phi, thresholds = (
         calculate_fwhm_spun_scattering(
             spin_phase_steps, mock_theta, mock_phi, ancillary_files, 45
