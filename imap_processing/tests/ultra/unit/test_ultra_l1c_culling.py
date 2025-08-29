@@ -77,7 +77,9 @@ def test_compare_sincpt_with_culling_mask_deterministic(furnish_kernels):
         nside = 128
         npix = hp.nside2npix(nside)
         spacecraft_pset_quality_flags = np.full(
-            npix, ImapPSETUltraFlags.NONE.value, dtype=np.uint16
+            (len(build_energy_bins()[2]), npix),
+            ImapPSETUltraFlags.NONE.value,
+            dtype=np.uint16,
         )
 
         # Compute culling mask and IMAP-to-Earth unit vector
@@ -92,14 +94,17 @@ def test_compare_sincpt_with_culling_mask_deterministic(furnish_kernels):
         culled = np.any(~mask, axis=0)
         # Culled pixels must have the flag set (bitwise check is safest)
         assert np.all(
-            (spacecraft_pset_quality_flags[culled] & ImapPSETUltraFlags.EARTH_FOV.value)
+            (
+                spacecraft_pset_quality_flags[:, culled]
+                & ImapPSETUltraFlags.EARTH_FOV.value
+            )
             == ImapPSETUltraFlags.EARTH_FOV.value
         )
 
         # Non-culled pixels must not have the flag
         assert np.all(
             (
-                spacecraft_pset_quality_flags[~culled]
+                spacecraft_pset_quality_flags[:, ~culled]
                 & ImapPSETUltraFlags.EARTH_FOV.value
             )
             == 0
