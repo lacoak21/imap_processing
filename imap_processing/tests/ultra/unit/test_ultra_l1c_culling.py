@@ -8,6 +8,7 @@ import spiceypy
 from imap_processing.quality_flags import ImapPSETUltraFlags
 from imap_processing.spice.geometry import SpiceBody
 from imap_processing.ultra.l1c.ultra_l1c_culling import compute_culling_mask
+from imap_processing.ultra.l1c.ultra_l1c_pset_bins import build_energy_bins
 
 
 @pytest.mark.external_kernel
@@ -37,7 +38,9 @@ def test_compute_culling_mask(furnish_kernels, spice_test_data_path):
     npix = hp.nside2npix(nside)
 
     spacecraft_pset_quality_flags = np.full(
-        npix, ImapPSETUltraFlags.NONE.value, dtype=np.uint16
+        (len(build_energy_bins()[2]), npix),
+        ImapPSETUltraFlags.NONE.value,
+        dtype=np.uint16,
     )
 
     with furnish_kernels(kernels):
