@@ -52,6 +52,7 @@ class TestUltraL2:
                     peak_exposure=1000,
                     timestr=manual_timestrs[i],
                     head=("90"),
+                    energy_dependent_exposure=True,
                 )
                 for i, mid_latitude in enumerate(
                     np.arange(
@@ -89,13 +90,29 @@ class TestUltraL2:
     ):
         # Avoid modifying the original pset
         pset = self.ultra_pset.copy(deep=True)
-
         # Set the values in the single input PSET for easy calculation
         # of the expected ena_intensity and ena_intensity statistical uncertainty
         pset["counts"].values = np.full_like(pset["counts"].values, 10)
-        pset["exposure_factor"].values = np.ones_like(pset["exposure_factor"].values)
+        pset["exposure_factor"].values = np.ones_like(pset["exposure_factor"])
         pset["background_rates"].values = np.ones_like(pset["background_rates"].values)
         pset["sensitivity"].values = np.ones_like(pset["sensitivity"].values)
+        pset["energy_bin_delta"].values = np.ones_like(pset["energy_bin_delta"].values)
+        pset["efficiency"] = (
+            ["energy", "pixel_index"],
+            np.ones_like(pset["exposure_factor"].values),
+        )
+        pset["geometric_function"] = (
+            ["energy", "pixel_index"],
+            np.ones_like(pset["exposure_factor"].values),
+        )
+        pset["scatter_theta"] = (
+            ["energy", "pixel_index"],
+            np.ones_like(pset["exposure_factor"].values),
+        )
+        pset["scatter_phi"] = (
+            ["energy", "pixel_index"],
+            np.ones_like(pset["exposure_factor"].values),
+        )
         pset["energy_bin_delta"].values = np.ones_like(pset["energy_bin_delta"].values)
         if epoch_dim_for_energy_delta:
             # add an extra dim to the start
@@ -119,6 +136,10 @@ class TestUltraL2:
                         "values_to_pull_project": [
                             "exposure_factor",
                             "sensitivity",
+                            "geometric_function",
+                            "efficiency",
+                            "scatter_theta",
+                            "scatter_phi",
                             "background_rates",
                         ],
                         "nside": 32,

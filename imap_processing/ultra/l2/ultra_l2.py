@@ -55,6 +55,10 @@ REQUIRED_L1C_VARIABLES_PUSH = [
 REQUIRED_L1C_VARIABLES_PULL = [
     "exposure_factor",
     "sensitivity",
+    "geometric_function",
+    "efficiency",
+    "scatter_theta",
+    "scatter_phi",
     "background_rates",
     "obs_date",
 ]
