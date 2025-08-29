@@ -3,10 +3,12 @@ import numpy as np
 import pytest
 
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
+    calculate_pixels_within_scattering_threshold,
     get_scattering_thresholds_for_energy,
     get_spacecraft_pointing_lookup_tables,
     mask_below_fwhm_scattering_threshold,
 )
+from imap_processing.ultra.l1c.ultra_l1c_pset_bins import build_energy_bins
 
 
 @pytest.mark.external_test_data
@@ -92,3 +94,23 @@ def test_get_mask_below_fwhm_scattering_threshold_zero(ancillary_files):
     )
     np.testing.assert_array_equal(pixel_mask.shape, (3, 1))
     np.testing.assert_array_equal(pixel_mask, expected_pixel_mask)
+
+
+def test_calculate_fwhm_spun_scattering(ancillary_files):
+    """Tests that FWHM scattering thresholding works as expected."""
+    step = 1000
+    theta_vals = np.tile(np.array([10, 20, 30])[:, np.newaxis], (1, 1000))
+    phi_vals = np.tile(np.array([10, 20, 30])[:, np.newaxis], (1, 1000))
+
+    for_inds = np.ones((len(theta_vals), step), dtype=bool)
+    quality_flags = np.zeros((len(build_energy_bins()[2]), len(theta_vals))).astype(
+        np.uint16
+    )
+    mask = calculate_pixels_within_scattering_threshold(
+        for_inds, theta_vals, phi_vals, quality_flags, ancillary_files, 90
+    )
+    assert len(mask) == step
+    # assert quality flags are either 0 (no issue) or 2 (scattering issue)
+    assert np.all((quality_flags == 0) | (quality_flags == 2))
+    # Assert there is at least one pixel below the scattering threshold
+    assert np.any(quality_flags == 2)
