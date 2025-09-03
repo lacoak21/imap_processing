@@ -156,6 +156,11 @@ class TestUltraL2:
             "ena_intensity",
             "ena_intensity_stat_unc",
             "exposure_factor",
+            "sensitivity",
+            "geometric_function",
+            "efficiency",
+            "scatter_theta",
+            "scatter_phi",
             "obs_date",
         ]
         for var in expected_vars:
@@ -246,10 +251,7 @@ class TestUltraL2:
         assert hp_skymap.data_1d["counts"].dims == counts_dims
         assert hp_skymap.data_1d["ena_intensity"].dims == counts_dims
         assert hp_skymap.data_1d["ena_intensity_stat_unc"].dims == counts_dims
-        assert hp_skymap.data_1d["exposure_factor"].dims == (
-            CoordNames.TIME.value,
-            CoordNames.GENERIC_PIXEL.value,
-        )
+        assert hp_skymap.data_1d["exposure_factor"].dims == counts_dims
 
     @pytest.mark.usefixtures("_setup_spice_kernels_list")
     def test_ultra_l2_output_unbinned_healpix(self, mock_data_dict, furnish_kernels):
@@ -375,11 +377,7 @@ class TestUltraL2:
             rect_map_dataset["ena_intensity_stat_unc"].dims
             == expected_ena_intensity_dims
         )
-        assert rect_map_dataset["exposure_factor"].dims == (
-            CoordNames.TIME.value,
-            CoordNames.AZIMUTH_L2.value,
-            CoordNames.ELEVATION_L2.value,
-        )
+        assert rect_map_dataset["exposure_factor"].dims == expected_ena_intensity_dims
 
         # Check that '_label' coordinates were added for all coordinates except 'epoch'
         for coord_var in expected_ena_intensity_dims[1:]:

@@ -22,6 +22,7 @@ from imap_processing.ultra.l1c.ultra_l1c_culling import compute_culling_mask
 from imap_processing.ultra.l1c.ultra_l1c_pset_bins import (
     build_energy_bins,
     get_efficiencies_and_geometric_function,
+    get_energy_delta_minus_plus,
     get_helio_adjusted_data,
     get_spacecraft_exposure_times,
     get_spacecraft_histogram,
@@ -190,6 +191,11 @@ def calculate_helio_pset(
     pset_dict["scatter_theta"] = scattering_theta
     pset_dict["scatter_phi"] = scattering_phi
     pset_dict["scatter_threshold"] = scattering_thresholds
+
+    # Add the energy delta plus/minus to the dataset
+    energy_delta_minus, energy_delta_plus = get_energy_delta_minus_plus()
+    pset_dict["energy_delta_minus"] = energy_delta_minus
+    pset_dict["energy_delta_plus"] = energy_delta_plus
 
     dataset = create_dataset(pset_dict, name, "l1c")
 

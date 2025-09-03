@@ -177,3 +177,23 @@ energy_bin_delta:
   FIELDNAM: energy_bin_delta
   LABLAXIS: energy bin delta
   UNITS: keV
+
+energy_delta_minus:
+  <<: *default_float32
+  VAR_TYPE: support_data
+  CATDESC: Difference between the energy bin center and lower edge.
+  LABLAXIS: energy
+  UNITS: KeV
+  FIELDNAM: energy_bin_delta_minus
+  DISPLAY_TYPE: no_plot
+  DEPEND_1: energy_bin_geometric_mean
+
+energy_delta_plus:
+  <<: *default_float32
+  VAR_TYPE: support_data
+  CATDESC: Difference between the energy bin center and upper edge.
+  LABLAXIS: energy
+  UNITS: KeV
+  FIELDNAM: energy_bin_delta_plus
+  DISPLAY_TYPE: no_plot
+  DEPEND_1: energy_bin_geometric_mean
