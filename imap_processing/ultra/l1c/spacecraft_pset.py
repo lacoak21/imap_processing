@@ -172,9 +172,9 @@ def calculate_spacecraft_pset(
     pointing_start, pointing_stop = get_pointing_times(
         float(et_to_met(species_dataset["event_times"].data[0]))
     )
-    mid_time = met_to_ttj2000ns((pointing_start + pointing_stop) / 2)
-    # For ISTP, epoch should be the center of the time bin.
-    pset_dict["epoch"] = np.atleast_1d(mid_time).astype(np.int64)
+    pointing_start = met_to_ttj2000ns(pointing_start)
+    # Epoch should be the center of the pointing
+    pset_dict["epoch"] = np.atleast_1d(pointing_start).astype(np.int64)
     pset_dict["counts"] = counts[np.newaxis, ...]
     pset_dict["latitude"] = latitude[np.newaxis, ...]
     pset_dict["longitude"] = longitude[np.newaxis, ...]
