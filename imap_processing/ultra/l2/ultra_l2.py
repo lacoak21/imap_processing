@@ -10,6 +10,7 @@ import xarray as xr
 from numpy.typing import NDArray
 
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
+from imap_processing.cdf.utils import load_cdf
 from imap_processing.ena_maps import ena_maps
 from imap_processing.ena_maps.utils.coordinates import CoordNames
 from imap_processing.ena_maps.utils.naming import (
@@ -253,8 +254,13 @@ def generate_ultra_healpix_skymap(
     # Add expected but not required variables to the pull projection list
     # Log a warning if they are missing from any PSET but continue processing.
     expected_present_vars = []
+    first_pset = (
+        load_cdf(ultra_l1c_psets[0])
+        if isinstance(ultra_l1c_psets[0], (str, Path))
+        else ultra_l1c_psets[0]
+    )
     for var in EXPECTED_L1C_VARIABLES_PULL:
-        if var not in ultra_l1c_psets[0].variables:
+        if var not in first_pset.variables:
             logger.warning(
                 f"Expected variable {var} not found in the first L1C PSET. "
                 "This variable will not be projected to the map."
