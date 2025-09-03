@@ -529,7 +529,7 @@ def ancillary_files():
         "l1b-90sensor-tofxesteep": path
         / "imap_ultra_l1b-90sensor-tofxesteep_20250101_v000.pgm",
         "l1b-tofxph": path / "imap_ultra_l1b-tofxph_20250101_v000.pgm",
-        "l1b-90sensor-scattering-calibration": path
+        "l1b-90sensor-scattering-calibration-data": path
         / "imap_ultra_l1b-90sensor-scattering-calibration-data_20250101_v000.csv",
         "l1c-90sensor-dps-exposure": path
         / "imap_ultra_l1c-90sensor-dps-exposure_20250101_v000.csv",
@@ -594,10 +594,16 @@ def deadtime_datasets():
 @pytest.fixture
 def random_spin_data():
     """Fixture for random spin data."""
-    with mock.patch(
-        "imap_processing.ultra.l1c.ultra_l1c_pset_bins.get_spacecraft_spin_phase"
-    ) as mock_spin_phases:
+    with (
+        mock.patch(
+            "imap_processing.ultra.l1c.ultra_l1c_pset_bins.get_spacecraft_spin_phase"
+        ) as mock_spin_phases,
+        mock.patch(
+            "imap_processing.ultra.l1c.ultra_l1c_pset_bins.ttj2000ns_to_met"
+        ) as mock_met,
+    ):
         mock_spin_phases.side_effect = lambda time: np.random.random(time.shape)
+        mock_met.side_effect = lambda time: time
         yield
 
 

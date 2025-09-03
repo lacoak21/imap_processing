@@ -8,6 +8,11 @@ import xarray as xr
 
 from imap_processing.cdf.utils import parse_filename_like
 from imap_processing.quality_flags import ImapPSETUltraFlags
+from imap_processing.spice.repoint import get_pointing_times
+from imap_processing.spice.time import (
+    et_to_met,
+    met_to_ttj2000ns,
+)
 from imap_processing.ultra.l1b.ultra_l1b_culling import get_de_rejection_mask
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
     calculate_fwhm_spun_scattering,
@@ -163,9 +168,13 @@ def calculate_spacecraft_pset(
         spacecraft_pset_quality_flags,
         nside=nside,
     )
-
+    # Get midpoint timestamp for pointing.
+    pointing_start, pointing_stop = get_pointing_times(
+        float(et_to_met(species_dataset["event_times"].data[0]))
+    )
+    mid_time = met_to_ttj2000ns((pointing_start + pointing_stop) / 2)
     # For ISTP, epoch should be the center of the time bin.
-    pset_dict["epoch"] = de_dataset.epoch.data[:1].astype(np.int64)
+    pset_dict["epoch"] = np.atleast_1d(mid_time).astype(np.int64)
     pset_dict["counts"] = counts[np.newaxis, ...]
     pset_dict["latitude"] = latitude[np.newaxis, ...]
     pset_dict["longitude"] = longitude[np.newaxis, ...]

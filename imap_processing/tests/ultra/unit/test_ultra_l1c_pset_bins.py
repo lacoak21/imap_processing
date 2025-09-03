@@ -151,7 +151,9 @@ def test_get_sectored_rates():
     sectored_rates = get_sectored_rates(test_l1a_rates_dataset, test_l1a_params_dataset)
     np.testing.assert_array_equal(
         sectored_rates["test_data"].data,
-        np.hstack([np.arange(10, 20), np.arange(30, 40), np.arange(50, 60)]),
+        np.arange(
+            10, 20
+        ),  # Make sure duplicate epochs with the same mode are filtered out
     )
     # Test with one mode shift in the middle of the dataset.
     modes = np.array([1, 3, 1])
@@ -226,7 +228,7 @@ def test_get_deadtime_interpolator(random_spin_data):
         # Assert value error is raised for NaN values
         with pytest.raises(
             ValueError,
-            match="Dead time ratios contain NaN values, cannot create interpolator.",
+            match="All dead time radios are NaN, cannot interpolate",
         ):
             get_deadtime_ratios_by_spin_phase(sectored_rates_ds)
 

@@ -1462,7 +1462,10 @@ class Ultra(ProcessInstrument):
             }
             science_files = dependencies.get_file_paths(source="ultra", data_type="l1b")
             l1b_dict = {
-                dataset.attrs["Logical_source"]: dataset
+                # TODO remove
+                dataset.attrs["Logical_source"].replace(
+                    "cullingmask", "goodtimes"
+                ): dataset
                 for dataset in [load_cdf(sci_file) for sci_file in science_files]
             }
             combined = {**l1a_dict, **l1b_dict}
@@ -1471,11 +1474,14 @@ class Ultra(ProcessInstrument):
             for path in anc_paths:
                 ancillary_files[path.stem.split("_")[2]] = path
             spice_paths = dependencies.get_file_paths(data_type="spice")
-            if spice_paths:
-                has_spice = True
+
+            if any("/spk/" in path.as_posix() for path in spice_paths):
+                has_ephermis_kernel = True
             else:
-                has_spice = False
-            datasets = ultra_l1c.ultra_l1c(combined, ancillary_files, has_spice)
+                has_ephermis_kernel = False
+            datasets = ultra_l1c.ultra_l1c(
+                combined, ancillary_files, has_ephermis_kernel
+            )
         elif self.data_level == "l2":
             all_pset_filepaths = dependencies.get_file_paths(
                 source="ultra", descriptor="pset"

@@ -11,7 +11,6 @@ from imap_processing.spice.repoint import get_pointing_times
 from imap_processing.spice.time import (
     et_to_met,
     met_to_ttj2000ns,
-    sct_to_et,
     ttj2000ns_to_et,
 )
 from imap_processing.ultra.l1b.ultra_l1b_culling import get_de_rejection_mask
@@ -139,14 +138,15 @@ def calculate_helio_pset(
         ancillary_files,
     )
     # Get midpoint timestamp for pointing.
-    # TODO remove sct_to_et conversion
+    # TODO remove sct_to_et conversion when l1b is updated
     pointing_start, pointing_stop = get_pointing_times(
-        et_to_met(sct_to_et(species_dataset["event_times"].data[0]))
+        et_to_met(species_dataset["event_times"].data[0])
     )
-    mid_time = ttj2000ns_to_et(met_to_ttj2000ns((pointing_start + pointing_stop) / 2))
+    mid_time = met_to_ttj2000ns((pointing_start + pointing_stop) / 2)
+
     logger.info("Adjusting data for helio frame.")
     exposure_time, efficiency, geometric_function = get_helio_adjusted_data(
-        mid_time,
+        ttj2000ns_to_et(mid_time),
         exposure_time,
         geometric_function,
         efficiencies,
@@ -171,7 +171,7 @@ def calculate_helio_pset(
     )
 
     # For ISTP, epoch should be the center of the time bin.
-    pset_dict["epoch"] = de_dataset.epoch.data[:1].astype(np.int64)
+    pset_dict["epoch"] = np.atleast_1d(mid_time).astype(np.int64)
     pset_dict["counts"] = counts[np.newaxis, ...]
     pset_dict["latitude"] = latitude[np.newaxis, ...]
     pset_dict["longitude"] = longitude[np.newaxis, ...]

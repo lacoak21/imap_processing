@@ -7,7 +7,7 @@ from imap_processing.ultra.l1c.spacecraft_pset import calculate_spacecraft_pset
 
 
 def ultra_l1c(
-    data_dict: dict, ancillary_files: dict, has_spice: bool
+    data_dict: dict, ancillary_files: dict, has_ephermis_kernel: bool
 ) -> list[xr.Dataset]:
     """
     Will process ULTRA L1A and L1B data into L1C CDF files at output_filepath.
@@ -18,8 +18,8 @@ def ultra_l1c(
         The data itself and its dependent data.
     ancillary_files : dict
         Ancillary files.
-    has_spice : bool
-        Whether to use SPICE data.
+    has_ephermis_kernel : bool
+        Whether to use ephemeris kernels.
 
     Returns
     -------
@@ -35,7 +35,7 @@ def ultra_l1c(
             and f"imap_ultra_l1b_{instrument_id}sensor-de" in data_dict
             and f"imap_ultra_l1a_{instrument_id}sensor-rates" in data_dict
             and f"imap_ultra_l1a_{instrument_id}sensor-params" in data_dict
-            and has_spice
+            and has_ephermis_kernel
         ):
             helio_pset = calculate_helio_pset(
                 data_dict[f"imap_ultra_l1b_{instrument_id}sensor-de"],

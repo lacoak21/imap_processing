@@ -76,7 +76,7 @@ geometric_function:
   CATDESC: The effective sensitive area as a function of theta and phi in instrument frame (energy independent).
   FIELDNAM: geometric_function
   LABLAXIS: Geometric Factor
-  UNITS: " "
+  UNITS: cm^2
   VALIDMIN: 0.0
 
 efficiency:
