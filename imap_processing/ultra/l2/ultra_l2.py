@@ -95,7 +95,6 @@ VARIABLES_TO_DROP_AFTER_INTENSITY_CALCULATION = [
 INCONSISTENTLY_ENERGY_DEPENDENT_VARIABLES = [
     "obs_date",
     "exposure_factor",
-    "exposure_factor",
     "sensitivity",
     "geometric_function",
     "efficiency",

@@ -228,7 +228,7 @@ def test_get_deadtime_interpolator(random_spin_data):
         # Assert value error is raised for NaN values
         with pytest.raises(
             ValueError,
-            match="All dead time radios are NaN, cannot interpolate",
+            match="All dead time ratios are NaN, cannot interpolate",
         ):
             get_deadtime_ratios_by_spin_phase(sectored_rates_ds)
 

@@ -255,9 +255,8 @@ def get_sectored_rates(rates_ds: xr.Dataset, params_ds: xr.Dataset) -> xr.Datase
 
     # This means that data was collected as a function of spin allowing for fine grained
     # rate analysis.
-    params = params_ds.copy()
     # Only get unique combinations of epoch and imageratescadence
-    params = params.groupby(["epoch", "imageratescadence"]).first()
+    params = params_ds.groupby(["epoch", "imageratescadence"]).first()
 
     sector_mode_start_inds = np.where(params["imageratescadence"] == 3)[0]
     # get the sector mode start and stop indices
@@ -331,7 +330,7 @@ def get_deadtime_ratios_by_spin_phase(
     deadtime_medians = deadtime_by_spin_phase.groupby("spin_phase").median(skipna=True)
     if np.any(np.isnan(deadtime_medians["deadtime_ratio"].values)):
         if not np.any(np.isfinite(deadtime_medians["deadtime_ratio"].values)):
-            raise ValueError("All dead time radios are NaN, cannot interpolate.")
+            raise ValueError("All dead time ratios are NaN, cannot interpolate.")
         logger.warning(
             "Dead time ratios contain NaN values, filtering data to only include "
             "finite values."

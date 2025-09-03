@@ -1476,11 +1476,11 @@ class Ultra(ProcessInstrument):
             spice_paths = dependencies.get_file_paths(data_type="spice")
 
             if any("/spk/" in path.as_posix() for path in spice_paths):
-                has_ephermis_kernel = True
+                has_ephemeris_kernel = True
             else:
-                has_ephermis_kernel = False
+                has_ephemeris_kernel = False
             datasets = ultra_l1c.ultra_l1c(
-                combined, ancillary_files, has_ephermis_kernel
+                combined, ancillary_files, has_ephemeris_kernel
             )
         elif self.data_level == "l2":
             all_pset_filepaths = dependencies.get_file_paths(
