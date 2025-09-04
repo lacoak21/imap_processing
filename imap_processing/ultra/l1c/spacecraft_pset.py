@@ -174,7 +174,7 @@ def calculate_spacecraft_pset(
         float(et_to_met(species_dataset["event_times"].data[0]))
     )
     pointing_start = met_to_ttj2000ns(pointing_start)
-    # Epoch should be the center of the pointing
+    # Epoch should be the start of the pointing
     pset_dict["epoch"] = np.atleast_1d(pointing_start).astype(np.int64)
     pset_dict["counts"] = counts[np.newaxis, ...]
     pset_dict["latitude"] = latitude[np.newaxis, ...]
