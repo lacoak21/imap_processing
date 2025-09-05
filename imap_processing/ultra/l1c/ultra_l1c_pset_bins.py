@@ -259,6 +259,8 @@ def get_sectored_rates(rates_ds: xr.Dataset, params_ds: xr.Dataset) -> xr.Datase
     params = params_ds.groupby(["epoch", "imageratescadence"]).first()
 
     sector_mode_start_inds = np.where(params["imageratescadence"] == 3)[0]
+    if len(sector_mode_start_inds) == 0:
+        raise ValueError("No sector mode data found in the parameters dataset.")
     # get the sector mode start and stop indices
     sector_mode_stop_inds = sector_mode_start_inds + 1
     # get the sector mode start and stop times

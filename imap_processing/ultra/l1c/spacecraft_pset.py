@@ -169,7 +169,7 @@ def calculate_spacecraft_pset(
         spacecraft_pset_quality_flags,
         nside=nside,
     )
-    # Get midpoint timestamp for pointing.
+    # Get pointing start and stop times and convert to ttj2000ns
     pointing_start, pointing_stop = get_pointing_times(
         float(et_to_met(species_dataset["event_times"].data[0]))
     )
