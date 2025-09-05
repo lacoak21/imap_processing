@@ -1474,14 +1474,12 @@ class Ultra(ProcessInstrument):
             for path in anc_paths:
                 ancillary_files[path.stem.split("_")[2]] = path
             spice_paths = dependencies.get_file_paths(data_type="spice")
-
-            if any("/spk/" in path.as_posix() for path in spice_paths):
-                has_ephemeris_kernel = True
+            # Only the helio pset needs IMAP frames
+            if any("imap_frames" in path.as_posix() for path in spice_paths):
+                imap_frames = True
             else:
-                has_ephemeris_kernel = False
-            datasets = ultra_l1c.ultra_l1c(
-                combined, ancillary_files, has_ephemeris_kernel
-            )
+                imap_frames = False
+            datasets = ultra_l1c.ultra_l1c(combined, ancillary_files, imap_frames)
         elif self.data_level == "l2":
             all_pset_filepaths = dependencies.get_file_paths(
                 source="ultra", descriptor="pset"
