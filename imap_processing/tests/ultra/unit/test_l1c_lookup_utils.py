@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
-    calculate_pixels_within_scattering_threshold,
+    calculate_fwhm_spun_scattering,
     get_scattering_thresholds_for_energy,
     get_spacecraft_pointing_lookup_tables,
     mask_below_fwhm_scattering_threshold,
@@ -107,7 +107,12 @@ def test_calculate_fwhm_spun_scattering(ancillary_files):
     quality_flags = np.zeros((len(build_energy_bins()[2]), len(theta_vals))).astype(
         np.uint16
     )
-    mask = calculate_pixels_within_scattering_threshold(
+    (
+        mask,
+        fwhm_theta_avg,
+        fwhm_phi_avg,
+        thresholds,
+    ) = calculate_fwhm_spun_scattering(
         for_inds, theta_vals, phi_vals, quality_flags, ancillary_files, 90
     )
     assert len(mask) == step

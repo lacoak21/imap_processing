@@ -244,10 +244,10 @@ def test_apply_deadtime_correction(imap_ena_sim_metakernel, ancillary_files):
     inside_inds = 100
     spin_phase_steps[:inside_inds, :] = True
     deadtime_ratios = np.ones(steps)
-
+    quality_flags = np.zeros((24, pix)).astype(np.uint16)
     pixels_below_threshold, fwhm_theta, fwhm_phi, thresholds = (
         calculate_fwhm_spun_scattering(
-            spin_phase_steps, mock_theta, mock_phi, ancillary_files, 45
+            spin_phase_steps, mock_theta, mock_phi, quality_flags, ancillary_files, 45
         )
     )
     boundary_sf = np.ones((pix, steps))
@@ -284,7 +284,7 @@ def test_get_spacecraft_exposure_times(
     quality_flags = np.zeros((24, pix)).astype(np.uint16)
     pixels_below_threshold, fwhm_theta, fwhm_phi, thresholds = (
         calculate_fwhm_spun_scattering(
-            spin_phase_steps, mock_theta, mock_phi, ancillary_files, 45
+            spin_phase_steps, mock_theta, mock_phi, quality_flags, ancillary_files, 45
         )
     )
     boundary_sf = np.ones((pix, steps))

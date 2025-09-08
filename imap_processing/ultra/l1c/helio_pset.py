@@ -97,22 +97,6 @@ def calculate_helio_pset(
         boundary_scale_factors,
     ) = get_spacecraft_pointing_lookup_tables(ancillary_files, instrument_id)
 
-    logger.info("calculating spun FWHM scattering values.")
-    pixels_below_scattering, scattering_theta, scattering_phi, scattering_thresholds = (
-        calculate_fwhm_spun_scattering(
-            for_indices_by_spin_phase,
-            theta_vals,
-            phi_vals,
-            ancillary_files,
-            instrument_id,
-        )
-    )
-    helio_pset_quality_flags = np.full(
-        (len(energy_bin_geometric_means), n_pix),
-        ImapPSETUltraFlags.NONE.value,
-        dtype=np.uint16,
-    )
-
     nside = hp.npix2nside(for_indices_by_spin_phase.shape[0])
     counts, latitude, longitude, n_pix = get_spacecraft_histogram(
         vhat_dps_helio,
@@ -120,9 +104,24 @@ def calculate_helio_pset(
         intervals,
         nside=nside,
     )
+    # Initialize a quality flags array
     helio_pset_quality_flags = np.full(
-        n_pix, ImapPSETUltraFlags.NONE.value, dtype=np.uint16
+        (len(energy_bin_geometric_means), n_pix),
+        ImapPSETUltraFlags.NONE.value,
+        dtype=np.uint16,
     )
+    logger.info("calculating spun FWHM scattering values.")
+    pixels_below_scattering, scattering_theta, scattering_phi, scattering_thresholds = (
+        calculate_fwhm_spun_scattering(
+            for_indices_by_spin_phase,
+            theta_vals,
+            phi_vals,
+            helio_pset_quality_flags,
+            ancillary_files,
+            instrument_id,
+        )
+    )
+
     healpix = np.arange(n_pix)
 
     logger.info("Calculating spacecraft exposure times with deadtime correction.")

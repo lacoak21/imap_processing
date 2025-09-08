@@ -95,16 +95,6 @@ def calculate_spacecraft_pset(
         boundary_scale_factors,
     ) = get_spacecraft_pointing_lookup_tables(ancillary_files, instrument_id)
 
-    logger.info("calculating spun FWHM scattering values.")
-    pixels_below_scattering, scattering_theta, scattering_phi, scattering_thresholds = (
-        calculate_fwhm_spun_scattering(
-            for_indices_by_spin_phase,
-            theta_vals,
-            phi_vals,
-            ancillary_files,
-            instrument_id,
-        )
-    )
     # Determine nside from the lookup table
     nside = hp.npix2nside(len(for_indices_by_spin_phase))
     counts, latitude, longitude, n_pix = get_spacecraft_histogram(
@@ -114,6 +104,24 @@ def calculate_spacecraft_pset(
         nside=nside,
     )
     healpix = np.arange(n_pix)
+
+    # Create an array to hold quality flags for each pixel and energy bin
+    spacecraft_pset_quality_flags = np.full(
+        (len(energy_bin_geometric_means), n_pix),
+        ImapPSETUltraFlags.NONE.value,
+        dtype=np.uint16,
+    )
+    logger.info("calculating spun FWHM scattering values.")
+    pixels_below_scattering, scattering_theta, scattering_phi, scattering_thresholds = (
+        calculate_fwhm_spun_scattering(
+            for_indices_by_spin_phase,
+            theta_vals,
+            phi_vals,
+            spacecraft_pset_quality_flags,
+            ancillary_files,
+            instrument_id,
+        )
+    )
 
     logger.info("Calculating spun efficiencies and geometric function.")
     # calculate efficiency and geometric function as a function of energy
