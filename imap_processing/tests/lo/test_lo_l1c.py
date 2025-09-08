@@ -35,7 +35,7 @@ def l1b_de():
                     "110000",
                 ],
             ),
-            "species": ("epoch", ["h", "o", "h", "h", "o"]),
+            "species": ("epoch", ["H", "O", "H", "H", "O"]),
             "spin_cycle": ("epoch", [1, 2, 3, 4, 5]),
             "avg_spin_durations": ("epoch", [15.2, 15.2, 14.9, 15, 14.9]),
         },
@@ -75,7 +75,7 @@ def l1b_de_spin():
                     "110000",
                 ],
             ),
-            "species": ("epoch", ["h", "o", "h", "h", "o"]),
+            "species": ("epoch", ["H", "O", "H", "H", "O"]),
             "spin_cycle": ("epoch", [1, 2, 3, 4, 5]),
             "avg_spin_durations": ("epoch", [15.2, 15.2, 14.9, 15, 14.9]),
         },
@@ -91,7 +91,7 @@ def anc_dependencies():
     anc_dependencies_path = [
         str(
             imap_module_directory
-            / "tests/lo/test_anc/imap_lo_goodtimes_20250415_v001.csv"
+            / "tests/lo/test_anc/imap_lo_good-times_20250415_v001.csv"
         ),
         str(
             imap_module_directory
@@ -224,7 +224,7 @@ def test_filter_goodtimes(l1b_de, anc_dependencies):
                 "epoch",
                 ["111111", "111100", "111000", "110100", "110000", "000000"],
             ),
-            "species": ("epoch", ["h", "o", "h", "h", "o", "u"]),
+            "species": ("epoch", ["H", "O", "H", "H", "O", "U"]),
             "spin_cycle": ("epoch", [1, 2, 3, 4, 5, 12]),
             "avg_spin_durations": ("epoch", [15.2, 15.2, 14.9, 15, 14.9, 50]),
         },

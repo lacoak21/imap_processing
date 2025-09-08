@@ -93,7 +93,7 @@ def lo_l1c(sci_dependencies: dict, anc_dependencies: list) -> list[xr.Dataset]:
             )
         else:
             pset["esa_mode"] = xr.DataArray(
-                l1b_de["esa_mode"].values[0],
+                np.array([l1b_de["esa_mode"].values[0]]),
                 dims=["epoch"],
                 attrs=attr_mgr.get_variable_attributes("esa_mode"),
             )
@@ -196,10 +196,12 @@ def filter_goodtimes(l1b_de: xr.Dataset, anc_dependencies: list) -> xr.Dataset:
         Filtered L1B Direct Event dataset.
     """
     # the goodtimes are currently the only ancillary file needed for L1C processing
-    goodtimes_table_df = lo_ancillary.read_ancillary_file(anc_dependencies[0])
+    goodtimes_table_df = lo_ancillary.read_ancillary_file(
+        next(str(s) for s in anc_dependencies if "good-times" in str(s))
+    )
 
     # convert goodtimes from MET to TTJ2000
-    goodtimes_start = met_to_ttj2000ns(goodtimes_table_df["GoodTime_strt"])
+    goodtimes_start = met_to_ttj2000ns(goodtimes_table_df["GoodTime_start"])
     goodtimes_end = met_to_ttj2000ns(goodtimes_table_df["GoodTime_end"])
 
     # Create a mask for epochs within any of the start/end time ranges
@@ -261,9 +263,9 @@ def create_pset_counts(
             "001000",
         ],
         # hydrogen species identifier
-        FilterType.HYDROGEN: "h",
+        FilterType.HYDROGEN: "H",
         # oxygen species identifier
-        FilterType.OXYGEN: "o",
+        FilterType.OXYGEN: "O",
     }
 
     # if the filter string is triples or doubles, filter using the coincidence type
@@ -542,11 +544,11 @@ def set_background_rates(
     # read in the background rates from ancillary file
     if species == FilterType.HYDROGEN:
         background_df = lo_ancillary.read_ancillary_file(
-            next(s for s in anc_dependencies if "hydrogen-background" in s)
+            next(str(s) for s in anc_dependencies if "hydrogen-background" in str(s))
         )
     else:
         background_df = lo_ancillary.read_ancillary_file(
-            next(s for s in anc_dependencies if "oxygen-background" in s)
+            next(str(s) for s in anc_dependencies if "oxygen-background" in str(s))
         )
 
     # find to the rows for the current pointing
@@ -561,7 +563,6 @@ def set_background_rates(
     # converted to 0.1 degree resolution of 3600
     pointing_bg_df["bin_end"] = pointing_bg_df["bin_end"] * 60
     pointing_bg_df.loc[pointing_bg_df["bin_end"] == 0, "bin_end"] = 3600
-
     # for each row in the bg ancillary file for this pointing
     for _, row in pointing_bg_df.iterrows():
         bin_start = int(row["bin_strt"])
@@ -574,9 +575,7 @@ def set_background_rates(
             elif row["type"] == "sigma":
                 bg_stat_uncert[esa_step, bin_start:bin_end, :] = value
             else:
-                print("TYPE", row["type"])
                 raise ValueError("Unknown background type in ancillary file.")
-
     # set the background rates, uncertainties, and systematic errors
     bg_rates_data = xr.DataArray(
         data=bg_rates,
