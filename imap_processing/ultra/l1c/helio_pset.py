@@ -11,7 +11,6 @@ from imap_processing.spice.repoint import get_pointing_times
 from imap_processing.spice.time import (
     et_to_met,
     met_to_ttj2000ns,
-    sct_to_et,
     ttj2000ns_to_et,
 )
 from imap_processing.ultra.l1b.ultra_l1b_culling import get_de_rejection_mask
@@ -23,6 +22,7 @@ from imap_processing.ultra.l1c.ultra_l1c_culling import compute_culling_mask
 from imap_processing.ultra.l1c.ultra_l1c_pset_bins import (
     build_energy_bins,
     get_efficiencies_and_geometric_function,
+    get_energy_delta_minus_plus,
     get_helio_adjusted_data,
     get_spacecraft_exposure_times,
     get_spacecraft_histogram,
@@ -139,11 +139,11 @@ def calculate_helio_pset(
         ancillary_files,
     )
     # Get midpoint timestamp for pointing.
-    # TODO remove sct_to_et conversion
     pointing_start, pointing_stop = get_pointing_times(
-        et_to_met(sct_to_et(species_dataset["event_times"].data[0]))
+        et_to_met(species_dataset["event_times"].data[0])
     )
     mid_time = ttj2000ns_to_et(met_to_ttj2000ns((pointing_start + pointing_stop) / 2))
+
     logger.info("Adjusting data for helio frame.")
     exposure_time, efficiency, geometric_function = get_helio_adjusted_data(
         mid_time,
@@ -169,9 +169,9 @@ def calculate_helio_pset(
         helio_pset_quality_flags,
         nside=nside,
     )
-
-    # For ISTP, epoch should be the center of the time bin.
-    pset_dict["epoch"] = de_dataset.epoch.data[:1].astype(np.int64)
+    pointing_start = met_to_ttj2000ns(pointing_start)
+    # Epoch should be the start of the pointing
+    pset_dict["epoch"] = np.atleast_1d(pointing_start).astype(np.int64)
     pset_dict["counts"] = counts[np.newaxis, ...]
     pset_dict["latitude"] = latitude[np.newaxis, ...]
     pset_dict["longitude"] = longitude[np.newaxis, ...]
@@ -191,6 +191,11 @@ def calculate_helio_pset(
     pset_dict["scatter_theta"] = scattering_theta
     pset_dict["scatter_phi"] = scattering_phi
     pset_dict["scatter_threshold"] = scattering_thresholds
+
+    # Add the energy delta plus/minus to the dataset
+    energy_delta_minus, energy_delta_plus = get_energy_delta_minus_plus()
+    pset_dict["energy_delta_minus"] = energy_delta_minus
+    pset_dict["energy_delta_plus"] = energy_delta_plus
 
     dataset = create_dataset(pset_dict, name, "l1c")
 

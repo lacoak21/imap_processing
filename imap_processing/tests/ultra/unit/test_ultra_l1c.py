@@ -8,7 +8,9 @@ import xarray as xr
 from imap_processing import imap_module_directory
 from imap_processing.cdf.utils import write_cdf
 from imap_processing.spice.geometry import SpiceFrame
-from imap_processing.spice.time import et_to_met
+from imap_processing.spice.time import (
+    et_to_met,
+)
 from imap_processing.ultra.l1b.ultra_l1b_annotated import (
     get_annotated_particle_velocity,
 )
@@ -112,7 +114,7 @@ def test_ultra_l1c_error(mock_data_l1b_dict):
     with pytest.raises(
         ValueError, match="Data dictionary does not contain the expected keys."
     ):
-        ultra_l1c(mock_data_l1b_dict, ancillary_files, has_spice=False)
+        ultra_l1c(mock_data_l1b_dict, ancillary_files, imap_frames=False)
 
 
 @pytest.mark.external_test_data
@@ -183,8 +185,17 @@ def test_calculate_spacecraft_pset_with_cdf(
         "imap_ultra_l1a_45sensor-rates": deadtime_datasets["rates"],
         "imap_ultra_l1a_45sensor-params": deadtime_datasets["params"],
     }
-
-    output_datasets = ultra_l1c(data_dict, ancillary_files, has_spice=False)
+    with (
+        mock.patch(
+            "imap_processing.ultra.l1c.spacecraft_pset.get_pointing_times",
+            return_value=(482374890.0, 482374000.0),
+        ),
+        mock.patch(
+            "imap_processing.ultra.l1c.ultra_l1c_pset_bins.ttj2000ns_to_met",
+            side_effect=lambda x: x,
+        ),
+    ):
+        output_datasets = ultra_l1c(data_dict, ancillary_files, imap_frames=False)
     output_datasets[0].attrs["Data_version"] = "999"
     output_datasets[0].attrs["Repointing"] = f"repoint{pointing + 1:05d}"
     output_datasets[0].attrs["Start_date"] = "20250415"
@@ -267,11 +278,18 @@ def test_calculate_helio_pset_with_cdf(
         "imap_ultra_l1a_45sensor-rates": deadtime_datasets["rates"],
         "imap_ultra_l1a_45sensor-params": deadtime_datasets["params"],
     }
-    with mock.patch(
-        "imap_processing.ultra.l1c.helio_pset.get_pointing_times",
-        return_value=(482374890.0, 482374000.0),
+
+    with (
+        mock.patch(
+            "imap_processing.ultra.l1c.helio_pset.get_pointing_times",
+            return_value=(482374890.0, 482374000.0),
+        ),
+        mock.patch(
+            "imap_processing.ultra.l1c.ultra_l1c_pset_bins.ttj2000ns_to_met",
+            side_effect=lambda x: x,
+        ),
     ):
-        output_datasets = ultra_l1c(data_dict, ancillary_files, has_spice=True)
+        output_datasets = ultra_l1c(data_dict, ancillary_files, imap_frames=True)
     output_datasets[0].attrs["Data_version"] = "999"
     output_datasets[0].attrs["Repointing"] = f"repoint{pointing + 1:05d}"
     test_data_path = write_cdf(output_datasets[0], istp=True)

@@ -8,6 +8,11 @@ import xarray as xr
 
 from imap_processing.cdf.utils import parse_filename_like
 from imap_processing.quality_flags import ImapPSETUltraFlags
+from imap_processing.spice.repoint import get_pointing_times
+from imap_processing.spice.time import (
+    et_to_met,
+    met_to_ttj2000ns,
+)
 from imap_processing.ultra.l1b.ultra_l1b_culling import get_de_rejection_mask
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
     calculate_fwhm_spun_scattering,
@@ -17,6 +22,7 @@ from imap_processing.ultra.l1c.ultra_l1c_culling import compute_culling_mask
 from imap_processing.ultra.l1c.ultra_l1c_pset_bins import (
     build_energy_bins,
     get_efficiencies_and_geometric_function,
+    get_energy_delta_minus_plus,
     get_spacecraft_background_rates,
     get_spacecraft_exposure_times,
     get_spacecraft_histogram,
@@ -163,9 +169,13 @@ def calculate_spacecraft_pset(
         spacecraft_pset_quality_flags,
         nside=nside,
     )
-
-    # For ISTP, epoch should be the center of the time bin.
-    pset_dict["epoch"] = de_dataset.epoch.data[:1].astype(np.int64)
+    # Get pointing start and stop times and convert to ttj2000ns
+    pointing_start, pointing_stop = get_pointing_times(
+        float(et_to_met(species_dataset["event_times"].data[0]))
+    )
+    pointing_start = met_to_ttj2000ns(pointing_start)
+    # Epoch should be the start of the pointing
+    pset_dict["epoch"] = np.atleast_1d(pointing_start).astype(np.int64)
     pset_dict["counts"] = counts[np.newaxis, ...]
     pset_dict["latitude"] = latitude[np.newaxis, ...]
     pset_dict["longitude"] = longitude[np.newaxis, ...]
@@ -187,6 +197,11 @@ def calculate_spacecraft_pset(
     pset_dict["scatter_theta"] = scattering_theta
     pset_dict["scatter_phi"] = scattering_phi
     pset_dict["scatter_threshold"] = scattering_thresholds
+
+    # Add the energy delta plus/minus to the dataset
+    energy_delta_minus, energy_delta_plus = get_energy_delta_minus_plus()
+    pset_dict["energy_delta_minus"] = energy_delta_minus
+    pset_dict["energy_delta_plus"] = energy_delta_plus
 
     dataset = create_dataset(pset_dict, name, "l1c")
 

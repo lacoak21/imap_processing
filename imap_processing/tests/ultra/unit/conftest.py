@@ -594,10 +594,16 @@ def deadtime_datasets():
 @pytest.fixture
 def random_spin_data():
     """Fixture for random spin data."""
-    with mock.patch(
-        "imap_processing.ultra.l1c.ultra_l1c_pset_bins.get_spacecraft_spin_phase"
-    ) as mock_spin_phases:
+    with (
+        mock.patch(
+            "imap_processing.ultra.l1c.ultra_l1c_pset_bins.get_spacecraft_spin_phase"
+        ) as mock_spin_phases,
+        mock.patch(
+            "imap_processing.ultra.l1c.ultra_l1c_pset_bins.ttj2000ns_to_met"
+        ) as mock_met,
+    ):
         mock_spin_phases.side_effect = lambda time: np.random.random(time.shape)
+        mock_met.side_effect = lambda time: time
         yield
 
 

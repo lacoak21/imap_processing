@@ -1,5 +1,7 @@
 """Module to create pointing sets."""
 
+import logging
+
 import astropy_healpix.healpy as hp
 import numpy as np
 import xarray as xr
@@ -12,6 +14,7 @@ from imap_processing.spice.geometry import (
     imap_state,
 )
 from imap_processing.spice.spin import get_spacecraft_spin_phase, get_spin_angle
+from imap_processing.spice.time import ttj2000ns_to_met
 from imap_processing.ultra.constants import UltraConstants
 from imap_processing.ultra.l1b.lookup_utils import (
     get_geometric_factor,
@@ -29,6 +32,8 @@ from imap_processing.ultra.l1b.ultra_l1b_extended import (
 
 # TODO: add species binning.
 FILLVAL_FLOAT32 = -1.0e31
+
+logger = logging.getLogger(__name__)
 
 
 def build_energy_bins() -> tuple[list[tuple[float, float]], np.ndarray, np.ndarray]:
@@ -221,7 +226,6 @@ def get_deadtime_ratios(sectored_rates_ds: xr.Dataset) -> xr.DataArray:
         - sectored_rates_ds.stop_tn
         - sectored_rates_ds.stop_bn
     )
-
     corrected_valid_events = b * np.exp(1e-7 * 8 * coin_stop_nd)
 
     # Compute dead time ratio
@@ -251,21 +255,24 @@ def get_sectored_rates(rates_ds: xr.Dataset, params_ds: xr.Dataset) -> xr.Datase
 
     # This means that data was collected as a function of spin allowing for fine grained
     # rate analysis.
-    sector_mode_start_inds = np.where(params_ds["imageratescadence"] == 3)[0]
+    # Only get unique combinations of epoch and imageratescadence
+    params = params_ds.groupby(["epoch", "imageratescadence"]).first()
+
+    sector_mode_start_inds = np.where(params["imageratescadence"] == 3)[0]
+    if len(sector_mode_start_inds) == 0:
+        raise ValueError("No sector mode data found in the parameters dataset.")
     # get the sector mode start and stop indices
     sector_mode_stop_inds = sector_mode_start_inds + 1
     # get the sector mode start and stop times
-    mode_3_start = params_ds["epoch"].values[sector_mode_start_inds]
-
+    mode_3_start = params["epoch"].values[sector_mode_start_inds]
     # if the last mode is a sector mode, we can assume that the sector data goes through
     # the end of the dataset, so we append np.inf to the end of the last time range.
-    if sector_mode_stop_inds[-1] == len(params_ds["epoch"]):
+    if sector_mode_stop_inds[-1] == len(params["epoch"]):
         mode_3_end = np.append(
-            params_ds["epoch"].values[sector_mode_stop_inds[:-1]], np.inf
+            params["epoch"].values[sector_mode_stop_inds[:-1]], np.inf
         )
     else:
-        mode_3_end = params_ds["epoch"].values[sector_mode_stop_inds]
-
+        mode_3_end = params["epoch"].values[sector_mode_stop_inds]
     # Build a list of conditions for each sector mode time range
     conditions = [
         (rates_ds["epoch"] >= start) & (rates_ds["epoch"] < end)
@@ -294,10 +301,9 @@ def get_deadtime_ratios_by_spin_phase(
     """
     deadtime_ratios = get_deadtime_ratios(sectored_rates)
     # Get the spin phase at the start of each sector rate measurement
+    met_times = ttj2000ns_to_met(sectored_rates.epoch.data)
     spin_phases = np.asarray(
-        get_spin_angle(
-            get_spacecraft_spin_phase(np.array(sectored_rates.epoch.data)), degrees=True
-        )
+        get_spin_angle(get_spacecraft_spin_phase(met_times), degrees=True)
     )
     # Assume the sectored rate data is evenly spaced in time, and find the middle spin
     # phase value for each sector.
@@ -324,11 +330,16 @@ def get_deadtime_ratios_by_spin_phase(
     deadtime_by_spin_phase = deadtime_by_spin_phase.sortby("spin_phase")
     # Group by spin phase and calculate the median dead time ratio for each phase
     deadtime_medians = deadtime_by_spin_phase.groupby("spin_phase").median(skipna=True)
-
     if np.any(np.isnan(deadtime_medians["deadtime_ratio"].values)):
-        raise ValueError(
-            "Dead time ratios contain NaN values, cannot create interpolator."
+        if not np.any(np.isfinite(deadtime_medians["deadtime_ratio"].values)):
+            raise ValueError("All dead time ratios are NaN, cannot interpolate.")
+        logger.warning(
+            "Dead time ratios contain NaN values, filtering data to only include "
+            "finite values."
         )
+    deadtime_medians = deadtime_medians.where(
+        np.isfinite(deadtime_medians["deadtime_ratio"]), drop=True
+    )
     interpolator = interpolate.PchipInterpolator(
         deadtime_medians["spin_phase"].values, deadtime_medians["deadtime_ratio"].values
     )

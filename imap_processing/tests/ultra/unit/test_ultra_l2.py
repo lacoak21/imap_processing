@@ -53,6 +53,7 @@ class TestUltraL2:
                     peak_exposure=1000,
                     timestr=manual_timestrs[i],
                     head=("90"),
+                    energy_dependent_exposure=True,
                 )
                 for i, mid_latitude in enumerate(
                     np.arange(
@@ -90,13 +91,18 @@ class TestUltraL2:
     ):
         # Avoid modifying the original pset
         pset = self.ultra_pset.copy(deep=True)
-
         # Set the values in the single input PSET for easy calculation
         # of the expected ena_intensity and ena_intensity statistical uncertainty
         pset["counts"].values = np.full_like(pset["counts"].values, 10)
-        pset["exposure_factor"].values = np.ones_like(pset["exposure_factor"].values)
+        pset["exposure_factor"].values = np.ones_like(pset["exposure_factor"])
         pset["background_rates"].values = np.ones_like(pset["background_rates"].values)
         pset["sensitivity"].values = np.ones_like(pset["sensitivity"].values)
+        pset["energy_bin_delta"].values = np.ones_like(pset["energy_bin_delta"].values)
+        pset["efficiency"] = xr.ones_like(pset["exposure_factor"])
+        pset["geometric_function"] = xr.ones_like(pset["exposure_factor"])
+        pset["scatter_theta"] = xr.ones_like(pset["exposure_factor"])
+        pset["scatter_phi"] = xr.ones_like(pset["exposure_factor"])
+
         pset["energy_bin_delta"].values = np.ones_like(pset["energy_bin_delta"].values)
         if epoch_dim_for_energy_delta:
             # add an extra dim to the start
@@ -120,6 +126,10 @@ class TestUltraL2:
                         "values_to_pull_project": [
                             "exposure_factor",
                             "sensitivity",
+                            "geometric_function",
+                            "efficiency",
+                            "scatter_theta",
+                            "scatter_phi",
                             "background_rates",
                         ],
                         "nside": 32,
@@ -139,6 +149,11 @@ class TestUltraL2:
             "obs_date_range",
             "ena_intensity_stat_unc",
             "exposure_factor",
+            "sensitivity",
+            "geometric_function",
+            "efficiency",
+            "scatter_theta",
+            "scatter_phi",
             "obs_date",
         ]
         for var in expected_vars:
@@ -319,10 +334,7 @@ class TestUltraL2:
         assert hp_skymap.data_1d["counts"].dims == counts_dims
         assert hp_skymap.data_1d["ena_intensity"].dims == counts_dims
         assert hp_skymap.data_1d["ena_intensity_stat_unc"].dims == counts_dims
-        assert hp_skymap.data_1d["exposure_factor"].dims == (
-            CoordNames.TIME.value,
-            CoordNames.GENERIC_PIXEL.value,
-        )
+        assert hp_skymap.data_1d["exposure_factor"].dims == counts_dims
 
     @pytest.mark.usefixtures("_setup_spice_kernels_list")
     def test_ultra_l2_output_unbinned_healpix(self, mock_data_dict, furnish_kernels):
@@ -448,11 +460,7 @@ class TestUltraL2:
             rect_map_dataset["ena_intensity_stat_unc"].dims
             == expected_ena_intensity_dims
         )
-        assert rect_map_dataset["exposure_factor"].dims == (
-            CoordNames.TIME.value,
-            CoordNames.AZIMUTH_L2.value,
-            CoordNames.ELEVATION_L2.value,
-        )
+        assert rect_map_dataset["exposure_factor"].dims == expected_ena_intensity_dims
 
         # Check that '_label' coordinates were added for all coordinates except 'epoch'
         for coord_var in expected_ena_intensity_dims[1:]:

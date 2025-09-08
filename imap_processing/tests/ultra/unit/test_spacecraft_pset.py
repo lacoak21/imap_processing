@@ -1,5 +1,7 @@
 """Tests Spacecraft PSET for ULTRA L1c."""
 
+from unittest import mock
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -85,16 +87,25 @@ def test_calculate_spacecraft_pset(
             "component": ("component", ["vx", "vy", "vz"]),
         },
     )
-
-    spacecraft_pset = calculate_spacecraft_pset(
-        test_l1b_de_dataset,
-        test_l1b_de_dataset,  # placeholder for goodtimes_dataset
-        deadtime_datasets["rates"],
-        deadtime_datasets["params"],
-        "imap_ultra_l1c_45sensor-spacecraftpset",
-        ancillary_files,
-        45,
-    )
+    with (
+        mock.patch(
+            "imap_processing.ultra.l1c.spacecraft_pset.get_pointing_times",
+            return_value=(482374890.0, 482374000.0),
+        ),
+        mock.patch(
+            "imap_processing.ultra.l1c.ultra_l1c_pset_bins.ttj2000ns_to_met",
+            side_effect=lambda x: x,
+        ),
+    ):
+        spacecraft_pset = calculate_spacecraft_pset(
+            test_l1b_de_dataset,
+            test_l1b_de_dataset,  # placeholder for goodtimes_dataset
+            deadtime_datasets["rates"],
+            deadtime_datasets["params"],
+            "imap_ultra_l1c_45sensor-spacecraftpset",
+            ancillary_files,
+            45,
+        )
     assert "pixel_index" in spacecraft_pset.coords
     assert "epoch" in spacecraft_pset.coords
     assert "energy_bin_geometric_mean" in spacecraft_pset.coords
@@ -163,16 +174,25 @@ def test_calculate_spacecraft_pset_with_cdf(
 
         name = "imap_ultra_l1b_45sensor-de"
         dataset = create_dataset(de_dict, name, "l1b")
-
-        spacecraft_pset = calculate_spacecraft_pset(
-            dataset,
-            dataset,  # placeholder for goodtimes_dataset
-            deadtime_datasets["rates"],
-            deadtime_datasets["params"],
-            "imap_ultra_l1c_45sensor-spacecraftpset",
-            ancillary_files,
-            45,
-        )
+        with (
+            mock.patch(
+                "imap_processing.ultra.l1c.spacecraft_pset.get_pointing_times",
+                return_value=(482374890.0, 482374000.0),
+            ),
+            mock.patch(
+                "imap_processing.ultra.l1c.ultra_l1c_pset_bins.ttj2000ns_to_met",
+                side_effect=lambda x: x,
+            ),
+        ):
+            spacecraft_pset = calculate_spacecraft_pset(
+                dataset,
+                dataset,  # placeholder for goodtimes_dataset
+                deadtime_datasets["rates"],
+                deadtime_datasets["params"],
+                "imap_ultra_l1c_45sensor-spacecraftpset",
+                ancillary_files,
+                45,
+            )
         # TODO: validate with output histogram data once we have it in healpix.
         assert (
             spacecraft_pset.attrs["Logical_source"]
