@@ -97,22 +97,11 @@ class TestUltraL2:
         pset["background_rates"].values = np.ones_like(pset["background_rates"].values)
         pset["sensitivity"].values = np.ones_like(pset["sensitivity"].values)
         pset["energy_bin_delta"].values = np.ones_like(pset["energy_bin_delta"].values)
-        pset["efficiency"] = (
-            ["energy", "pixel_index"],
-            np.ones_like(pset["exposure_factor"].values),
-        )
-        pset["geometric_function"] = (
-            ["energy", "pixel_index"],
-            np.ones_like(pset["exposure_factor"].values),
-        )
-        pset["scatter_theta"] = (
-            ["energy", "pixel_index"],
-            np.ones_like(pset["exposure_factor"].values),
-        )
-        pset["scatter_phi"] = (
-            ["energy", "pixel_index"],
-            np.ones_like(pset["exposure_factor"].values),
-        )
+        pset["efficiency"] = xr.ones_like(pset["exposure_factor"])
+        pset["geometric_function"] = xr.ones_like(pset["exposure_factor"])
+        pset["scatter_theta"] = xr.ones_like(pset["exposure_factor"])
+        pset["scatter_phi"] = xr.ones_like(pset["exposure_factor"])
+
         pset["energy_bin_delta"].values = np.ones_like(pset["energy_bin_delta"].values)
         if epoch_dim_for_energy_delta:
             # add an extra dim to the start
