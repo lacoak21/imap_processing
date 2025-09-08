@@ -451,3 +451,53 @@ def test_enhanced_gradiometry_with_quality_flags_detailed():
         grad_ds["gradiometer_offset_magnitude"].data, expected_magnitudes, rtol=1e-10
     )
     assert np.array_equal(grad_ds["quality_flags"].data, expected_flags)
+
+
+def test_rotate_frames(mag_l1d_test_class):
+    # Reset to initial MAGO frame for this test
+    mag_l1d_test_class.frame = ValidFrames.MAGO
+
+    initial_vectors = mag_l1d_test_class.vectors.copy()
+    initial_magi_vectors = mag_l1d_test_class.magi_vectors.copy()
+
+    # Mock frame_transform to return identifiable transformed vectors
+    def mock_frame_transform(epoch_et, vectors, from_frame, to_frame):
+        if from_frame == ValidFrames.MAGO.value:
+            return vectors + 100
+        elif from_frame == ValidFrames.MAGI.value:
+            return vectors + 200
+        else:
+            return vectors + 300
+
+    with patch(
+        "imap_processing.mag.l1d.mag_l1d_data.frame_transform",
+        side_effect=mock_frame_transform,
+    ) as mock_transform_l1d:
+        target_frame = ValidFrames.SRF
+        mag_l1d_test_class.rotate_frame(target_frame)
+
+        # Verify frame_transform was called twice (once for MAGO, once for MAGI)
+        assert mock_transform_l1d.call_count == 2
+
+        # First call should be for MAGO vectors
+        first_call_args = mock_transform_l1d.call_args_list[0]
+        assert first_call_args[1]["from_frame"] == ValidFrames.MAGO.value
+        assert first_call_args[1]["to_frame"] == ValidFrames.SRF.value
+
+        # Second call should be for MAGI vectors
+        second_call_args = mock_transform_l1d.call_args_list[1]
+        assert second_call_args[1]["from_frame"] == ValidFrames.MAGI.value
+        assert second_call_args[1]["to_frame"] == ValidFrames.SRF.value
+
+        # Check that MAGO vectors were transformed from MAGO frame (+100)
+        expected_mago_vectors = initial_vectors + 100
+        np.testing.assert_array_equal(mag_l1d_test_class.vectors, expected_mago_vectors)
+
+        # Check that MAGI vectors were transformed from MAGI frame (+200)
+        expected_magi_vectors = initial_magi_vectors + 200
+        np.testing.assert_array_equal(
+            mag_l1d_test_class.magi_vectors, expected_magi_vectors
+        )
+
+        # Check that frame was updated
+        assert mag_l1d_test_class.frame == ValidFrames.SRF
