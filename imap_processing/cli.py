@@ -24,8 +24,7 @@ import imap_data_access
 import numpy as np
 import spiceypy
 import xarray as xr
-from imap_data_access import ScienceFilePath
-from imap_data_access.io import download
+from imap_data_access.io import IMAPDataAccessError, download
 from imap_data_access.processing_input import (
     ProcessingInputCollection,
     ProcessingInputType,
@@ -407,32 +406,23 @@ class ProcessInstrument(ABC):
             A list of file paths to upload to the SDC.
         """
         if self.upload_to_sdc:
-            # Validate that the files don't already exist
-            for filename in products:
-                file_path = ScienceFilePath(filename)
-                existing_file = imap_data_access.query(
-                    instrument=file_path.instrument,
-                    data_level=file_path.data_level,
-                    descriptor=file_path.descriptor,
-                    start_date=file_path.start_date,
-                    end_date=file_path.start_date,
-                    repointing=file_path.repointing,
-                    version=file_path.version,
-                    extension="cdf",
-                    table="science",
-                )
-                if existing_file:
-                    raise ProcessInstrument.ImapFileExistsError(
-                        f"File {filename} already exists in the IMAP SDC. "
-                        "No files were uploaded."
-                        f"Generated files: {products}."
-                    )
-
-            if len(products) == 0:
+            if not products:
                 logger.info("No files to upload.")
+                return
+
             for filename in products:
-                logger.info(f"Uploading file: {filename}")
-                imap_data_access.upload(filename)
+                try:
+                    logger.info(f"Uploading file: {filename}")
+                    imap_data_access.upload(filename)
+                except IMAPDataAccessError as e:
+                    msg = str(e)
+                    if "FileAlreadyExists" in msg and "409" in msg:
+                        logger.warning("Skipping upload of existing file, %s", filename)
+                        continue
+                    else:
+                        logger.error(f"Upload failed with error: {msg}")
+                except Exception as e:
+                    logger.error(f"Upload failed unknown error: {e}")
 
     @final
     def process(self) -> None:
@@ -1230,8 +1220,8 @@ class Spacecraft(ProcessInstrument):
             The list of processed products.
         """
         print(f"Processing Spacecraft {self.data_level}")
-
-        if self.data_level == "l1a":
+        processed_dataset = []
+        if self.descriptor == "quaternions":
             # File path is expected output file path
             input_files = dependencies.get_file_paths(source="spacecraft")
             if len(input_files) > 1:
@@ -1240,26 +1230,21 @@ class Spacecraft(ProcessInstrument):
                     f"{input_files}. Expected only one dependency."
                 )
             datasets = list(quaternions.process_quaternions(input_files[0]))
-            return datasets
-        elif self.data_level == "spice":
+            processed_dataset.extend(datasets)
+        elif self.descriptor == "pointing-attitude":
             spice_inputs = dependencies.get_file_paths(
                 data_type=SPICESource.SPICE.value
             )
             ah_paths = [path for path in spice_inputs if ".ah" in path.suffixes]
-            if len(ah_paths) != 1:
-                raise ValueError(
-                    f"Unexpected spice dependencies found for Spacecraft "
-                    f"pointing_kernel: {ah_paths}. Expected exactly one "
-                    f"attitude history file."
-                )
             pointing_kernel_paths = pointing_frame.generate_pointing_attitude_kernel(
-                ah_paths[0]
+                ah_paths[-1]
             )
-            return pointing_kernel_paths
+            processed_dataset.extend(pointing_kernel_paths)
         else:
             raise NotImplementedError(
                 f"Spacecraft processing not implemented for level {self.data_level}"
             )
+        return processed_dataset
 
 
 class Swapi(ProcessInstrument):
