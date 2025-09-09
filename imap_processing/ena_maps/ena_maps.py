@@ -1187,6 +1187,10 @@ class RectangularSkyMap(AbstractSkyMap):
         # Rewrap each data array in the data_1d to the original 2D grid shape
         rewrapped_data = {}
         for key in self.data_1d.data_vars:
+            # Don't rewrap non-spatial variables
+            if CoordNames.GENERIC_PIXEL.value not in self.data_1d[key].coords:
+                rewrapped_data[key] = self.data_1d[key]
+                continue
             # drop pixel dim from the end, and add the spatial coords as dims
             rewrapped_dims = [
                 dim
@@ -1292,18 +1296,17 @@ class RectangularSkyMap(AbstractSkyMap):
                     name=f"{coord_name}_delta",
                     dims=[coord_name],
                 )
-            # Add energy delta_minus and delta_plus variables
             elif coord_name == CoordNames.ENERGY_L2.value:
-                cdf_ds[f"{coord_name}_delta_minus"] = xr.DataArray(
-                    xr.full_like(cdf_ds[coord_name], np.nan),
-                    name=f"{coord_name}_delta",
-                    dims=[coord_name],
-                )
-                cdf_ds[f"{coord_name}_delta_plus"] = xr.DataArray(
-                    xr.full_like(cdf_ds[coord_name], np.nan),
-                    name=f"{coord_name}_delta",
-                    dims=[coord_name],
-                )
+                if f"{coord_name}_delta_minus" not in cdf_ds:
+                    raise KeyError(
+                        f"Required variable '{coord_name}_delta_minus' "
+                        f"not found in cdf Dataset."
+                    )
+                if f"{coord_name}_delta_plus" not in cdf_ds:
+                    raise KeyError(
+                        f"Required variable '{coord_name}_delta_plus' "
+                        f"not found in cdf Dataset."
+                    )
 
         # Object which holds CDF attributes for the map
         cdf_attrs = ImapCdfAttributes()
