@@ -75,6 +75,10 @@ VARIABLES_TO_WEIGHT_BY_POINTING_SET_EXPOSURE_TIMES_SOLID_ANGLE = [
     "sensitivity",
     "background_rates",
     "obs_date",
+    "geometric_function",
+    "efficiency",
+    "scatter_theta",
+    "scatter_phi",
 ]
 
 # These variables are dropped after they are used to
@@ -310,15 +314,17 @@ def generate_ultra_healpix_skymap(
             pointing_set.data["exposure_factor"] * pointing_set.solid_angle
         )
 
+        # Get variables that should be weighted by exposure and solid angle
+        existing_vars_to_weight = []
+        for var in VARIABLES_TO_WEIGHT_BY_POINTING_SET_EXPOSURE_TIMES_SOLID_ANGLE:
+            if var in pointing_set.data:
+                existing_vars_to_weight.append(var)
+
         # Initial processing for weighted quantities at PSET level
         # Weight the values by exposure and solid angle
         # Ensure only valid pointing set pixels contribute to the weighted mean.
-        pointing_set.data[
-            VARIABLES_TO_WEIGHT_BY_POINTING_SET_EXPOSURE_TIMES_SOLID_ANGLE
-        ] = (
-            pointing_set.data[
-                VARIABLES_TO_WEIGHT_BY_POINTING_SET_EXPOSURE_TIMES_SOLID_ANGLE
-            ]
+        pointing_set.data[existing_vars_to_weight] = (
+            pointing_set.data[existing_vars_to_weight]
             * pointing_set.data["pointing_set_exposure_times_solid_angle"]
         ).where(good_pixel_mask)
 
@@ -339,9 +345,9 @@ def generate_ultra_healpix_skymap(
         )
 
     # Subsequent processing for weighted quantities at SkyMap level
-    skymap.data_1d[VARIABLES_TO_WEIGHT_BY_POINTING_SET_EXPOSURE_TIMES_SOLID_ANGLE] /= (
-        skymap.data_1d["pointing_set_exposure_times_solid_angle"]
-    )
+    skymap.data_1d[existing_vars_to_weight] /= skymap.data_1d[
+        "pointing_set_exposure_times_solid_angle"
+    ]
 
     # Background rates must be scaled by the ratio of the solid angles of the
     # map pixel / pointing set pixel
@@ -404,11 +410,10 @@ def generate_ultra_healpix_skymap(
     skymap.data_1d = skymap.data_1d.drop_vars(
         VARIABLES_TO_DROP_AFTER_INTENSITY_CALCULATION,
     )
-
     return skymap, np.array(all_pset_epochs)
 
 
-def ultra_l2(
+def ultra_l2(  # noqa: PLR0912
     data_dict: dict[str, xr.Dataset | str | Path],
     output_map_structure: (
         ena_maps.RectangularSkyMap | ena_maps.HealpixSkyMap
@@ -511,6 +516,7 @@ def ultra_l2(
         map_dataset = healpix_skymap.to_dataset()
         # Add attributes related to the map
         map_attrs = {
+            "HEALPix_solid_angle": str(healpix_skymap.solid_angle),
             "HEALPix_nside": str(output_map_structure.nside),
             "HEALPix_nest": str(output_map_structure.nested),
         }
@@ -585,6 +591,11 @@ def ultra_l2(
     # to "energy" for all instruments.
     map_dataset = map_dataset.rename({"energy_bin_geometric_mean": "energy"})
 
+    # Rename positional uncertainty variables if present
+    if "scatter_theta" in map_dataset and "scatter_phi" in map_dataset:
+        map_dataset = map_dataset.rename({"scatter_theta": "positional_uncert_theta"})
+        map_dataset = map_dataset.rename({"scatter_phi": "positional_uncert_phi"})
+
     # Add the defined attributes to the map's global attrs
     map_dataset.attrs.update(map_attrs)
 
@@ -650,6 +661,8 @@ def ultra_l2(
             )
         )
 
-    # Adjust the dtype of obs_date to be int64
+    # Adjust the dtype of obs dates to be int64
     map_dataset["obs_date"] = map_dataset["obs_date"].astype(np.int64)
+    map_dataset["obs_date_range"] = map_dataset["obs_date_range"].astype(np.int64)
+
     return [map_dataset]
