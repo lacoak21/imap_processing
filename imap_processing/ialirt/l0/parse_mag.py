@@ -268,6 +268,9 @@ def calculate_l1b(
         retrieve_matrix_from_single_l1b_calibration(calibration_dataset, is_mago=False)
     )
 
+    logger.info(f"calibration_matrix_mago shape: {calibration_matrix_mago.shape}.")
+    logger.info(f"calibration_matrix_magi shape: {calibration_matrix_magi.shape}.")
+
     # Get time values for each group.
     time_data = get_time(
         grouped_data, group, pkt_counter, time_shift_mago, time_shift_magi
@@ -392,6 +395,7 @@ def transform_to_inertial(
     attitude_time: np.ndarray,
     target_time: float,
     mag_vector: np.ndarray,
+    instrument_frame: SpiceFrame,
 ) -> np.ndarray:
     """
     Transform vector to ECLIPJ2000.
@@ -415,6 +419,8 @@ def transform_to_inertial(
         Example: time_data['primary_epoch'].
     mag_vector : numpy.ndarray
         Vector, shape (3).
+    instrument_frame : SpiceFrame
+        SPICE frame of the instrument.
 
     Returns
     -------
@@ -478,6 +484,7 @@ def transform_to_inertial(
         np.array([spin_phase_deg]),
         np.array([ra_deg]),
         np.array([dec_deg]),
+        instrument_frame,
     )[0]
 
     return inertial_vector
@@ -570,6 +577,7 @@ def process_packet(
     mago_times_all = []
     magi_vectors_all = []
     magi_times_all = []
+    incomplete_groups = []
 
     for group in unique_groups:
         # Get status values for each group.
@@ -581,10 +589,7 @@ def process_packet(
         ]
 
         if not np.array_equal(pkt_counter, np.arange(4)):
-            logger.info(
-                f"Group {group} does not contain all values from 0 to "
-                f"3 without duplicates."
-            )
+            incomplete_groups.append(group)
             continue
 
         # Get decoded status data.
@@ -648,6 +653,7 @@ def process_packet(
             attitude_time,
             time_data["primary_epoch"],
             mago_out,
+            SpiceFrame.IMAP_MAG_O,
         )
         magi_inertial_vector = transform_to_inertial(
             sc_spin_phase_rad.values,
@@ -656,6 +662,7 @@ def process_packet(
             attitude_time,
             time_data["secondary_epoch"],
             magi_out,
+            SpiceFrame.IMAP_MAG_I,
         )
 
         met = grouped_data["met"][(grouped_data["group"] == group).values]
@@ -664,6 +671,13 @@ def process_packet(
         mago_vectors_all.append(mago_inertial_vector)
         magi_vectors_all.append(magi_inertial_vector)
         magi_times_all.append(time_data["secondary_epoch"])
+
+    if incomplete_groups:
+        logger.info(
+            f"The following mag groups were skipped due to "
+            f"missing or duplicate pkt_counter values: "
+            f"{incomplete_groups}"
+        )
 
     mago_corrected, magnitude = apply_gradiometry_correction(
         np.array(mago_vectors_all),
