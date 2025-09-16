@@ -176,13 +176,13 @@ def calculate_helio_pset(
     pset_dict["latitude"] = latitude[np.newaxis, ...]
     pset_dict["longitude"] = longitude[np.newaxis, ...]
     pset_dict["energy_bin_geometric_mean"] = energy_bin_geometric_means
-    pset_dict["helio_exposure_factor"] = exposure_time
+    pset_dict["helio_exposure_factor"] = exposure_time[np.newaxis, ...]
     pset_dict["pixel_index"] = healpix
     pset_dict["energy_bin_delta"] = np.diff(intervals, axis=1).squeeze()[
         np.newaxis, ...
     ]
-    pset_dict["sensitivity"] = sensitivity
-    pset_dict["efficiency"] = efficiencies
+    pset_dict["sensitivity"] = sensitivity[np.newaxis, ...]
+    pset_dict["efficiency"] = efficiencies[np.newaxis, ...]
     pset_dict["geometric_function"] = geometric_function
     pset_dict["dead_time_ratio"] = deadtime_ratios
     pset_dict["spin_phase_step"] = np.arange(len(deadtime_ratios))

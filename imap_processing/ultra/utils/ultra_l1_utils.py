@@ -146,6 +146,10 @@ def create_dataset(  # noqa: PLR0912
         elif key in {
             "counts",
             "background_rates",
+            "exposure_factor",
+            "helio_exposure_factor",
+            "sensitivity",
+            "efficiency",
         }:
             dataset[key] = xr.DataArray(
                 data,
@@ -153,10 +157,6 @@ def create_dataset(  # noqa: PLR0912
                 attrs=cdf_manager.get_variable_attributes(key, check_schema=False),
             )
         elif key in {
-            "exposure_factor",
-            "helio_exposure_factor",
-            "sensitivity",
-            "efficiency",
             "geometric_function",
             "scatter_theta",
             "scatter_phi",

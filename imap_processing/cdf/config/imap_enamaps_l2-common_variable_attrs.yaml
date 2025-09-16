@@ -187,9 +187,9 @@ ena_count:
 
 sensitivity:
   <<: *default_float32
-  CATDESC: Calibration/sensitivity factor calculated from multiple pointing sets.
-  FIELDNAM: sensitivity
-  UNITS: cm^-3
+  CATDESC: Averaged instrument sensitive area.
+  FIELDNAM: Sensitivity
+  UNITS: cm^2
   DEPEND_0: epoch
   VAR_TYPE: data
   LABLAXIS: sensitivity
@@ -209,19 +209,18 @@ exposure_factor: &exposure_factor
 
 geometric_function:
   <<: *default_float32
-  CATDESC: The geometric function calculated from multiple pointing sets.
-  FIELDNAM: geometric_function
+  CATDESC: Averaged aperture area as seen by the backstop.
+  FIELDNAM: Geometric Function
   UNITS: cm^2 sr
-  DEPEND_0: epoch
-  VAR_TYPE: data
-  LABLAXIS: Geometric Factor
+  VAR_TYPE: support_data
+  LABLAXIS: Geometric Function
   DISPLAY_TYPE: no_plot
   DICT_KEY: SPASE>Particle>ParticleType:Atom,ParticleQuantity:GeometricFactor,Qualifier:Directional,CoordinateSystemName:HAE,CoordinateRepresentation:Spherical
 
 efficiency:
   <<: *default_float32
-  CATDESC: Event efficiency calculated from multiple pointing sets.
-  FIELDNAM: efficiency
+  CATDESC: Efficiency of the instrument in converting ENAs to valid events.
+  FIELDNAM: Efficiency
   UNITS: " "
   DEPEND_0: epoch
   VAR_TYPE: data
@@ -231,22 +230,20 @@ efficiency:
 
 positional_uncert_theta:
   <<: *default_float32
-  CATDESC: Positional uncertainty in theta direction calculated from multiple pointing sets.
-  FIELDNAM: positional_uncertainty_theta
+  CATDESC: Averaged position uncertainty along the theta dimension of the instrument.
+  FIELDNAM: Positional Uncertainty Theta
   UNITS: degrees
-  DEPEND_0: epoch
-  VAR_TYPE: data
+  VAR_TYPE: support_data
   LABLAXIS: Position Uncertainty Theta
   DISPLAY_TYPE: no_plot
   DICT_KEY: SPASE>Particle>ParticleType:Atom,ParticleQuantity:ArrivalDirection,Qualifier:Uncertainty,CoordinateSystemName:HAE,CoordinateRepresentation:Spherical
 
 positional_uncert_phi:
   <<: *default_float32
-  CATDESC: Positional uncertainty in phi direction calculated from multiple pointing sets.
-  FIELDNAM: positional_uncertainty_phi
+  CATDESC: Averaged position uncertainty along the phi dimension of the instrument.
+  FIELDNAM: Positional Uncertainty Phi
   UNITS: degrees
-  DEPEND_0: epoch
-  VAR_TYPE: data
+  VAR_TYPE: support_data
   LABLAXIS: Position Uncertainty Phi
   DISPLAY_TYPE: no_plot
   DICT_KEY: SPASE>Particle>ParticleType:Atom,ParticleQuantity:ArrivalDirection,Qualifier:Uncertainty,CoordinateSystemName:HAE,CoordinateRepresentation:Spherical
