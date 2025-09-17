@@ -56,8 +56,6 @@ def convert_to_rates(
         "lo-sw-angular",
         "lo-nsw-priority",
         "lo-sw-priority",
-        "lo-nsw-species",
-        "lo-sw-species",
         "lo-ialirt",
     ]:
         # Applying rate calculation described in section 10.2 of the algorithm
@@ -66,13 +64,34 @@ def convert_to_rates(
         # time data array to match the data variable shape
         dims = [1] * dataset[variable_name].data.ndim
         dims[1] = 128
-        acq_times = dataset.acquisition_time_per_step.data.reshape(dims)
+        acq_times = dataset.acquisition_time_per_step.data.reshape(dims)  # (128)
+        # Now perform the calculation
+        rates_data = dataset[variable_name].data / (
+            acq_times
+            * 1e-3  # Converting from milliseconds to seconds
+            * constants.L1B_DATA_PRODUCT_CONFIGURATIONS[descriptor]["num_spin_sectors"]
+        )
+    elif descriptor in [
+        "lo-nsw-species",
+        "lo-sw-species",
+    ]:
+        # Applying rate calculation described in section 10.2 of the algorithm
+        # document
+        # In order to divide by acquisition times, we must reshape the acq
+        # time data array to match the data variable shape (epoch, esa_step, sector)
+        dims = [1] * dataset[variable_name].data.ndim
+        dims[1] = 128
+        acq_times = dataset.acquisition_time_per_step.data.reshape(dims)  # (128)
+        # acquisition time have an array of shape (128,). We match n_sector to that.
+        # Per CoDICE, fill first 127 with default value of 12. Then fill last with 11.
+        n_sector = np.full(128, 12, dtype=int)
+        n_sector[-1] = 11
 
         # Now perform the calculation
         rates_data = dataset[variable_name].data / (
             acq_times
-            * 1e-6  # Converting from microseconds to seconds
-            * constants.L1B_DATA_PRODUCT_CONFIGURATIONS[descriptor]["num_spin_sectors"]
+            * 1e-3  # Converting from milliseconds to seconds
+            * n_sector[:, np.newaxis]  # Spin sectors
         )
     elif descriptor in [
         "hi-counters-aggregated",
@@ -164,12 +183,22 @@ def process_codice_l1b(file_path: Path) -> xr.Dataset:
             l1b_dataset[variable_name].data = convert_to_rates(
                 l1b_dataset, descriptor, variable_name
             )
-
             # Set the variable attributes
             cdf_attrs_key = f"{descriptor}-{variable_name}"
             l1b_dataset[variable_name].attrs = cdf_attrs.get_variable_attributes(
                 cdf_attrs_key, check_schema=False
             )
+
+        if descriptor in ["lo-sw-species", "lo-nsw-species"]:
+            # Do not carry these variable attributes from L1a to L1b
+            drop_variables = [
+                "k_factor",
+                "nso_half_spin",
+                "sw_bias_gain_mode",
+                "st_bias_gain_mode",
+                "spin_period",
+            ]
+            l1b_dataset = l1b_dataset.drop_vars(drop_variables)
 
     logger.info(f"\nFinal data product:\n{l1b_dataset}\n")
 
