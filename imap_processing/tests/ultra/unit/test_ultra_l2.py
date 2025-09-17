@@ -428,6 +428,8 @@ class TestUltraL2:
         # Check that the positional uncertainty variables were renamed
         assert "positional_uncert_theta" in map_dataset
         assert "positional_uncert_phi" in map_dataset
+        # Check that background_rates was renamed to bg_rate
+        assert "bg_rate" in map_dataset
 
     @pytest.mark.usefixtures("_setup_spice_kernels_list")
     def test_ultra_l2_rectangular(self, mock_data_dict, furnish_kernels):

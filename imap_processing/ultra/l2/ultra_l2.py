@@ -692,4 +692,6 @@ def ultra_l2(  # noqa: PLR0912
     map_dataset["obs_date"] = map_dataset["obs_date"].astype(np.int64)
     map_dataset["obs_date_range"] = map_dataset["obs_date_range"].astype(np.int64)
 
+    # Rename background rates to be compliant with the l2 map definitions
+    map_dataset = map_dataset.rename({"background_rates": "bg_rate"})
     return [map_dataset]
