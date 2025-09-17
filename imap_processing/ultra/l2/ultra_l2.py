@@ -430,7 +430,7 @@ def generate_ultra_healpix_skymap(  # noqa: PLR0912
     return skymap, np.array(all_pset_epochs)
 
 
-def ultra_l2(  # noqa: PLR0912
+def ultra_l2(
     data_dict: dict[str, xr.Dataset | str | Path],
     output_map_structure: (
         ena_maps.RectangularSkyMap | ena_maps.HealpixSkyMap
@@ -609,9 +609,11 @@ def ultra_l2(  # noqa: PLR0912
     map_dataset = map_dataset.rename({"energy_bin_geometric_mean": "energy"})
 
     # Rename positional uncertainty variables if present
-    if "scatter_theta" in map_dataset and "scatter_phi" in map_dataset:
-        map_dataset = map_dataset.rename({"scatter_theta": "positional_uncert_theta"})
-        map_dataset = map_dataset.rename({"scatter_phi": "positional_uncert_phi"})
+    map_dataset = map_dataset.rename({"scatter_theta": "positional_uncert_theta"})
+    map_dataset = map_dataset.rename({"scatter_phi": "positional_uncert_phi"})
+
+    # Rename background rates to be compliant with the l2 map definitions
+    map_dataset = map_dataset.rename({"background_rates": "bg_rate"})
 
     # Add the defined attributes to the map's global attrs
     map_dataset.attrs.update(map_attrs)
@@ -692,6 +694,4 @@ def ultra_l2(  # noqa: PLR0912
     map_dataset["obs_date"] = map_dataset["obs_date"].astype(np.int64)
     map_dataset["obs_date_range"] = map_dataset["obs_date_range"].astype(np.int64)
 
-    # Rename background rates to be compliant with the l2 map definitions
-    map_dataset = map_dataset.rename({"background_rates": "bg_rate"})
     return [map_dataset]
