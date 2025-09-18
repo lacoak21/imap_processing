@@ -38,6 +38,7 @@ def l1b_de():
             "species": ("epoch", ["H", "O", "H", "H", "O"]),
             "spin_cycle": ("epoch", [1, 2, 3, 4, 5]),
             "avg_spin_durations": ("epoch", [15.2, 15.2, 14.9, 15, 14.9]),
+            "spin_bin": ("epoch", [1900, 2000, 3000, 3000, 3000]),
         },
         coords={
             "epoch": [
@@ -78,6 +79,7 @@ def l1b_de_spin():
             "species": ("epoch", ["H", "O", "H", "H", "O"]),
             "spin_cycle": ("epoch", [1, 2, 3, 4, 5]),
             "avg_spin_durations": ("epoch", [15.2, 15.2, 14.9, 15, 14.9]),
+            "spin_bin": ("epoch", [1900, 2000, 3000, 3000, 3000]),
         },
         coords={
             "epoch": met_to_ttj2000ns(np.arange(511000000, 511000000 + 200, 40) + 902),
@@ -91,7 +93,7 @@ def anc_dependencies():
     anc_dependencies_path = [
         str(
             imap_module_directory
-            / "tests/lo/test_anc/imap_lo_good-times_20250415_v001.csv"
+            / "tests/lo/test_anc/imap_lo_good-times-small_20250101_20270101_v001.csv"
         ),
         str(
             imap_module_directory
@@ -187,11 +189,10 @@ def expected_bg():
     return expected_bg
 
 
-@patch(
-    "imap_processing.lo.l1c.lo_l1c.set_background_rates",
-    return_value=(None, None, None),
-)
+@patch("imap_processing.lo.l1c.lo_l1c.set_background_rates")
+@patch("imap_processing.lo.l1c.lo_l1c.filter_goodtimes")
 def test_lo_l1c(
+    mock_filter_goodtimes,
     mock_set_background_rates,
     l1b_de_spin,
     anc_dependencies,
@@ -203,7 +204,8 @@ def test_lo_l1c(
     data = {"imap_lo_l1b_de": l1b_de_spin}
     use_fake_spin_data_for_time(511000000)
     use_fake_repoint_data_for_time(np.arange(511000000, 511000000 + 86400 * 5, 86400))
-
+    mock_set_background_rates.return_value = (None, None, None)
+    mock_filter_goodtimes.return_value = l1b_de_spin
     expected_logical_source = "imap_lo_l1c_pset"
 
     # Act
@@ -215,37 +217,33 @@ def test_lo_l1c(
 
 def test_filter_goodtimes(l1b_de, anc_dependencies):
     # Arrange
-    l1b_de_with_badtimes = xr.Dataset(
+    l1b_de_all = xr.Dataset(
         {
-            "pointing_bin_lon": ("epoch", [20, 0, 20, 2000, 3500, 200]),
-            "pointing_bin_lat": ("epoch", [20, 20, 20, 20, 20, 40]),
             "esa_step": ("epoch", [1, 2, 1, 4, 5, 2]),
-            "coincidence_type": (
-                "epoch",
-                ["111111", "111100", "111000", "110100", "110000", "000000"],
-            ),
-            "species": ("epoch", ["H", "O", "H", "H", "O", "U"]),
-            "spin_cycle": ("epoch", [1, 2, 3, 4, 5, 12]),
-            "avg_spin_durations": ("epoch", [15.2, 15.2, 14.9, 15, 14.9, 50]),
+            "spin_bin": ("epoch", [1900, 2000, 3000, 3000, 3000, 3000]),
         },
         coords={
-            "epoch": [
-                7.9794907049e17,
-                7.9794907153e17,
-                7.9794907254e17,
-                7.9794907354e17,
-                7.9794907454e17,
-                8.74117692184e17,
-            ],
+            "epoch": met_to_ttj2000ns(
+                [
+                    473389199,
+                    473389200,
+                    473389201,
+                    473389202,
+                    473389203,
+                    473407619,
+                ]
+            )
         },
     )
-    l1b_de_no_badtimes_expected = l1b_de.copy()
+    expected_goodtimes_mask = [False, False, True, False, True, False]
+
+    l1b_goodtimes_onl_expected = l1b_de_all.isel(epoch=expected_goodtimes_mask)
 
     # Act
-    l1b_no_badtimes = filter_goodtimes(l1b_de_with_badtimes, anc_dependencies)
+    l1b_goodtimes_only = filter_goodtimes(l1b_de_all, anc_dependencies)
 
     # Assert
-    xr.testing.assert_equal(l1b_no_badtimes, l1b_de_no_badtimes_expected)
+    xr.testing.assert_equal(l1b_goodtimes_only, l1b_goodtimes_onl_expected)
 
 
 def test_create_pset_counts(l1b_de):
