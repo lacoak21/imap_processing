@@ -19,9 +19,10 @@ longitude_label:
   DEPEND_1: longitude
 
 longitude_delta:
-  VAR_TYPE: metadata
+  VAR_TYPE: support_data
   dtype: float32
   CATDESC: Half-width of longitude pixel
+  DEPEND_1: longitude
   FORMAT: F12.6
   UNITS: degrees
   FIELDNAM: longitude delta
@@ -35,9 +36,10 @@ latitude_label:
   DEPEND_1: latitude
 
 latitude_delta:
-  VAR_TYPE: metadata
+  VAR_TYPE: support_data
   dtype: float32
   CATDESC: Half-width of latitude pixel
+  DEPEND_1: latitude
   FORMAT: F12.6
   UNITS: degrees
   FIELDNAM: latitude delta
@@ -65,7 +67,7 @@ ena_intensity:
   LABL_PTR_2: longitude_label
   LABL_PTR_3: latitude_label
 
-ena_intensity_stat_unc:
+ena_intensity_stat_uncert:
   DEPEND_1: energy
   DEPEND_2: longitude
   DEPEND_3: latitude
