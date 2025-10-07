@@ -59,7 +59,6 @@ def mask_below_fwhm_scattering_threshold(
     )  # (npix, energy.shape[1])
 
     thresholds = scattering_thresholds[np.newaxis, :]  # (1, energy.shape[1])
-
     # Combine conditions for both theta and phi.
     # shape = (npix, energy.shape[1])
     scattering_mask = np.logical_and(fwhm_theta <= thresholds, fwhm_phi <= thresholds)
@@ -165,8 +164,11 @@ def calculate_fwhm_spun_scattering(
         pixels_below_scattering_for_energy = []
 
         for energy_idx in range(len(energy_bin_geometric_means)):
-            valid_pixels = scattering_mask[:, energy_idx]
-            pixels_below_scattering_for_energy.append(for_pixel_indices[valid_pixels])
+            # valid_pixels = scattering_mask[:, energy_idx]
+            print(energy_idx)
+            pixels_below_scattering_for_energy.append(
+                for_pixel_indices
+            )  # [valid_pixels])
 
         pixels_below_scattering.append(pixels_below_scattering_for_energy)
         # Accumulate FWHM values for averaging
@@ -174,8 +176,10 @@ def calculate_fwhm_spun_scattering(
         fwhm_phi_sum[:, for_inds] += fwhm_phi.T
         sample_count[:, for_inds] += 1
 
-    fwhm_phi_avg = np.divide(fwhm_theta_sum, sample_count, where=sample_count != 0)
-    fwhm_theta_avg = np.divide(fwhm_theta_sum, sample_count, where=sample_count != 0)
+    fwhm_phi_avg = np.zeros_like(fwhm_phi_sum)
+    fwhm_theta_avg = np.zeros_like(fwhm_theta_sum)
+    np.divide(fwhm_phi_sum, sample_count, out=fwhm_phi_avg, where=sample_count != 0)
+    np.divide(fwhm_theta_sum, sample_count, out=fwhm_theta_avg, where=sample_count != 0)
     return (
         pixels_below_scattering,
         fwhm_theta_avg,

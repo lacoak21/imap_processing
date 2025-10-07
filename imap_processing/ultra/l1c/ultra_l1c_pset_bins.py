@@ -4,6 +4,7 @@ import logging
 
 import astropy_healpix.healpy as hp
 import numpy as np
+import pandas as pd
 import xarray as xr
 from numpy.typing import NDArray
 from scipy import interpolate
@@ -380,9 +381,9 @@ def calculate_exposure_time(
     # Get energy bin geometric means
     energy_bin_geometric_means = build_energy_bins()[2]
     # Exposure time should now be of shape (energy, npix)
-    exposure_pointing = np.zeros((len(energy_bin_geometric_means), n_pix))
+    counts_weighted = np.zeros((len(energy_bin_geometric_means), n_pix))
     # nominal spin phase step.
-    nominal_ms_step = 15 / len(pixels_below_scattering)  # time step
+    nominal_s_step = 15.0 / len(pixels_below_scattering)  # time step
     # Query the dead-time ratio and apply the nominal exposure time to pixels in the FOR
     # and below the scattering threshold
     # Loop through the spin phase steps. This is spinning the spacecraft by nominal
@@ -395,12 +396,12 @@ def calculate_exposure_time(
                 continue
             # Apply the nominal exposure time (1 ms) scaled by the deadtime ratio to
             # every pixel in the FOR, that is below the FWHM scattering threshold,
-            exposure_pointing[energy_bin_idx, pixels_at_energy_and_spin] += (
-                nominal_ms_step
-                * deadtime_ratios[i]
+            counts_weighted[energy_bin_idx, pixels_at_energy_and_spin] += (
+                deadtime_ratios[i]
                 * boundary_scale_factors[pixels_at_energy_and_spin, i]
             )
-
+    # Multiply by the nominal spin step to get the exposure time in seconds
+    exposure_pointing = counts_weighted * nominal_s_step
     return exposure_pointing
 
 
@@ -444,9 +445,27 @@ def get_spacecraft_exposure_times(
     # sectored_rates = get_sectored_rates(rates_dataset, params_dataset)
     # nominal_deadtime_ratios = get_deadtime_ratios_by_spin_phase(sectored_rates)
     nominal_deadtime_ratios = get_deadtime_ratios_by_spin_phase(rates_dataset)
-    exposure_pointing_adjusted = calculate_exposure_time(
+    exposure_time = calculate_exposure_time(
         nominal_deadtime_ratios, pixels_below_scattering, boundary_scale_factors, n_pix
     )
+    # Get number of spins
+    nominal_spin_seconds = 15.0
+    # spin_data = get_spin_data()
+    # # Get valid spin data only
+    # valid_mask = (spin_data["spin_phase_valid"].values == 1) & (
+    #     spin_data["spin_period_valid"].values == 1
+    # )
+    # total_spin = np.sum(spin_data[valid_mask].spin_period_sec / nominal_spin_seconds)
+    spin_data = pd.read_csv(
+        "/Users/luco3133/projects/imap_processing/data/imap/spice/spin/"
+        "imap_2026_268_2026_269_11.spin.csv"
+    )
+    total_spin: np.ndarray = np.sum(
+        spin_data["Spin Duration (sec)"] / nominal_spin_seconds
+    )
+    print(total_spin, "total spins")
+    exposure_pointing_adjusted = total_spin * exposure_time
+
     return exposure_pointing_adjusted, nominal_deadtime_ratios
 
 
@@ -466,78 +485,91 @@ def get_efficiencies_and_geometric_function(
     Parameters
     ----------
     pixels_below_scattering : list
-        List of lists indicating pixels within the scattering threshold.
+        A Nested list of arrays indicating pixels within the scattering threshold.
         The outer list indicates spin phase steps, the middle list indicates energy
-        bins, and the inner list contains pixel indices indicating pixels that are
-        below the FWHM scattering threshold.
+        bins, and the inner arrays contain indices indicating pixels that are below
+        the FWHM scattering threshold.
     boundary_scale_factors : np.ndarray
         Boundary scale factors for each pixel at each spin phase.
     theta_vals : np.ndarray
-        A 2D array of theta values for each HEALPix pixel at each spin phase step.
+        Theta values for each pixel at each spin phase.
     phi_vals : np.ndarray
-         A 2D array of phi values for each HEALPix pixel at each spin phase step.
+        Phi values for each pixel at each spin phase.
     npix : int
         Number of HEALPix pixels.
     ancillary_files : dict
-        Dictionary containing ancillary files.
+        Dictionary of ancillary file paths.
 
     Returns
     -------
-    gf_summation : np.ndarray
-        Summation of geometric factors for each pixel and energy bin.
-    eff_summation : np.ndarray
-        Summation of efficiencies for each pixel and energy bin.
+    gf_averaged : np.ndarray
+        Averaged geometric factors across all spin phases.
+        Shape = (n_energy_bins, npix).
+    eff_averaged : np.ndarray
+        Averaged efficiencies across all spin phases.
+        Shape = (n_energy_bins, npix).
     """
     # Load callable efficiency interpolator function
     eff_interpolator = get_efficiency_interpolator(ancillary_files)
     # load geometric factor lookup table
     geometric_lookup_table = load_geometric_factor_tables(
-        ancillary_files, "l1b-sensor-gf-blades"
+        ancillary_files, "l1b-sensor-gf-noblades"
     )
     # Get energy bin geometric means
     energy_bin_geometric_means = build_energy_bins()[2]
     energy_bins = len(energy_bin_geometric_means)
+
     # Initialize summation arrays for geometric factors and efficiencies
     gf_summation = np.zeros((energy_bins, npix))
     eff_summation = np.zeros((energy_bins, npix))
     sample_count = np.zeros((energy_bins, npix))
-    # Loop through spin phases
+
     for i, pixels_at_spin in enumerate(pixels_below_scattering):
         # Loop through energy bins
         # Compute gf and eff for these theta/phi pairs
         theta_at_spin = theta_vals[:, i]
         phi_at_spin = phi_vals[:, i]
+
         gf_values = get_geometric_factor(
             phi=phi_at_spin,
             theta=theta_at_spin,
             quality_flag=np.zeros(len(phi_at_spin)).astype(np.uint16),
             geometric_factor_tables=geometric_lookup_table,
         )
+
         for energy_bin_idx in range(energy_bins):
             pixel_inds = pixels_at_spin[energy_bin_idx]
             if pixel_inds.size == 0:
                 continue
+
             energy = energy_bin_geometric_means[energy_bin_idx]
+            # Clip energy to calibrated range
+            energy_clipped = np.clip(energy, 3.0, 80.0)
+
             eff_values = get_efficiency(
-                np.full(phi_at_spin[pixel_inds].shape, energy),
+                np.full(phi_at_spin[pixel_inds].shape, energy_clipped),
                 phi_at_spin[pixel_inds],
                 theta_at_spin[pixel_inds],
                 ancillary_files,
                 interpolator=eff_interpolator,
             )
+            bsfs = boundary_scale_factors[pixel_inds, i]
+            if np.any(np.isnan(bsfs)):
+                logger.warning(
+                    "NaN values found in boundary scale factors. Setting to 1.0"
+                )
+                bsfs = 1.0
             # Accumulate gf and eff values
-            gf_summation[energy_bin_idx, pixel_inds] += (
-                gf_values[pixel_inds] * boundary_scale_factors[pixel_inds, i]
-            )
-            eff_summation[energy_bin_idx, pixel_inds] += (
-                eff_values * boundary_scale_factors[pixel_inds, i]
-            )
+            gf_summation[energy_bin_idx, pixel_inds] += gf_values[pixel_inds] * bsfs
+            eff_summation[energy_bin_idx, pixel_inds] += eff_values * bsfs
             sample_count[energy_bin_idx, pixel_inds] += 1
 
     # return averaged geometric factors and efficiencies across all spin phases
     # These are now energy dependent.
-    gf_averaged = np.divide(gf_summation, sample_count, where=sample_count != 0)
-    eff_averaged = np.divide(eff_summation, sample_count, where=sample_count != 0)
+    gf_averaged = np.zeros_like(gf_summation)
+    eff_averaged = np.zeros_like(eff_summation)
+    np.divide(gf_summation, sample_count, out=gf_averaged, where=sample_count != 0)
+    np.divide(eff_summation, sample_count, out=eff_averaged, where=sample_count != 0)
     return gf_averaged, eff_averaged
 
 
@@ -731,7 +763,6 @@ def get_spacecraft_background_rates(
         # Multiply times 1e-3 to convert to m.
         ctof_min = dmin_ctof * 1e-3 / vmax * 1e-9  # Convert to ns
         ctof_max = dmin_ctof * 1e-3 / vmin * 1e-9  # Convert to ns
-
         background_rates[i, :] = (
             np.abs(ctof_max - ctof_min)
             * (etof_max - etof_min)

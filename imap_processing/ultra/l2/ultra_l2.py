@@ -57,8 +57,8 @@ REQUIRED_L1C_VARIABLES_PUSH = [
 REQUIRED_L1C_VARIABLES_PULL = [
     "exposure_factor",
     "sensitivity",
-    "background_rates",
     "obs_date",
+    "background_rates",
 ]
 # These variables are expected but not strictly required. In certain test scenarios,
 # they may be missing, in which case we will raise a warning and continue.
@@ -361,15 +361,15 @@ def generate_ultra_healpix_skymap(  # noqa: PLR0912
                 index_match_method=ena_maps.IndexMatchMethod.PULL,
                 pset_valid_mask=good_pixel_mask,
             )
-    # Subsequent processing for weighted quantities at SkyMap level
+    # # Subsequent processing for weighted quantities at SkyMap level
     skymap.data_1d[existing_vars_to_weight] /= skymap.data_1d[
         "pointing_set_exposure_times_solid_angle"
     ]
 
-    # Background rates must be scaled by the ratio of the solid angles of the
-    # map pixel / pointing set pixel
+    # Background rates and sensitivity must be scaled by the ratio of the solid angles
+    # of the map pixel / pointing set pixel
     skymap.data_1d["background_rates"] *= skymap.solid_angle / pointing_set.solid_angle
-
+    skymap.data_1d["sensitivity"] *= skymap.solid_angle / pointing_set.solid_angle
     # Get the energy bin widths from a PointingSet (they will all be the same)
     delta_energy = pointing_set.data["energy_bin_delta"]
     if CoordNames.TIME.value in delta_energy.dims:
@@ -385,13 +385,18 @@ def generate_ultra_healpix_skymap(  # noqa: PLR0912
         # Get corrected count rate with background subtraction applied
         skymap.data_1d["corrected_count_rate"] = (
             skymap.data_1d["counts"].astype(float) / skymap.data_1d["exposure_factor"]
-        ) - skymap.data_1d["background_rates"]
+        )  # - skymap.data_1d["background_rates"]
 
         # Calculate ena_intensity = corrected_counts / (
-        # sensitivity * solid_angle * delta_energy)
+
+        # Calculate intensity only for valid pixels
         skymap.data_1d["ena_intensity"] = skymap.data_1d["corrected_count_rate"] / (
-            skymap.data_1d["sensitivity"] * skymap.solid_angle * delta_energy
+            skymap.data_1d["sensitivity"] * pointing_set.solid_angle * delta_energy
         )
+        print("L1C pointing set solid angle:", pointing_set.solid_angle)
+        print("L2 skymap solid angle:", skymap.solid_angle)
+        print("Ratio:", skymap.solid_angle / pointing_set.solid_angle)
+        print("Delta energy:", delta_energy.values)
 
         skymap.data_1d["ena_intensity_stat_unc"] = (
             skymap.data_1d["counts"].astype(float) ** 0.5
@@ -476,7 +481,6 @@ def ultra_l2(  # noqa: PLR0912
         output_map_structure = map_descriptor.to_empty_map()
         inertial_frame = map_descriptor.frame_descriptor
     inertial_frame_long_name = INERTIAL_FRAME_LONG_NAMES.get(inertial_frame, "unknown")
-
     # Object which holds CDF attributes for the map
     cdf_attrs = ImapCdfAttributes()
     cdf_attrs.add_instrument_global_attrs(instrument="ultra")

@@ -6,6 +6,7 @@ import astropy_healpix.healpy as hp
 import numpy as np
 import xarray as xr
 
+from imap_processing.cdf.utils import parse_filename_like
 from imap_processing.quality_flags import ImapPSETUltraFlags
 from imap_processing.spice.repoint import get_pointing_times
 from imap_processing.spice.time import (
@@ -13,7 +14,6 @@ from imap_processing.spice.time import (
     met_to_ttj2000ns,
     ttj2000ns_to_et,
 )
-from imap_processing.ultra.l1b.ultra_l1b_culling import get_de_rejection_mask
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
     calculate_fwhm_spun_scattering,
     get_spacecraft_pointing_lookup_tables,
@@ -24,6 +24,7 @@ from imap_processing.ultra.l1c.ultra_l1c_pset_bins import (
     get_efficiencies_and_geometric_function,
     get_energy_delta_minus_plus,
     get_helio_adjusted_data,
+    get_spacecraft_background_rates,
     get_spacecraft_exposure_times,
     get_spacecraft_histogram,
 )
@@ -69,16 +70,21 @@ def calculate_helio_pset(
     dataset : xarray.Dataset
         Dataset containing the data.
     """
+    sensor = parse_filename_like(name)["sensor"][0:2]
     pset_dict: dict[str, np.ndarray] = {}
     # Select only the species we are interested in.
     indices = np.where(np.isin(de_dataset["ebin"].values, species_id))[0]
     species_dataset = de_dataset.isel(epoch=indices)
 
-    rejected = get_de_rejection_mask(
-        species_dataset["quality_scattering"].values,
-        species_dataset["quality_outliers"].values,
-    )
-    species_dataset = species_dataset.isel(epoch=~rejected)
+    if indices.size == 0:
+        logger.info(f"No data available for {name}")
+        return None
+
+    # rejected = get_de_rejection_mask(
+    #     species_dataset["quality_scattering"].values,
+    #     species_dataset["quality_outliers"].values,
+    # )
+    # species_dataset = species_dataset.isel(epoch=~rejected)
 
     v_mag_helio_spacecraft = np.linalg.norm(
         species_dataset["velocity_dps_helio"].values, axis=1
@@ -130,7 +136,7 @@ def calculate_helio_pset(
     )
     logger.info("Calculating spun efficiencies and geometric function.")
     # calculate efficiency and geometric function as a function of energy
-    efficiencies, geometric_function = get_efficiencies_and_geometric_function(
+    geometric_function, efficiencies = get_efficiencies_and_geometric_function(
         pixels_below_scattering,
         boundary_scale_factors,
         theta_vals,
@@ -140,7 +146,7 @@ def calculate_helio_pset(
     )
     # Get midpoint timestamp for pointing.
     pointing_start, pointing_stop = get_pointing_times(
-        et_to_met(species_dataset["event_times"].data[0])
+        et_to_met(np.min(species_dataset["event_times"].values)) + 100000,
     )
     mid_time = ttj2000ns_to_et(met_to_ttj2000ns((pointing_start + pointing_stop) / 2))
 
@@ -155,6 +161,18 @@ def calculate_helio_pset(
         nside=nside,
     )
     sensitivity = efficiencies * geometric_function
+
+    logger.info("Calculating background rates.")
+    # TODO calculate helio background rates
+    # Calculate background rates
+    background_rates = get_spacecraft_background_rates(
+        rates_dataset,
+        sensor,
+        ancillary_files,
+        intervals,
+        goodtimes_dataset["spin_number"].values,
+        nside=nside,
+    )
 
     start: float = np.min(species_dataset["event_times"].values)
     end: float = np.max(species_dataset["event_times"].values)
@@ -176,7 +194,8 @@ def calculate_helio_pset(
     pset_dict["latitude"] = latitude[np.newaxis, ...]
     pset_dict["longitude"] = longitude[np.newaxis, ...]
     pset_dict["energy_bin_geometric_mean"] = energy_bin_geometric_means
-    pset_dict["helio_exposure_factor"] = exposure_time[np.newaxis, ...]
+    pset_dict["background_rates"] = background_rates[np.newaxis, ...]
+    pset_dict["exposure_factor"] = exposure_time[np.newaxis, ...]
     pset_dict["pixel_index"] = healpix
     pset_dict["energy_bin_delta"] = np.diff(intervals, axis=1).squeeze()[
         np.newaxis, ...

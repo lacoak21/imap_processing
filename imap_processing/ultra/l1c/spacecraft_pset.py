@@ -13,7 +13,6 @@ from imap_processing.spice.time import (
     et_to_met,
     met_to_ttj2000ns,
 )
-from imap_processing.ultra.l1b.ultra_l1b_culling import get_de_rejection_mask
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
     calculate_fwhm_spun_scattering,
     get_spacecraft_pointing_lookup_tables,
@@ -77,14 +76,15 @@ def calculate_spacecraft_pset(
 
     # If there are no species return None.
     if indices.size == 0:
+        logger.info(f"No data available for {name}")
         return None
 
     # Before we use the de_dataset to calculate the pointing set grid we need to filter.
-    rejected = get_de_rejection_mask(
-        species_dataset["quality_scattering"].values,
-        species_dataset["quality_outliers"].values,
-    )
-    species_dataset = species_dataset.isel(epoch=~rejected)
+    # rejected = get_de_rejection_mask(
+    #     species_dataset["quality_scattering"].values,
+    #     species_dataset["quality_outliers"].values,
+    # )
+    # species_dataset = species_dataset.isel(epoch=~rejected)
 
     v_mag_dps_spacecraft = np.linalg.norm(
         species_dataset["velocity_dps_sc"].values, axis=1
@@ -124,18 +124,6 @@ def calculate_spacecraft_pset(
     )
     healpix = np.arange(n_pix)
 
-    logger.info("Calculating spun efficiencies and geometric function.")
-    # calculate efficiency and geometric function as a function of energy
-    efficiencies, geometric_function = get_efficiencies_and_geometric_function(
-        pixels_below_scattering,
-        boundary_scale_factors,
-        theta_vals,
-        phi_vals,
-        n_pix,
-        ancillary_files,
-    )
-    sensitivity = efficiencies * geometric_function
-
     # Calculate exposure times
     logger.info("Calculating spacecraft exposure times with deadtime correction.")
     exposure_pointing, deadtime_ratios = get_spacecraft_exposure_times(
@@ -145,6 +133,19 @@ def calculate_spacecraft_pset(
         boundary_scale_factors,
         n_pix=n_pix,
     )
+
+    logger.info("Calculating spun efficiencies and geometric function.")
+    # calculate efficiency and geometric function as a function of energy
+    geometric_function, efficiencies = get_efficiencies_and_geometric_function(
+        pixels_below_scattering,
+        boundary_scale_factors,
+        theta_vals,
+        phi_vals,
+        n_pix,
+        ancillary_files,
+    )
+    sensitivity = efficiencies * geometric_function
+
     logger.info("Calculating background rates.")
     # Calculate background rates
     background_rates = get_spacecraft_background_rates(
