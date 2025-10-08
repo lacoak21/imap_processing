@@ -1,4 +1,6 @@
 # %%
+import os
+
 import numpy as np
 import pandas as pd
 import spiceypy as sp
@@ -11,9 +13,7 @@ cdf_manager = ImapCdfAttributes()
 cdf_manager.add_instrument_global_attrs("ultra")
 cdf_manager.add_instrument_variable_attrs("ultra", "l1b")
 
-folder_path = (
-    "/Users/luco3133/projects/ultra_stuff/validation_stuff/flux_2_basic_corrected"
-)
+folder_path = "/Users/luco3133/projects/codice_stuff/U45-U90_6Pointings_logo_example"
 spin_table_name = "SpinTable-flux-2-basic-noeff.csv"
 
 kernles = [
@@ -21,141 +21,155 @@ kernles = [
     "/Users/luco3133/projects/imap_processing/imap_processing/tests/spice/test_data/naif0012.tls",
 ]
 
+files = os.listdir(folder_path)
+pointings = [f.split("-")[-1].replace(".csv", "").replace("p", "") for f in files]
+
 with sp.KernelPool(kernles) as pool:
-    for id in [90]:
-        ae_flux = pd.read_csv(
-            f"{folder_path}/AE-IMAP_ULTRA_{id}-flux-2-basic-noeff-p0.csv"
-        )
-        # print(ae_flux)
-        rates_flux = pd.read_csv(
-            f"{folder_path}/Rates-IMAP_ULTRA_{id}-flux-2-basic-noeff-p0.csv"
-        )
-        # spin_table = pd.read_csv(f"{folder_path}/SpinTable_flux-2.csv")
-        print(f"min energy {id}:", np.min(np.array(ae_flux["energy_sc"].values)))
-        print(f"max energy {id}:", np.max(np.array(ae_flux["energy_sc"].values)))
-        # print(spin_table)
-        energy_max = 1000
-        # Create the xarray Dataset with mapped variables
-        ebin = np.where(
-            (ae_flux["accidental"].values & (ae_flux["energy_sc"] > energy_max)), 255, 1
-        )
-        print(ebin)
-        l1b_ds = xr.Dataset(
-            {
-                # Time-related variables
-                "event_times": (
-                    ["epoch"],
-                    ae_flux["tdb (s)"].values.astype(np.float32),
+    for pointing in pointings:
+        for id in [90, 45]:
+            ae_flux = pd.read_csv(
+                f"{folder_path}/AE-IMAP_ULTRA_{id}-flux-2-basic-noeff-p0.csv"
+            )
+            print(pointing)
+            # print(ae_flux)
+            rates_flux = pd.read_csv(
+                f"{folder_path}/Rates-IMAP_ULTRA_{id}-flux-2-basic-noeff-p0.csv"
+            )
+            # spin_table = pd.read_csv(f"{folder_path}/SpinTable_flux-2.csv")
+            print(f"min energy {id}:", np.min(np.array(ae_flux["energy_sc"].values)))
+            print(f"max energy {id}:", np.max(np.array(ae_flux["energy_sc"].values)))
+            # print(spin_table)
+            energy_max = 1000
+            # Create the xarray Dataset with mapped variables
+            ebin = np.where(
+                (ae_flux["accidental"].values & (ae_flux["energy_sc"] > energy_max)),
+                255,
+                1,
+            )
+            print(ebin)
+            l1b_ds = xr.Dataset(
+                {
+                    # Time-related variables
+                    "event_times": (
+                        ["epoch"],
+                        ae_flux["tdb (s)"].values.astype(np.float32),
+                    ),
+                    # Spacecraft velocity components
+                    "velocity_sc": (
+                        ["epoch", "component"],
+                        np.stack(
+                            [
+                                ae_flux["v_x_sc"].values,
+                                ae_flux["v_y_sc"].values,
+                                ae_flux["v_z_sc"].values,
+                            ],
+                            axis=1,
+                        ).astype(np.float32),
+                    ),
+                    "velocity_dps_sc": (
+                        ["epoch", "component"],
+                        np.stack(
+                            [
+                                ae_flux["v_x_sc"].values,
+                                ae_flux["v_y_sc"].values,
+                                ae_flux["v_z_sc"].values,
+                            ],
+                            axis=1,
+                        ).astype(np.float32),
+                    ),
+                    # Heliospheric velocity components
+                    "velocity_dps_helio": (
+                        ["epoch", "component"],
+                        np.stack(
+                            [
+                                ae_flux["v_x_hel"].values,
+                                ae_flux["v_y_hel"].values,
+                                ae_flux["v_z_hel"].values,
+                            ],
+                            axis=1,
+                        ).astype(np.float32),
+                    ),
+                    # Energy variables
+                    "energy_spacecraft": (
+                        ["epoch"],
+                        ae_flux["energy_sc"].values.astype(np.float32),
+                    ),
+                    "energy_heliosphere": (
+                        ["epoch"],
+                        ae_flux["energy_hel"].values.astype(np.float32),
+                    ),
+                    "energy": (
+                        ["epoch"],
+                        ae_flux["energy_sc"].values.astype(np.float32),
+                    ),
+                    # Primary energy variable
+                    # Event efficiency and geometric factor
+                    "event_efficiency": (
+                        ["epoch"],
+                        ae_flux["eff"].values.astype(np.float64),
+                    ),
+                    "geometric_factor_blades": (
+                        ["epoch"],
+                        ae_flux["gf"].values.astype(np.float64),
+                    ),
+                    # Quality flags
+                    # "quality_scattering": (
+                    #     ["epoch"],
+                    #     ae_flux["scatter"].values.astype(np.uint16),
+                    # ),
+                    # "quality_outliers": (
+                    #     ["epoch"],
+                    #     ae_flux["accidental"].values.astype(np.uint16),
+                    # ),
+                    "ebin": (
+                        ["epoch"],
+                        ebin,
+                    ),
+                    # Mapping accidental to outliers
+                },
+                coords={
+                    "epoch": ae_flux["tdb (s)"].values.astype(np.float64),
+                    "component": ["x", "y", "z"],  # For 3D vector components
+                },
+                attrs=cdf_manager.get_global_attributes(
+                    f"imap_ultra_l1b_{id}sensor-de"
                 ),
-                # Spacecraft velocity components
-                "velocity_sc": (
-                    ["epoch", "component"],
-                    np.stack(
-                        [
-                            ae_flux["v_x_sc"].values,
-                            ae_flux["v_y_sc"].values,
-                            ae_flux["v_z_sc"].values,
-                        ],
-                        axis=1,
-                    ).astype(np.float32),
+            )
+            rates_ds = xr.Dataset(
+                {
+                    # Spacecraft velocity components
+                    "spin_phase": (
+                        ["epoch"],
+                        rates_flux["Spin Phase (deg)"].values.astype(np.float32),
+                    ),
+                    "start_rate": (
+                        ["epoch"],
+                        rates_flux["Start Rate (Hz)"].values.astype(np.float32),
+                    ),
+                    "stop_rate": (
+                        ["epoch"],
+                        rates_flux["Stop Rate (Hz)"].values.astype(np.float32),
+                    ),
+                    "coin_rate": (
+                        ["epoch"],
+                        rates_flux["Coin Rate (Hz)"].values.astype(np.float32),
+                    ),
+                    "dead_time_ratio": (
+                        ["epoch"],
+                        rates_flux["Dead Time Ratio"].values.astype(np.float32),
+                    ),
+                },
+                coords={
+                    "epoch": np.arange(len(rates_flux["Dead Time Ratio"].values)),
+                },
+                attrs=cdf_manager.get_global_attributes(
+                    f"imap_ultra_l1a_{id}sensor-rates"
                 ),
-                "velocity_dps_sc": (
-                    ["epoch", "component"],
-                    np.stack(
-                        [
-                            ae_flux["v_x_sc"].values,
-                            ae_flux["v_y_sc"].values,
-                            ae_flux["v_z_sc"].values,
-                        ],
-                        axis=1,
-                    ).astype(np.float32),
-                ),
-                # Heliospheric velocity components
-                "velocity_dps_helio": (
-                    ["epoch", "component"],
-                    np.stack(
-                        [
-                            ae_flux["v_x_hel"].values,
-                            ae_flux["v_y_hel"].values,
-                            ae_flux["v_z_hel"].values,
-                        ],
-                        axis=1,
-                    ).astype(np.float32),
-                ),
-                # Energy variables
-                "energy_spacecraft": (
-                    ["epoch"],
-                    ae_flux["energy_sc"].values.astype(np.float32),
-                ),
-                "energy_heliosphere": (
-                    ["epoch"],
-                    ae_flux["energy_hel"].values.astype(np.float32),
-                ),
-                "energy": (["epoch"], ae_flux["energy_sc"].values.astype(np.float32)),
-                # Primary energy variable
-                # Event efficiency and geometric factor
-                "event_efficiency": (
-                    ["epoch"],
-                    ae_flux["eff"].values.astype(np.float64),
-                ),
-                "geometric_factor_blades": (
-                    ["epoch"],
-                    ae_flux["gf"].values.astype(np.float64),
-                ),
-                # Quality flags
-                # "quality_scattering": (
-                #     ["epoch"],
-                #     ae_flux["scatter"].values.astype(np.uint16),
-                # ),
-                # "quality_outliers": (
-                #     ["epoch"],
-                #     ae_flux["accidental"].values.astype(np.uint16),
-                # ),
-                "ebin": (
-                    ["epoch"],
-                    ebin,
-                ),
-                # Mapping accidental to outliers
-            },
-            coords={
-                "epoch": ae_flux["tdb (s)"].values.astype(np.float64),
-                "component": ["x", "y", "z"],  # For 3D vector components
-            },
-            attrs=cdf_manager.get_global_attributes(f"imap_ultra_l1b_{id}sensor-de"),
-        )
-        rates_ds = xr.Dataset(
-            {
-                # Spacecraft velocity components
-                "spin_phase": (
-                    ["epoch"],
-                    rates_flux["Spin Phase (deg)"].values.astype(np.float32),
-                ),
-                "start_rate": (
-                    ["epoch"],
-                    rates_flux["Start Rate (Hz)"].values.astype(np.float32),
-                ),
-                "stop_rate": (
-                    ["epoch"],
-                    rates_flux["Stop Rate (Hz)"].values.astype(np.float32),
-                ),
-                "coin_rate": (
-                    ["epoch"],
-                    rates_flux["Coin Rate (Hz)"].values.astype(np.float32),
-                ),
-                "dead_time_ratio": (
-                    ["epoch"],
-                    rates_flux["Dead Time Ratio"].values.astype(np.float32),
-                ),
-            },
-            coords={
-                "epoch": np.arange(len(rates_flux["Dead Time Ratio"].values)),
-            },
-            attrs=cdf_manager.get_global_attributes(f"imap_ultra_l1a_{id}sensor-rates"),
-        )
-        l1b_ds.attrs["Data_version"] = "100"
-        rates_ds.attrs["Data_version"] = "100"
-        write_cdf(l1b_ds)
-        write_cdf(rates_ds)
+            )
+            l1b_ds.attrs["Data_version"] = "100"
+            rates_ds.attrs["Data_version"] = "100"
+            write_cdf(l1b_ds)
+            write_cdf(rates_ds)
 
 # %%
 # from imap_processing.cdf.utils import load_cdf, write_cdf
