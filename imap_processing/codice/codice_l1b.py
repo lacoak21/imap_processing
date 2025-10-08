@@ -189,6 +189,12 @@ def process_codice_l1b(file_path: Path) -> xr.Dataset:
                 cdf_attrs_key, check_schema=False
             )
 
+        # TODO eventually energy_table will be voltage_table
+        l1b_dataset.rename({"energy_table": "voltage_table"}, inplace=True)
+        l1b_dataset["energy_table"] = (
+            l1a_dataset["voltage_table"] * l1b_dataset["k_factor"]
+        ) / 1000
+
         if descriptor in ["lo-sw-species", "lo-nsw-species"]:
             # Do not carry these variable attributes from L1a to L1b
             drop_variables = [
