@@ -190,7 +190,7 @@ def process_codice_l1b(file_path: Path) -> xr.Dataset:
             )
 
         # TODO eventually energy_table will be voltage_table
-        l1b_dataset.rename({"energy_table": "voltage_table"}, inplace=True)
+        l1b_dataset.rename(name_dict={"energy_table": "voltage_table"}, inplace=True)
         l1b_dataset["energy_table"] = (
             l1a_dataset["voltage_table"] * l1b_dataset["k_factor"]
         ) / 1000
