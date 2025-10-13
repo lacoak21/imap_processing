@@ -26,10 +26,216 @@ from imap_processing.codice.constants import (
     L2_GEOMETRIC_FACTOR,
     L2_HI_NUMBER_OF_SSD,
     L2_HI_SECTORED_ANGLE,
+    LO_NSW_SPECIES_VARIABLE_NAMES,
+    LO_SW_PICKUP_ION_SPECIES_VARIABLE_NAMES,
+    LO_SW_SPECIES_VARIABLE_NAMES,
+    NSW_POSITIONS,
+    PUI_POSITIONS,
+    SW_POSITIONS,
 )
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+def get_geometric_factor_lut(dependencies: ProcessingInputCollection) -> dict:
+    """
+    Get the geometric factor lookup table.
+
+    Parameters
+    ----------
+    dependencies : ProcessingInputCollection
+        The collection of processing input files.
+
+    Returns
+    -------
+    geometric_factor_lut : dict
+        A dict with a full and reduced mode array with shape (esa_steps, position).
+    """
+    geometric_factors = pd.read_csv(
+        dependencies.get_file_paths(descriptor="l2-lo-gfactor")[0]
+    )
+
+    # sort by esa step. They should already be sorted, but just in case
+    full = geometric_factors[geometric_factors["mode"] == "full"].sort_values(
+        by="esa_step"
+    )
+    reduced = geometric_factors[geometric_factors["mode"] == "reduced"].sort_values(
+        by="esa_step"
+    )
+
+    # Sort position columns to ensure the correct order
+    position_names_sorted = sorted(
+        [col for col in full if col.startswith("position")],
+        key=lambda x: int(x.split("_")[-1]),
+    )
+
+    return {
+        "full": full[position_names_sorted].to_numpy(),
+        "reduced": reduced[position_names_sorted].to_numpy(),
+    }
+
+
+def get_efficiency_lut(dependencies: ProcessingInputCollection) -> pd.DataFrame:
+    """
+    Get the efficiency lookup table.
+
+    Parameters
+    ----------
+    dependencies : ProcessingInputCollection
+        The collection of processing input files.
+
+    Returns
+    -------
+    efficiency_lut : pandas.DataFrame
+        Contains the efficiency lookup table. Columns are:
+        species, product, esa_step, position_1, position_2, ..., position_24.
+    """
+    return pd.read_csv(dependencies.get_file_paths(descriptor="l2-lo-efficiency")[0])
+
+
+def get_species_efficiency(species: str, efficiency: pd.DataFrame) -> np.ndarray:
+    """
+    Get the efficiency values for a given species.
+
+    Parameters
+    ----------
+    species : str
+        The species name.
+    efficiency : pandas.DataFrame
+        The efficiency lookup table.
+
+    Returns
+    -------
+    efficiency : np.ndarray
+        A 2D array of efficiencies with shape (epoch, esa_steps).
+    """
+    species_efficiency = efficiency[efficiency["species"] == species].sort_values(
+        by="esa_step"
+    )
+    # Sort position columns to ensure the correct order
+    position_names_sorted = sorted(
+        [col for col in species_efficiency if col.startswith("position")],
+        key=lambda x: int(x.split("_")[-1]),
+    )
+    # Shape: (esa_steps, positions)
+    return species_efficiency[position_names_sorted].to_numpy()
+
+
+def compute_geometric_factors(
+    dataset: xr.Dataset, geometric_factor_lookup: dict
+) -> np.ndarray:
+    """
+    Calculate geometric factors needed for intensity calculations.
+
+    Geometric factors are determined by comparing the half-spin values per
+    esa_step in the HALF_SPIN_LUT to the rgfo_half_spin values in the provided
+    L2 dataset.
+
+    If the half-spin value is less than the corresponding rgfo_half_spin value,
+    the geometric factor is set to 0.75 (full mode); otherwise, it is set to 0.5
+    (reduced mode).
+
+    NOTE: Half spin values are associated with ESA steps which corresponds to the
+    index of the energy_per_charge dimension that is between 0 and 127.
+
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        The L2 dataset containing rgfo_half_spin data variable.
+    geometric_factor_lookup : dict
+        A dict with a full and reduced mode array with shape (esa_steps, position).
+
+    Returns
+    -------
+    geometric_factors : np.ndarray
+        A 3D array of geometric factors with shape (epoch, esa_steps, positions).
+    """
+    # Convert the HALF_SPIN_LUT to a reverse mapping of esa_step to half_spin
+    esa_step_to_half_spin_map = {
+        val: key for key, vals in HALF_SPIN_LUT.items() for val in vals
+    }
+
+    # Create a list of half_spin values corresponding to ESA steps (0 to 127)
+    half_spin_values = np.array(
+        [esa_step_to_half_spin_map[step] for step in range(128)]
+    )
+    # Expand dimensions to compare each rgfo_half_spin value against
+    # all half_spin_values
+    rgfo_half_spin = dataset.rgfo_half_spin.data[:, np.newaxis]  # Shape: (epoch, 1)
+    # Perform the comparison and calculate modes
+    # Modes will be true (reduced mode) anywhere half_spin >= rgfo_half_spin otherwise
+    # false (full mode)
+    modes = half_spin_values >= rgfo_half_spin
+
+    # Get the geometric factors based on the modes
+    gf = np.where(
+        modes[:, :, np.newaxis],  # Shape (epoch, esa_step, 1)
+        geometric_factor_lookup["reduced"],  # Shape (1, esa_step, 24) - reduced mode
+        geometric_factor_lookup["full"],  # Shape (1, esa_step, 24) - full mode
+    )  # Shape: (epoch, esa_step, positions)
+    return gf
+
+
+def process_lo_species_intensity(
+    dataset: xr.Dataset,
+    species_list: list,
+    geometric_factors: np.ndarray,
+    efficiency: pd.DataFrame,
+    positions: list,
+) -> xr.Dataset:
+    """
+    Process the lo-species L2 dataset to calculate species intensities.
+
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        The L2 dataset to process.
+    species_list : list
+        List of species variable names to calculate intensity.
+    geometric_factors : np.ndarray
+        The geometric factors array with shape (epoch, esa_steps).
+    efficiency : pandas.DataFrame
+        The efficiency lookup table.
+    positions : list
+        A list of position indices to select from the geometric factor and
+        efficiency lookup tables.
+
+    Returns
+    -------
+    xarray.Dataset
+        The updated L2 dataset with species intensities calculated.
+    """
+    # Select the relevant positions from the geometric factors
+    geometric_factors = geometric_factors[:, :, positions]
+    # take the mean geometric factor across positions
+    geometric_factors = np.nanmean(geometric_factors, axis=-1)
+    scaler = len(positions)
+    # Calculate the species intensities using the provided geometric factors and
+    # efficiency. Species_intensity = species_rate / (gm * eff * esa_step)
+    for species in species_list:
+        # Select the relevant positions for the species from the efficiency LUT
+        # Shape: (epoch, esa_steps, positions)
+        species_eff = get_species_efficiency(species, efficiency)[
+            np.newaxis, :, positions
+        ]
+        if species_eff.size == 0:
+            logger.warning("No efficiency data found for species {species}. Skipping.")
+            continue
+        # Take the mean efficiency across positions
+        species_eff = np.nanmean(species_eff, axis=-1)
+        denominator = (
+            scaler * geometric_factors * species_eff * dataset["energy_table"].data
+        )
+        if species not in dataset:
+            logger.warning(
+                f"Species {species} not found in dataset. Filling with NaNS."
+            )
+            dataset[species] = np.full(dataset["energy_table"].data.shape, np.nan)
+        else:
+            dataset[species] = dataset[species] / denominator[:, :, np.newaxis]
+
+    return dataset
 
 
 def process_hi_omni(
@@ -220,9 +426,10 @@ def process_codice_l2(
 
     # Use the L1 data product as a starting point for L2
     l2_dataset = l1_dataset.copy()
-
     # Get the L2 CDF attributes
     # cdf_attrs = ImapCdfAttributes()
+
+    # TODO uncomment and update variable attrs
     # l2_dataset = add_dataset_attributes(l2_dataset, dataset_name, cdf_attrs)
 
     # TODO: update list of datasets that need geometric factors (if needed)
@@ -231,7 +438,45 @@ def process_codice_l2(
         "imap_codice_l2_lo-sw-species",
         "imap_codice_l2_lo-nsw-species",
     ]:
-        geometric_factors = compute_geometric_factors(l2_dataset)
+        geometric_factor_lookup = get_geometric_factor_lut(dependencies)
+        efficiency_lookup = get_efficiency_lut(dependencies)
+        geometric_factors = compute_geometric_factors(
+            l2_dataset, geometric_factor_lookup
+        )
+
+        if dataset_name == "imap_codice_l2_lo-sw-species":
+            # Filter the efficiency lookup table for solar wind efficiencies
+            efficiencies = efficiency_lookup[efficiency_lookup["product"] == "sw"]
+            # Calculate the pickup ion sunward solar wind intensities using equation
+            # described in section 11.2.4 of algorithm document.
+            process_lo_species_intensity(
+                l2_dataset,
+                LO_SW_PICKUP_ION_SPECIES_VARIABLE_NAMES,
+                geometric_factors,
+                efficiencies,
+                PUI_POSITIONS,
+            )
+            # Calculate the sunward solar wind species intensities using equation
+            # described in section 11.2.4 of algorithm document.
+            process_lo_species_intensity(
+                l2_dataset,
+                LO_SW_SPECIES_VARIABLE_NAMES,
+                geometric_factors,
+                efficiencies,
+                SW_POSITIONS,
+            )
+        else:
+            # Filter the efficiency lookup table for non solar wind efficiencies
+            efficiencies = efficiency_lookup[efficiency_lookup["product"] == "nsw"]
+            # Calculate the non-sunward species intensities using equation
+            # described in section 11.2.4 of algorithm document.
+            process_lo_species_intensity(
+                l2_dataset,
+                LO_NSW_SPECIES_VARIABLE_NAMES,
+                geometric_factors,
+                efficiencies,
+                NSW_POSITIONS,
+            )
 
     if dataset_name in [
         "imap_codice_l2_hi-counters-singles",
@@ -291,23 +536,6 @@ def process_codice_l2(
         # in section 11.2.3 of algorithm document.
         pass
 
-    elif dataset_name == "imap_codice_l2_lo-sw-species":
-        # Calculate the sunward solar wind species intensities using equation
-        # described in section 11.2.4 of algorithm document.
-        # Calculate the pickup ion sunward solar wind intensities using equation
-        # described in section 11.2.4 of algorithm document.
-        # Hopefully this can also apply to lo-ialirt
-        # TODO: WIP - needs to be completed
-        l2_dataset = process_lo_sw_species(l2_dataset, geometric_factors)
-        pass
-
-    elif dataset_name == "imap_codice_l2_lo-nsw-species":
-        # Calculate the non-sunward solar wind species intensities using
-        # equation described in section 11.2.4 of algorithm document.
-        # Calculate the pickup ion non-sunward solar wind intensities using
-        # equation described in section 11.2.4 of algorithm document.
-        pass
-
     logger.info(f"\nFinal data product:\n{l2_dataset}\n")
 
     return l2_dataset
@@ -359,89 +587,4 @@ def add_dataset_attributes(
                     f"Field '{variable_name}' and '{cdf_attrs_key}' not found in "
                     f"attribute manager."
                 )
-    return dataset
-
-
-def compute_geometric_factors(dataset: xr.Dataset) -> np.ndarray:
-    """
-    Calculate geometric factors needed for intensity calculations.
-
-    Geometric factors are determined by comparing the half-spin values per
-    esa_step in the HALF_SPIN_LUT to the rgfo_half_spin values in the provided
-    L2 dataset.
-
-    If the half-spin value is less than the corresponding rgfo_half_spin value,
-    the geometric factor is set to 0.75 (full mode); otherwise, it is set to 0.5
-    (reduced mode).
-
-    NOTE: Half spin values are associated with ESA steps which corresponds to the
-    index of the energy_per_charge dimension that is between 0 and 127.
-
-    Parameters
-    ----------
-    dataset : xarray.Dataset
-        The L2 dataset containing rgfo_half_spin data variable.
-
-    Returns
-    -------
-    geometric_factors : np.ndarray
-        A 2D array of geometric factors with shape (epoch, esa_steps).
-    """
-    # Convert the HALF_SPIN_LUT to a reverse mapping of esa_step to half_spin
-    esa_step_to_half_spin_map = {
-        val: key for key, vals in HALF_SPIN_LUT.items() for val in vals
-    }
-
-    # Create a list of half_spin values corresponding to ESA steps (0 to 127)
-    half_spin_values = np.array(
-        [esa_step_to_half_spin_map[step] for step in range(128)]
-    )
-
-    # Expand dimensions to compare each rgfo_half_spin value against
-    # all half_spin_values
-    rgfo_half_spin = dataset.rgfo_half_spin.data[:, np.newaxis]  # Shape: (epoch, 1)
-
-    # Perform the comparison and calculate geometric factors
-    geometric_factors = np.where(half_spin_values < rgfo_half_spin, 0.75, 0.5)
-
-    return geometric_factors
-
-
-def process_lo_sw_species(
-    dataset: xr.Dataset, geometric_factors: np.ndarray
-) -> xr.Dataset:
-    """
-    Process the lo-sw-species L2 dataset to calculate species intensities.
-
-    Parameters
-    ----------
-    dataset : xarray.Dataset
-        The L2 dataset to process.
-    geometric_factors : np.ndarray
-        The geometric factors array with shape (epoch, esa_steps).
-
-    Returns
-    -------
-    xarray.Dataset
-        The updated L2 dataset with species intensities calculated.
-    """
-    # TODO: WIP - implement intensity calculations
-    # valid_solar_wind_vars = [
-    #     "hplus",
-    #     "heplusplus",
-    #     "cplus4",
-    #     "cplus5",
-    #     "cplus6",
-    #     "oplus5",
-    #     "oplus6",
-    #     "oplus7",
-    #     "oplus8",
-    #     "ne",
-    #     "mg",
-    #     "si",
-    #     "fe_loq",
-    #     "fe_hiq",
-    # ]
-    # valid_pick_up_ion_vars = ["heplus", "cnoplus"]
-
     return dataset
