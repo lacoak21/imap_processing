@@ -6,12 +6,13 @@ import astropy_healpix.healpy as hp
 import numpy as np
 import xarray as xr
 
-from imap_processing.cdf.utils import parse_filename_like
+from imap_processing.cdf.utils import load_cdf, parse_filename_like
 from imap_processing.quality_flags import ImapPSETUltraFlags
 from imap_processing.spice.repoint import get_pointing_times
 from imap_processing.spice.time import (
     et_to_met,
     met_to_ttj2000ns,
+    met_to_utc,
 )
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
     calculate_fwhm_spun_scattering,
@@ -20,7 +21,6 @@ from imap_processing.ultra.l1c.l1c_lookup_utils import (
 from imap_processing.ultra.l1c.ultra_l1c_culling import compute_culling_mask
 from imap_processing.ultra.l1c.ultra_l1c_pset_bins import (
     build_energy_bins,
-    get_efficiencies_and_geometric_function,
     get_energy_delta_minus_plus,
     get_spacecraft_background_rates,
     get_spacecraft_exposure_times,
@@ -40,6 +40,7 @@ def calculate_spacecraft_pset(
     ancillary_files: dict,
     instrument_id: int,
     species_id: list,
+    pointing: int | None = None,
 ) -> xr.Dataset:
     """
     Create dictionary with defined datatype for Pointing Set Grid Data.
@@ -62,15 +63,20 @@ def calculate_spacecraft_pset(
         Instrument ID, either 45 or 90.
     species_id : List
         Species ID.
+    pointing : int, optional
+        Pointing number, by default None.
 
     Returns
     -------
     dataset : xarray.Dataset
         Dataset containing the data.
     """
-    pset_dict: dict[str, np.ndarray] = {}
-
+    p0_pset = load_cdf(
+        "/Users/luco3133/projects/imap_processing/data/imap/ultra/l1c/2025/04/"
+        "imap_ultra_l1c_45sensor-spacecraftpset_20250416_v003.cdf"
+    )
     sensor = parse_filename_like(name)["sensor"][0:2]
+    pset_dict = {}
     indices = np.where(np.isin(de_dataset["ebin"].values, species_id))[0]
     species_dataset = de_dataset.isel(epoch=indices)
 
@@ -85,7 +91,6 @@ def calculate_spacecraft_pset(
     #     species_dataset["quality_outliers"].values,
     # )
     # species_dataset = species_dataset.isel(epoch=~rejected)
-
     v_mag_dps_spacecraft = np.linalg.norm(
         species_dataset["velocity_dps_sc"].values, axis=1
     )
@@ -104,7 +109,7 @@ def calculate_spacecraft_pset(
         boundary_scale_factors,
     ) = get_spacecraft_pointing_lookup_tables(ancillary_files, instrument_id)
 
-    logger.info("calculating spun FWHM scattering values.")
+    # logger.info("calculating spun FWHM scattering values.")
     pixels_below_scattering, scattering_theta, scattering_phi, scattering_thresholds = (
         calculate_fwhm_spun_scattering(
             for_indices_by_spin_phase,
@@ -114,6 +119,13 @@ def calculate_spacecraft_pset(
             instrument_id,
         )
     )
+    # # Save
+    # with open('pixels_below_scattering_45.pkl', 'wb') as f:
+    #     pickle.dump(pixels_below_scattering, f)
+
+    # Load
+    # with open("pixels_below_scattering_45.pkl", "rb") as f:
+    #     pixels_below_scattering = pickle.load(f)
     # Determine nside from the lookup table
     nside = hp.npix2nside(len(for_indices_by_spin_phase))
     counts, latitude, longitude, n_pix = get_spacecraft_histogram(
@@ -131,20 +143,29 @@ def calculate_spacecraft_pset(
         params_dataset,
         pixels_below_scattering,
         boundary_scale_factors,
-        n_pix=n_pix,
+        n_pix,
+        pointing,
     )
 
-    logger.info("Calculating spun efficiencies and geometric function.")
-    # calculate efficiency and geometric function as a function of energy
-    geometric_function, efficiencies = get_efficiencies_and_geometric_function(
-        pixels_below_scattering,
-        boundary_scale_factors,
-        theta_vals,
-        phi_vals,
-        n_pix,
-        ancillary_files,
-    )
-    sensitivity = efficiencies * geometric_function
+    # logger.info("Calculating spun efficiencies and geometric function.")
+    # # calculate efficiency and geometric function as a function of energy
+    # geometric_function, efficiencies = get_efficiencies_and_geometric_function(
+    #     pixels_below_scattering,
+    #     boundary_scale_factors,
+    #     theta_vals,
+    #     phi_vals,
+    #     n_pix,
+    #     ancillary_files,
+    # )
+
+    efficiencies = p0_pset["efficiency"].values
+    geometric_function = p0_pset["geometric_function"].values
+    scattering_theta = p0_pset["scatter_theta"].values
+    scattering_phi = p0_pset["scatter_phi"].values
+    scattering_thresholds = p0_pset["scatter_threshold"].values
+    sensitivity = p0_pset["sensitivity"].values
+
+    # sensitivity = efficiencies * geometric_function
 
     logger.info("Calculating background rates.")
     # Calculate background rates
@@ -175,8 +196,9 @@ def calculate_spacecraft_pset(
     )
     # Get pointing start and stop times and convert to ttj2000ns
     pointing_start, pointing_stop = get_pointing_times(
-        float(et_to_met(species_dataset["event_times"].data[0]))
+        float(et_to_met(species_dataset["event_times"].data[0])) + 10000
     )
+    print(met_to_utc(pointing_start))
     pointing_start = met_to_ttj2000ns(pointing_start)
     # Epoch should be the start of the pointing
     pset_dict["epoch"] = np.atleast_1d(pointing_start).astype(np.int64)
@@ -192,16 +214,16 @@ def calculate_spacecraft_pset(
     ]
     pset_dict["quality_flags"] = spacecraft_pset_quality_flags[np.newaxis, ...]
 
-    pset_dict["sensitivity"] = sensitivity[np.newaxis, ...]
-    pset_dict["efficiency"] = efficiencies[np.newaxis, ...]
+    pset_dict["sensitivity"] = sensitivity  # [np.newaxis, ...]
+    pset_dict["efficiency"] = efficiencies  # [np.newaxis, ...]
     pset_dict["geometric_function"] = geometric_function
     pset_dict["dead_time_ratio"] = deadtime_ratios
     pset_dict["spin_phase_step"] = np.arange(len(deadtime_ratios))
 
     # Convert FWHM to gaussian uncertainty by dividing by 2.355
     # See algorithm documentation (section 3.5.7, third bullet point) for more details
-    pset_dict["scatter_theta"] = scattering_theta / 2.355
-    pset_dict["scatter_phi"] = scattering_phi / 2.355
+    pset_dict["scatter_theta"] = scattering_theta  # / 2.355
+    pset_dict["scatter_phi"] = scattering_phi  # / 2.355
 
     pset_dict["scatter_threshold"] = scattering_thresholds
 

@@ -164,8 +164,8 @@ def calculate_fwhm_spun_scattering(
         pixels_below_scattering_for_energy = []
 
         for energy_idx in range(len(energy_bin_geometric_means)):
-            # valid_pixels = scattering_mask[:, energy_idx]
             print(energy_idx)
+            # valid_pixels = scattering_mask[:, energy_idx]
             pixels_below_scattering_for_energy.append(
                 for_pixel_indices
             )  # [valid_pixels])

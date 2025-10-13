@@ -1129,7 +1129,14 @@ def get_efficiency_interpolator(ancillary_files: dict) -> RegularGridInterpolato
     energy_column_names = lookup_table.columns[2:].tolist()
     energy_vals = [float(col.replace("keV", "")) for col in energy_column_names]
     efficiency_2d = lookup_table[energy_column_names].values
-
+    # In get_efficiency_interpolator, add logging:
+    logger.info(
+        f"Efficiency table theta range: {theta_vals.min():.2f} to "
+        f"{theta_vals.max():.2f} deg"
+    )
+    logger.info(
+        f"Efficiency table phi range: {phi_vals.min():.2f} to {phi_vals.max():.2f} deg"
+    )
     efficiency_grid = efficiency_2d.reshape(
         (len(theta_vals), len(phi_vals), len(energy_vals))
     )

@@ -139,9 +139,11 @@ def match_coords_to_indices(
     # which must be converted to ephemeris time (ET) for SPICE.
     if event_et is None:
         if isinstance(input_object, PointingSet):
-            event_et = ttj2000ns_to_et(799429669184000000)
+            event_et = ttj2000ns_to_et(input_object.epoch)
+            # event_et = 7.9807366919e+08
         elif isinstance(output_object, PointingSet):
-            event_et = ttj2000ns_to_et(799429669184000000)
+            event_et = ttj2000ns_to_et(output_object.epoch)
+            # event_et = 7.9807366919e+08
         else:
             raise ValueError(
                 "Event time must be specified if both objects are SkyMaps."

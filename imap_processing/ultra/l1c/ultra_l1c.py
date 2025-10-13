@@ -28,9 +28,10 @@ def ultra_l1c(
         List of xarray.Dataset.
     """
     output_datasets = []
-
+    print("HELLOOOO")
     # Account for possibility of having 45 and 90 in dictionary.
     for instrument_id in [45, 90]:
+        print(data_dict.keys(), "DARADICT")
         if (
             f"imap_ultra_l1b_{instrument_id}sensor-goodtimes" in data_dict
             and f"imap_ultra_l1b_{instrument_id}sensor-de" in data_dict
@@ -55,6 +56,19 @@ def ultra_l1c(
             and f"imap_ultra_l1a_{instrument_id}sensor-rates" in data_dict
             and f"imap_ultra_l1a_{instrument_id}sensor-params" in data_dict
         ):
+            # Find the de key with repoint number
+            de_key = next(
+                key
+                for key in data_dict
+                if key.startswith(f"imap_ultra_l1b_{instrument_id}sensor-de")
+            )
+            # Extract pointing/repoint number from the key
+            try:
+                repoint = data_dict[de_key].attrs.get("Repointing", "")
+                pointing = int(repoint.replace("repoint", ""))
+                print(pointing)
+            except KeyError:
+                pointing = None
             spacecraft_pset = calculate_spacecraft_pset(
                 data_dict[f"imap_ultra_l1b_{instrument_id}sensor-de"],
                 data_dict[f"imap_ultra_l1b_{instrument_id}sensor-goodtimes"],
@@ -64,7 +78,9 @@ def ultra_l1c(
                 ancillary_files,
                 instrument_id,
                 UltraConstants.TOFXPH_SPECIES_GROUPS["proton"],
+                pointing,
             )
+
             output_datasets = [spacecraft_pset]
             spacecraft_pset_non_proton = calculate_spacecraft_pset(
                 data_dict[f"imap_ultra_l1b_{instrument_id}sensor-de"],

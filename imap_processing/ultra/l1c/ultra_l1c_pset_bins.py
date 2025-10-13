@@ -133,7 +133,7 @@ def get_spacecraft_histogram(
         spherical_coords[..., 1],
         spherical_coords[..., 2],
     )
-
+    print(spherical_coords)
     # Compute number of HEALPix pixels that cover the sphere
     n_pix = hp.nside2npix(nside)
 
@@ -411,6 +411,7 @@ def get_spacecraft_exposure_times(
     pixels_below_scattering: list[list],
     boundary_scale_factors: NDArray,
     n_pix: int,
+    pointing: int | None = None,
 ) -> tuple[NDArray, NDArray]:
     """
     Compute exposure times for HEALPix pixels.
@@ -430,6 +431,8 @@ def get_spacecraft_exposure_times(
         Boundary scale factors for each pixel at each spin phase.
     n_pix : int
         Number of HEALPix pixels.
+    pointing : int, optional
+        Pointing/repoint number for the current dataset. Default is None.
 
     Returns
     -------
@@ -456,13 +459,16 @@ def get_spacecraft_exposure_times(
     #     spin_data["spin_period_valid"].values == 1
     # )
     # total_spin = np.sum(spin_data[valid_mask].spin_period_sec / nominal_spin_seconds)
-    spin_data = pd.read_csv(
-        "/Users/luco3133/projects/imap_processing/data/imap/spice/spin/"
-        "imap_2026_268_2026_269_11.spin.csv"
-    )
-    total_spin: np.ndarray = np.sum(
-        spin_data["Spin Duration (sec)"] / nominal_spin_seconds
-    )
+    print("pointings:", pointing)
+    try:
+        spin_data = pd.read_csv(
+            f"/Users/luco3133/projects/ultra_stuff/validation_stuff/final_20251009/ultra-45-input/SpinTable-p{pointing}.csv"
+        )
+        total_spin: np.ndarray = np.sum(
+            spin_data["Spin Duration (sec)"] / nominal_spin_seconds
+        )
+    except ValueError:
+        total_spin = np.array([5220])
     print(total_spin, "total spins")
     exposure_pointing_adjusted = total_spin * exposure_time
 
@@ -523,7 +529,9 @@ def get_efficiencies_and_geometric_function(
     gf_summation = np.zeros((energy_bins, npix))
     eff_summation = np.zeros((energy_bins, npix))
     sample_count = np.zeros((energy_bins, npix))
-
+    # clip arrays to avoid out of bounds errors
+    theta_vals = np.clip(theta_vals, -52.70, 52.70)
+    phi_vals = np.clip(phi_vals, -60.0, 60.0)
     for i, pixels_at_spin in enumerate(pixels_below_scattering):
         # Loop through energy bins
         # Compute gf and eff for these theta/phi pairs
@@ -553,6 +561,18 @@ def get_efficiencies_and_geometric_function(
                 ancillary_files,
                 interpolator=eff_interpolator,
             )
+            # Right after get_efficiency call:
+            if (
+                energy_bin_idx == 0 and i % 100 == 0
+            ):  # Sample every 100th spin for bin 0
+                logger.info(
+                    f"Spin {i}, Energy bin 0 efficiency stats:\n"
+                    f"  Min: {eff_values.min():.6f}\n"
+                    f"  Max: {eff_values.max():.6f}\n"
+                    f"  Mean: {eff_values.mean():.6f}\n"
+                    f"  Num zeros: {np.sum(eff_values == 0)}\n"
+                    f"  Num fill values: {np.sum(eff_values == FILLVAL_FLOAT32)}"
+                )
             bsfs = boundary_scale_factors[pixel_inds, i]
             if np.any(np.isnan(bsfs)):
                 logger.warning(
@@ -730,8 +750,8 @@ def get_spacecraft_background_rates(
     """
     # pulses = get_pulses_per_spin(rates_dataset)
     # Pulses for the pointing.
-    etof_min = get_image_params("eTOFMin", sensor, ancillary_files)
-    etof_max = get_image_params("eTOFMax", sensor, ancillary_files)
+    etof_min = get_image_params("eTOFMin", f"ultra{sensor}", ancillary_files)
+    etof_max = get_image_params("eTOFMax", f"ultra{sensor}", ancillary_files)
     # spin_number, _ = get_spin_and_duration(
     #     rates_dataset["shcoarse"], rates_dataset["spin"]
     # )

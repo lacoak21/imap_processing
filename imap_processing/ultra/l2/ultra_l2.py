@@ -320,7 +320,7 @@ def generate_ultra_healpix_skymap(  # noqa: PLR0912
         # Add solid_angle * exposure of pointing set as data_var
         # so this quantity is projected to map pixels for use in weighted averaging
         pointing_set.data["pointing_set_exposure_times_solid_angle"] = (
-            pointing_set.data["exposure_factor"] * pointing_set.solid_angle
+            pointing_set.data["exposure_factor"]  # * pointing_set.solid_angle
         )
 
         # Get variables that should be weighted by exposure and solid angle
@@ -365,11 +365,9 @@ def generate_ultra_healpix_skymap(  # noqa: PLR0912
     skymap.data_1d[existing_vars_to_weight] /= skymap.data_1d[
         "pointing_set_exposure_times_solid_angle"
     ]
-
     # Background rates and sensitivity must be scaled by the ratio of the solid angles
     # of the map pixel / pointing set pixel
     skymap.data_1d["background_rates"] *= skymap.solid_angle / pointing_set.solid_angle
-    skymap.data_1d["sensitivity"] *= skymap.solid_angle / pointing_set.solid_angle
     # Get the energy bin widths from a PointingSet (they will all be the same)
     delta_energy = pointing_set.data["energy_bin_delta"]
     if CoordNames.TIME.value in delta_energy.dims:
@@ -388,16 +386,25 @@ def generate_ultra_healpix_skymap(  # noqa: PLR0912
         )  # - skymap.data_1d["background_rates"]
 
         # Calculate ena_intensity = corrected_counts / (
-
         # Calculate intensity only for valid pixels
         skymap.data_1d["ena_intensity"] = skymap.data_1d["corrected_count_rate"] / (
-            skymap.data_1d["sensitivity"] * pointing_set.solid_angle * delta_energy
+            skymap.data_1d["sensitivity"] * skymap.solid_angle * delta_energy
         )
         print("L1C pointing set solid angle:", pointing_set.solid_angle)
         print("L2 skymap solid angle:", skymap.solid_angle)
         print("Ratio:", skymap.solid_angle / pointing_set.solid_angle)
         print("Delta energy:", delta_energy.values)
-
+        print("counts mean:", skymap.data_1d["counts"].mean().values)
+        print("exposure_factor mean:", skymap.data_1d["exposure_factor"].mean().values)
+        print(
+            "corrected_count_rate mean:",
+            skymap.data_1d["corrected_count_rate"].mean().values,
+        )
+        print("sensitivity mean:", skymap.data_1d["sensitivity"].mean().values)
+        print("delta_energy:", delta_energy.values)
+        print("solid angle:", skymap.solid_angle)
+        print("intensity mean:", skymap.data_1d["ena_intensity"].mean().values)
+        print(skymap.data_1d["counts"].mean(dim=["pixel"]))
         skymap.data_1d["ena_intensity_stat_unc"] = (
             skymap.data_1d["counts"].astype(float) ** 0.5
         ) / (

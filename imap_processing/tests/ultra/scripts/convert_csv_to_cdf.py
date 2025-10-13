@@ -13,8 +13,10 @@ cdf_manager = ImapCdfAttributes()
 cdf_manager.add_instrument_global_attrs("ultra")
 cdf_manager.add_instrument_variable_attrs("ultra", "l1b")
 
-folder_path = "/Users/luco3133/projects/codice_stuff/U45-U90_6Pointings_logo_example"
-spin_table_name = "SpinTable-flux-2-basic-noeff.csv"
+folder_path = (
+    "/Users/luco3133/projects/ultra_stuff/validation_stuff/final_20251009/"
+    "ultra-45-input"
+)
 
 kernles = [
     "/Users/luco3133/projects/imap_processing/imap_processing/tests/spice/test_data/imap_sclk_0000.tsc",
@@ -22,23 +24,19 @@ kernles = [
 ]
 
 files = os.listdir(folder_path)
-pointings = [f.split("-")[-1].replace(".csv", "").replace("p", "") for f in files]
+pointings = [f.split("-")[-1].replace(".csv", "") for f in files]
 
 with sp.KernelPool(kernles) as pool:
     for pointing in pointings:
-        for id in [90, 45]:
-            ae_flux = pd.read_csv(
-                f"{folder_path}/AE-IMAP_ULTRA_{id}-flux-2-basic-noeff-p0.csv"
+        for id in [45]:  # , 45]:
+            print(
+                f"Creating direct event dataset for {pointing} pointing and {id} sensor"
             )
-            print(pointing)
-            # print(ae_flux)
+            ae_flux = pd.read_csv(f"{folder_path}/AE-IMAP_ULTRA_{id}-{pointing}.csv")
             rates_flux = pd.read_csv(
-                f"{folder_path}/Rates-IMAP_ULTRA_{id}-flux-2-basic-noeff-p0.csv"
+                f"{folder_path}/Rates-IMAP_ULTRA_{id}-{pointing}.csv"
             )
-            # spin_table = pd.read_csv(f"{folder_path}/SpinTable_flux-2.csv")
-            print(f"min energy {id}:", np.min(np.array(ae_flux["energy_sc"].values)))
-            print(f"max energy {id}:", np.max(np.array(ae_flux["energy_sc"].values)))
-            # print(spin_table)
+
             energy_max = 1000
             # Create the xarray Dataset with mapped variables
             ebin = np.where(
@@ -46,7 +44,6 @@ with sp.KernelPool(kernles) as pool:
                 255,
                 1,
             )
-            print(ebin)
             l1b_ds = xr.Dataset(
                 {
                     # Time-related variables
@@ -166,8 +163,13 @@ with sp.KernelPool(kernles) as pool:
                     f"imap_ultra_l1a_{id}sensor-rates"
                 ),
             )
+            print("Datasets created")
             l1b_ds.attrs["Data_version"] = "100"
             rates_ds.attrs["Data_version"] = "100"
+            l1b_ds.attrs["Repointing"] = f"repoint{int(pointing.replace('p', '')):05d}"
+            rates_ds.attrs["Repointing"] = (
+                f"repoint{int(pointing.replace('p', '')):05d}"
+            )
             write_cdf(l1b_ds)
             write_cdf(rates_ds)
 
