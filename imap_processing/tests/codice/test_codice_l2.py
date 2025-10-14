@@ -18,10 +18,13 @@ from imap_processing.codice.codice_l2 import (
     get_efficiency_lut,
     get_geometric_factor_lut,
     process_codice_l2,
+    process_lo_angular_intensity,
     process_lo_species_intensity,
 )
 from imap_processing.codice.constants import (
+    LO_SW_ANGULAR_VARIABLE_NAMES,
     LO_SW_SOLAR_WIND_SPECIES_VARIABLE_NAMES,
+    SW_POSITIONS,
 )
 
 pytestmark = pytest.mark.external_test_data
@@ -271,6 +274,70 @@ def test_process_lo_missing_species_intensity():
         )
 
 
+def test_process_lo_angular_intensity():
+    l1b_val_data = (
+        imap_module_directory
+        / "tests"
+        / "codice"
+        / "data"
+        / "l1b_validation"
+        / "imap_codice_l1b_lo-sw-angular_20250814211100_v0.0.3.cdf"
+    )
+    l1b_val_data = load_cdf(l1b_val_data)
+    l1b_val_data_processed = l1b_val_data.copy()
+    gf = np.ones((len(l1b_val_data.epoch), 128, 24)) * 2
+    with mock.patch(
+        "imap_processing.codice.codice_l2.get_species_efficiency",
+        return_value=np.ones((128, 24)) * 2,
+    ):
+        l1b_val_data_processed = process_lo_angular_intensity(
+            l1b_val_data_processed,
+            LO_SW_ANGULAR_VARIABLE_NAMES,
+            gf,
+            None,
+            SW_POSITIONS,
+        )
+
+    for var in LO_SW_ANGULAR_VARIABLE_NAMES:
+        assert var in l1b_val_data_processed, f"Missing variable {var} after processing"
+        # Check that values are non-negative
+        assert np.all(l1b_val_data_processed[var].values >= 0), (
+            f"Variable {var} contains negative values"
+        )
+        # Check shape
+        expected_shape = (
+            len(l1b_val_data.epoch),
+            len(l1b_val_data.energy_table),
+            3,  # 3 elevation angles map to 5 positions
+            len(l1b_val_data.spin_sector_index),
+        )
+        np.testing.assert_allclose(
+            expected_shape, l1b_val_data_processed[var].shape, rtol=1e-5
+        )
+        # Check that values match expected calculation
+        expected_intensity = (
+            l1b_val_data[var]
+            / (4 * l1b_val_data["energy_table"].data)[
+                np.newaxis, :, np.newaxis, np.newaxis
+            ]
+        )
+        # convert pos to el
+        expected_intensity = (
+            expected_intensity.assign_coords(group=("azimuth_index", [0, 1, 2, 2, 1]))
+            .groupby("group")
+            .mean()
+        )
+
+        np.testing.assert_allclose(
+            l1b_val_data_processed[var].values, expected_intensity.values, rtol=1e-5
+        )
+    # Check coords
+    np.testing.assert_allclose(l1b_val_data_processed["elevation_angle"], [0, 15, 30])
+    np.testing.assert_allclose(
+        l1b_val_data_processed["spin_angle"], np.arange(24) * 15 + 7.5
+    )
+
+
 def test_codice_l2_sw_species_intensity(processing_dependencies, mock_get_file_paths):
     sci_input = ScienceInput("imap_codice_l1b_lo-sw-species_20250814_v006.cdf")
     processing_dependencies.add(sci_input)
@@ -283,5 +350,34 @@ def test_codice_l2_nsw_species_intensity(processing_dependencies, mock_get_file_
     sci_input = ScienceInput("imap_codice_l1b_lo-nsw-species_20250814_v006.cdf")
     processing_dependencies.add(sci_input)
     ds = process_codice_l2("lo-nsw-species", processing_dependencies)
+    ds.attrs["Data_version"] = "001"
+    write_cdf(ds)
+
+
+def test_codice_l2_nsw_angular_intensity(processing_dependencies, mock_get_file_paths):
+    l1b_val_data = (
+        imap_module_directory
+        / "tests"
+        / "codice"
+        / "data"
+        / "l1b_validation"
+        / "imap_codice_l1b_lo-nsw-angular_20241110193900_v0.0.2.cdf"
+    )
+    ds = process_codice_l2(l1b_val_data, processing_dependencies)
+
+    ds.attrs["Data_version"] = "001"
+    write_cdf(ds)
+
+
+def test_codice_l2_sw_angular_intensity(processing_dependencies, mock_get_file_paths):
+    l1b_val_data = (
+        imap_module_directory
+        / "tests"
+        / "codice"
+        / "data"
+        / "l1b_validation"
+        / "imap_codice_l1b_lo-sw-angular_20241110193900_v0.0.2.cdf"
+    )
+    ds = process_codice_l2(l1b_val_data, processing_dependencies)
     ds.attrs["Data_version"] = "001"
     write_cdf(ds)
