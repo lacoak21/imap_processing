@@ -1,0 +1,635 @@
+# ----------------------------- Useful variables -----------------------------
+uint8_fillval: &uint8_fillval 255
+uint32_fillval: &uint32_fillval 4294967295
+real_fillval: &real_fillval -1.0e+31
+
+min_int: &min_int -9223372036854775808
+max_int: &max_int 9223372036854775807
+
+# --------------------------- Default attributes -----------------------------
+energy_attrs: &energy_default
+  VAR_TYPE: support_data
+  CATDESC: Geometric mean energy per nucleon
+  FIELDNAM: Energy Table
+  LABLAXIS: Energy
+  SCALETYP: log
+  UNITS: MeV/nuc
+  FORMAT: '%f'
+  FILLVAL: *real_fillval
+  VALIDMAX: 200.0
+  VALIDMIN: 0.05000000074505806
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Characteristic
+
+# ------------------------------- Coordinates -------------------------------
+epoch_delta_minus:
+  CATDESC: Time from acquisition start to acquisition center
+  FIELDNAM: epoch delta minus
+  FILLVAL: -9223372036854775808
+  FORMAT: I18
+  LABLAXIS: Epoch Delta Minus
+  SCALETYP: linear
+  UNITS: ns
+  VALIDMIN: *min_int
+  VALIDMAX: *max_int
+  VAR_TYPE: support_data
+  DICT_KEY: SPASE>Support>SupportQuantity:Temporal,Qualifier:Uncertainty
+
+epoch_delta_plus:
+  CATDESC: Time from acquisition center to acquisition end
+  FIELDNAM: epoch delta plus
+  FILLVAL: -9223372036854775808
+  FORMAT: I18
+  LABLAXIS: Epoch Delta Plus
+  SCALETYP: linear
+  UNITS: ns
+  VALIDMIN: *min_int
+  VALIDMAX: *max_int
+  VAR_TYPE: support_data
+  DICT_KEY: SPASE>Support>SupportQuantity:Temporal,Qualifier:Uncertainty
+
+energy_cno:
+  <<: *energy_default
+  DELTA_MINUS_VAR: energy_cno_minus
+  DELTA_PLUS_VAR: energy_cno_plus
+
+energy_fe:
+  <<: *energy_default
+  DELTA_MINUS_VAR: energy_fe_minus
+  DELTA_PLUS_VAR: energy_fe_plus
+
+energy_h:
+  <<: *energy_default
+  DELTA_MINUS_VAR: energy_h_minus
+  DELTA_PLUS_VAR: energy_h_plus
+
+energy_he3he4:
+  <<: *energy_default
+  DELTA_MINUS_VAR: energy_he3he4_minus
+  DELTA_PLUS_VAR: energy_he3he4_plus
+
+energy_c:
+  <<: *energy_default
+  DELTA_MINUS_VAR: energy_c_minus
+  DELTA_PLUS_VAR: energy_c_plus
+
+energy_he3:
+  <<: *energy_default
+  DELTA_MINUS_VAR: energy_he3_minus
+  DELTA_PLUS_VAR: energy_he3_plus
+
+energy_he4:
+  <<: *energy_default
+  DELTA_MINUS_VAR: energy_he4_minus
+  DELTA_PLUS_VAR: energy_he4_plus
+
+energy_junk:
+  <<: *energy_default
+  DELTA_MINUS_VAR: energy_junk_minus
+  DELTA_PLUS_VAR: energy_junk_plus
+
+energy_ne_mg_si:
+  <<: *energy_default
+  DELTA_MINUS_VAR: energy_ne_mg_si_minus
+  DELTA_PLUS_VAR: energy_ne_mg_si_plus
+
+energy_o:
+  <<: *energy_default
+  DELTA_MINUS_VAR: energy_o_minus
+  DELTA_PLUS_VAR: energy_o_plus
+
+energy_uh:
+  <<: *energy_default
+  DELTA_MINUS_VAR: energy_uh_minus
+  DELTA_PLUS_VAR: energy_uh_plus
+
+# ------------------------------- Label vars --------------------------------
+epoch_delta_minus_label:
+  CATDESC: Time from acquisition start to acquisition center
+  FIELDNAM: Epoch delta minus
+  FORMAT: A18
+  VAR_TYPE: metadata
+
+epoch_delta_plus_label:
+  CATDESC: Time from acquisition center to acquisition end
+  FIELDNAM: Epoch delta plus
+  FORMAT: A18
+  VAR_TYPE: metadata
+
+# ------------------------------- Labels ------------------------------------
+energy_cno_label:
+  CATDESC: Energy CNO
+  FIELDNAM: Energy CNO
+  FORMAT: A6
+  VAR_TYPE: metadata
+
+energy_fe_label:
+  CATDESC: Energy Fe
+  FIELDNAM: Energy Fe
+  FORMAT: A6
+  VAR_TYPE: metadata
+
+energy_h_label:
+  CATDESC: Energy H
+  FIELDNAM: Energy H
+  FORMAT: A6
+  VAR_TYPE: metadata
+
+energy_he3he4_label:
+  CATDESC: Energy He3He4
+  FIELDNAM: Energy He3He4
+  FORMAT: A6
+  VAR_TYPE: metadata
+
+energy_c_label:
+  CATDESC: Energy C
+  FIELDNAM: Energy C
+  FORMAT: A6
+  VAR_TYPE: metadata
+
+energy_he3_label:
+  CATDESC: Energy He3
+  FIELDNAM: Energy He3
+  FORMAT: A6
+  VAR_TYPE: metadata
+
+energy_he4_label:
+  CATDESC: Energy He4
+  FIELDNAM: Energy He4
+  FORMAT: A6
+  VAR_TYPE: metadata
+
+energy_junk_label:
+  CATDESC: Energy Junk
+  FIELDNAM: Energy Junk
+  FORMAT: A6
+  VAR_TYPE: metadata
+
+energy_ne_mg_si_label:
+  CATDESC: Energy NeMgSi
+  FIELDNAM: Energy NeMgSi
+  FORMAT: A6
+  VAR_TYPE: metadata
+
+energy_o_label:
+  CATDESC: Energy O
+  FIELDNAM: Energy O
+  FORMAT: A6
+  VAR_TYPE: metadata
+
+energy_uh_label:
+  CATDESC: Energy UH
+  FIELDNAM: Energy UH
+  FORMAT: A6
+  VAR_TYPE: metadata
+
+# --------------------------- Dataset variable attrs ------------------------
+# The following are set in multiple data products
+data_quality:
+  VAR_TYPE: data
+  DEPEND_0: epoch
+  CATDESC: Indicates whether data quality is suspect (1).
+  DISPLAY_TYPE: time_series
+  FIELDNAM: Data Quality
+  FILLVAL: *uint8_fillval
+  FORMAT: '%d'
+  LABLAXIS: Data Quality
+  SCALETYP: linear
+  UNITS: ' '
+  VALIDMAX: 1
+  VALIDMIN: 0
+  VAR_TYPE: support_data
+  DICT_KEY: SPASE>Support>SupportQuantity:DataQuality
+
+# ----- hi-omni Attributes -----
+# Species plus and minus attrs:
+energy_c_minus:
+  <<: *energy_default
+  CATDESC: Energy Table Minus value
+  FIELDNAM: energy delta minus
+  DEPEND_1: energy_c
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_c_plus:
+  <<: *energy_default
+  CATDESC: Energy Table Plus value
+  FIELDNAM: energy delta plus
+  DEPEND_1: energy_c
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_fe_minus:
+  <<: *energy_default
+  CATDESC: Energy Table Minus value
+  FIELDNAM: energy delta minus
+  DEPEND_1: energy_fe
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_fe_plus:
+  <<: *energy_default
+  CATDESC: Energy Table Plus value
+  FIELDNAM: energy delta plus
+  DEPEND_1: energy_fe
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_h_minus:
+  <<: *energy_default
+  CATDESC: Energy Table Minus value
+  FIELDNAM: energy delta minus
+  DEPEND_1: energy_h
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_h_plus:
+  <<: *energy_default
+  CATDESC: Energy Table Plus value
+  FIELDNAM: energy delta plus
+  DEPEND_1: energy_h
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_he3_minus:
+  <<: *energy_default
+  CATDESC: Energy Table Minus value
+  FIELDNAM: energy delta minus
+  DEPEND_1: energy_he3
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_he3_plus:
+  <<: *energy_default
+  CATDESC: Energy Table Plus value
+  FIELDNAM: energy delta plus
+  DEPEND_1: energy_he3
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_he4_minus:
+  <<: *energy_default
+  CATDESC: Energy Table Minus value
+  FIELDNAM: energy delta minus
+  DEPEND_1: energy_he4
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_he4_plus:
+  <<: *energy_default
+  CATDESC: Energy Table Plus value
+  FIELDNAM: energy delta plus
+  DEPEND_1: energy_he4
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_junk_minus:
+  <<: *energy_default
+  CATDESC: Energy Table Minus value
+  FIELDNAM: energy delta minus
+  DEPEND_1: energy_junk
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_junk_plus:
+  <<: *energy_default
+  CATDESC: Energy Table Plus value
+  FIELDNAM: energy delta plus
+  DEPEND_1: energy_junk
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_ne_mg_si_minus:
+  <<: *energy_default
+  CATDESC: Energy Table Minus value
+  FIELDNAM: energy delta minus
+  DEPEND_1: energy_ne_mg_si
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_ne_mg_si_plus:
+  <<: *energy_default
+  CATDESC: Energy Table Plus value
+  FIELDNAM: energy delta plus
+  DEPEND_1: energy_ne_mg_si
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_o_minus:
+  <<: *energy_default
+  CATDESC: Energy Table Minus value
+  FIELDNAM: energy delta minus
+  DEPEND_1: energy_o
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_o_plus:
+  <<: *energy_default
+  CATDESC: Energy Table Plus value
+  FIELDNAM: energy delta plus
+  DEPEND_1: energy_o
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_uh_minus:
+  <<: *energy_default
+  CATDESC: Energy Table Minus value
+  FIELDNAM: energy delta minus
+  DEPEND_1: energy_uh
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+energy_uh_plus:
+  <<: *energy_default
+  CATDESC: Energy Table Plus value
+  FIELDNAM: energy delta plus
+  DEPEND_1: energy_uh
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
+
+# Uncertainty attrs:
+unc_c:
+  FIELDNAM: Uncertainties for c
+  VALIDMIN: 0.0
+  VALIDMAX: 4096.0
+  UNITS: '# / cm2 s sr MeV/nuc'
+  FORMAT: '%f'
+  CATDESC: Uncertainties for c (Root 2 spacing)
+  VAR_TYPE: support_data
+  SI_CONVERSION: ' > '
+  SCALETYP: linear
+  FILLVAL: 1.0e+31
+  DISPLAY_TYPE: time_series
+  DEPEND_0: epoch
+  COORDINATE_SYSTEM: instrument frame
+  DEPEND_1: energy_c
+  LABL_PTR_1: energy_c_label
+
+unc_fe:
+  FIELDNAM: Uncertainties for fe
+  VALIDMIN: 0.0
+  VALIDMAX: 4096.0
+  UNITS: '# / cm2 s sr MeV/nuc'
+  FORMAT: '%f'
+  CATDESC: Uncertainties for fe (Root 2 spacing)
+  VAR_TYPE: support_data
+  SI_CONVERSION: ' > '
+  SCALETYP: linear
+  FILLVAL: 1.0e+31
+  DISPLAY_TYPE: time_series
+  DEPEND_0: epoch
+  COORDINATE_SYSTEM: instrument frame
+  DEPEND_1: energy_fe
+  LABL_PTR_1: energy_fe_label
+
+unc_h:
+  FIELDNAM: Uncertainties for h
+  VALIDMIN: 0.0
+  VALIDMAX: 4096.0
+  UNITS: '# / cm2 s sr MeV/nuc'
+  FORMAT: '%f'
+  CATDESC: Uncertainties for h (Root 2 spacing)
+  VAR_TYPE: support_data
+  SI_CONVERSION: ' > '
+  SCALETYP: linear
+  FILLVAL: 1.0e+31
+  DISPLAY_TYPE: time_series
+  DEPEND_0: epoch
+  COORDINATE_SYSTEM: instrument frame
+  DEPEND_1: energy_h
+  LABL_PTR_1: energy_h_label
+
+unc_he3:
+  FIELDNAM: Uncertainties for he3
+  VALIDMIN: 0.0
+  VALIDMAX: 4096.0
+  UNITS: '# / cm2 s sr MeV/nuc'
+  FORMAT: '%f'
+  CATDESC: Uncertainties for he3 (Root 2 spacing)
+  VAR_TYPE: support_data
+  SI_CONVERSION: ' > '
+  SCALETYP: linear
+  FILLVAL: 1.0e+31
+  DISPLAY_TYPE: time_series
+  DEPEND_0: epoch
+  COORDINATE_SYSTEM: instrument frame
+  DEPEND_1: energy_he3
+  LABL_PTR_1: energy_he3_label
+
+unc_he4:
+  FIELDNAM: Uncertainties for he4
+  VALIDMIN: 0.0
+  VALIDMAX: 4096.0
+  UNITS: '# / cm2 s sr MeV/nuc'
+  FORMAT: '%f'
+  CATDESC: Uncertainties for he4 (Root 2 spacing)
+  VAR_TYPE: support_data
+  SI_CONVERSION: ' > '
+  SCALETYP: linear
+  FILLVAL: 1.0e+31
+  DISPLAY_TYPE: time_series
+  DEPEND_0: epoch
+  COORDINATE_SYSTEM: instrument frame
+  DEPEND_1: energy_he4
+  LABL_PTR_1: energy_he4_label
+
+unc_junk:
+  FIELDNAM: Uncertainties for junk
+  VALIDMIN: 0.0
+  VALIDMAX: 4096.0
+  UNITS: '# / cm2 s sr MeV/nuc'
+  FORMAT: '%f'
+  CATDESC: Uncertainties for junk (Root 2 spacing)
+  VAR_TYPE: support_data
+  SI_CONVERSION: ' > '
+  SCALETYP: linear
+  FILLVAL: 1.0e+31
+  DISPLAY_TYPE: time_series
+  DEPEND_0: epoch
+  COORDINATE_SYSTEM: instrument frame
+  DEPEND_1: energy_junk
+  LABL_PTR_1: energy_junk_label
+
+unc_ne_mg_si:
+  FIELDNAM: Uncertainties for ne-mg-si
+  VALIDMIN: 0.0
+  VALIDMAX: 4096.0
+  UNITS: '# / cm2 s sr MeV/nuc'
+  FORMAT: '%f'
+  CATDESC: Uncertainties for ne-mg-si (Root 2 spacing)
+  VAR_TYPE: support_data
+  SI_CONVERSION: ' > '
+  SCALETYP: linear
+  FILLVAL: 1.0e+31
+  DISPLAY_TYPE: time_series
+  DEPEND_0: epoch
+  COORDINATE_SYSTEM: instrument frame
+  DEPEND_1: energy_ne_mg_si
+  LABL_PTR_1: energy_ne_mg_si_label
+
+unc_o:
+  FIELDNAM: Uncertainties for o
+  VALIDMIN: 0.0
+  VALIDMAX: 4096.0
+  UNITS: '# / cm2 s sr MeV/nuc'
+  FORMAT: '%f'
+  CATDESC: Uncertainties for o (Root 2 spacing)
+  VAR_TYPE: support_data
+  SI_CONVERSION: ' > '
+  SCALETYP: linear
+  FILLVAL: 1.0e+31
+  DISPLAY_TYPE: time_series
+  DEPEND_0: epoch
+  COORDINATE_SYSTEM: instrument frame
+  DEPEND_1: energy_o
+  LABL_PTR_1: energy_o_label
+
+unc_uh:
+  FIELDNAM: Uncertainties for uh
+  VALIDMIN: 0.0
+  VALIDMAX: 4096.0
+  UNITS: '# / cm2 s sr MeV/nuc'
+  FORMAT: '%f'
+  CATDESC: Uncertainties for uh (Root 2 spacing)
+  VAR_TYPE: support_data
+  SI_CONVERSION: ' > '
+  SCALETYP: linear
+  FILLVAL: 1.0e+31
+  DISPLAY_TYPE: time_series
+  DEPEND_0: epoch
+  COORDINATE_SYSTEM: instrument frame
+  DEPEND_1: energy_uh
+  LABL_PTR_1: energy_uh_label
+c:
+  VAR_TYPE: data
+  DEPEND_0: epoch
+  DISPLAY_TYPE: spectrogram
+  FIELDNAM: c
+  FILLVAL: *real_fillval
+  FORMAT: '%f'
+  LABLAXIS: Diff. Intensity
+  SCALETYP: linear
+  UNITS: '# / cm2 s sr MeV/nuc'
+  VALIDMAX: 16777216.0
+  VALIDMIN: 0.0
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
+  CATDESC: c (Root 2 spacing)
+  DEPEND_1: energy_c
+  LABL_PTR_1: energy_c_label
+
+fe:
+  VAR_TYPE: data
+  DEPEND_0: epoch
+  DISPLAY_TYPE: spectrogram
+  FIELDNAM: fe
+  FILLVAL: *real_fillval
+  FORMAT: '%f'
+  LABLAXIS: Diff. Intensity
+  SCALETYP: linear
+  UNITS: '# / cm2 s sr MeV/nuc'
+  VALIDMAX: 16777216.0
+  VALIDMIN: 0.0
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
+  CATDESC: fe (Root 2 spacing)
+  DEPEND_1: energy_fe
+  LABL_PTR_1: energy_fe_label
+
+h:
+  VAR_TYPE: data
+  DEPEND_0: epoch
+  DISPLAY_TYPE: spectrogram
+  FIELDNAM: h
+  FILLVAL: *real_fillval
+  FORMAT: '%f'
+  LABLAXIS: Diff. Intensity
+  SCALETYP: linear
+  UNITS: '# / cm2 s sr MeV/nuc'
+  VALIDMAX: 16777216.0
+  VALIDMIN: 0.0
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
+  CATDESC: h (Root 2 spacing)
+  DEPEND_1: energy_h
+  LABL_PTR_1: energy_h_label
+
+he3:
+  VAR_TYPE: data
+  DEPEND_0: epoch
+  DISPLAY_TYPE: spectrogram
+  FIELDNAM: he3
+  FILLVAL: *real_fillval
+  FORMAT: '%f'
+  LABLAXIS: Diff. Intensity
+  SCALETYP: linear
+  UNITS: '# / cm2 s sr MeV/nuc'
+  VALIDMAX: 16777216.0
+  VALIDMIN: 0.0
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
+  CATDESC: he3 (Root 2 spacing)
+  DEPEND_1: energy_he3
+  LABL_PTR_1: energy_he3_label
+
+he4:
+  VAR_TYPE: data
+  DEPEND_0: epoch
+  DISPLAY_TYPE: spectrogram
+  FIELDNAM: he4
+  FILLVAL: *real_fillval
+  FORMAT: '%f'
+  LABLAXIS: Diff. Intensity
+  SCALETYP: linear
+  UNITS: '# / cm2 s sr MeV/nuc'
+  VALIDMAX: 16777216.0
+  VALIDMIN: 0.0
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
+  CATDESC: he4 (Root 2 spacing)
+  DEPEND_1: energy_he4
+  LABL_PTR_1: energy_he4_label
+
+junk:
+  VAR_TYPE: data
+  DEPEND_0: epoch
+  DISPLAY_TYPE: spectrogram
+  FIELDNAM: junk
+  FILLVAL: *real_fillval
+  FORMAT: '%f'
+  LABLAXIS: Diff. Intensity
+  SCALETYP: linear
+  UNITS: '# / cm2 s sr MeV/nuc'
+  VALIDMAX: 16777216.0
+  VALIDMIN: 0.0
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
+  CATDESC: junk (Root 2 spacing)
+  DEPEND_1: energy_junk
+  LABL_PTR_1: energy_junk_label
+
+ne_mg_si:
+  VAR_TYPE: data
+  DEPEND_0: epoch
+  DISPLAY_TYPE: spectrogram
+  FIELDNAM: ne-mg-si
+  FILLVAL: *real_fillval
+  FORMAT: '%f'
+  LABLAXIS: Diff. Intensity
+  SCALETYP: linear
+  UNITS: '# / cm2 s sr MeV/nuc'
+  VALIDMAX: 16777216.0
+  VALIDMIN: 0.0
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
+  CATDESC: ne-mg-si (Root 2 spacing)
+  DEPEND_1: energy_ne_mg_si
+  LABL_PTR_1: energy_ne_mg_si_label
+
+o:
+  VAR_TYPE: data
+  DEPEND_0: epoch
+  DISPLAY_TYPE: spectrogram
+  FIELDNAM: o
+  FILLVAL: *real_fillval
+  FORMAT: '%f'
+  LABLAXIS: Diff. Intensity
+  SCALETYP: linear
+  UNITS: '# / cm2 s sr MeV/nuc'
+  VALIDMAX: 16777216.0
+  VALIDMIN: 0.0
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
+  CATDESC: o (Root 2 spacing)
+  DEPEND_1: energy_o
+  LABL_PTR_1: energy_o_label
+
+uh:
+  VAR_TYPE: data
+  DEPEND_0: epoch
+  DISPLAY_TYPE: spectrogram
+  FIELDNAM: uh
+  FILLVAL: *real_fillval
+  FORMAT: '%f'
+  LABLAXIS: Diff. Intensity
+  SCALETYP: linear
+  UNITS: '# / cm2 s sr MeV/nuc'
+  VALIDMAX: 16777216.0
+  VALIDMIN: 0.0
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
+  CATDESC: uh (Root 2 spacing)
+  DEPEND_1: energy_uh
+  LABL_PTR_1: energy_uh_label
