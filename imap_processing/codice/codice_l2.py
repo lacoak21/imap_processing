@@ -312,11 +312,6 @@ def process_lo_angular_intensity(
     else:
         raise ValueError("Unknown positions for elevation angle mapping.")
 
-    # Create a new coordinate for spin angle based on spin_sector_index
-    # Use equation from section 11.2.2 of algorithm document
-    dataset = dataset.assign_coords(
-        spin_angle=("spin_sector_index", dataset["spin_sector_index"].data * 15.0 + 7.5)
-    )
     # Create a new coordinate for elevation_angle based on azimuth_index
     dataset = dataset.assign_coords(
         elevation_angle=(
@@ -330,6 +325,11 @@ def process_lo_angular_intensity(
         .groupby("elevation_angle")
         .sum(keep_attrs=True)  # One position should always contain zeros so sum is safe
         .transpose("epoch", "energy_table", "spin_sector_index", "elevation_angle", ...)
+    )
+    # Create a new coordinate for spin angle based on spin_sector_index
+    # Use equation from section 11.2.2 of algorithm document
+    dataset = dataset.assign_coords(
+        spin_angle=("spin_sector_index", dataset["spin_sector_index"].data * 15.0 + 7.5)
     )
 
     dataset = dataset.drop_vars(species_list).merge(dataset_converted)
