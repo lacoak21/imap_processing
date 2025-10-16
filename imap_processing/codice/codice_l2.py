@@ -292,24 +292,19 @@ def process_lo_angular_intensity(
             * species_eff
             * dataset["energy_table"].data[:, np.newaxis]
         )
+        # convert denominator to DataArray to leverage xarray broadcasting
+        denominator = xr.DataArray(
+            denominator, dims=("epoch", "energy_table", "azimuth_index")
+        )
         if species not in dataset:
             logger.warning(
                 f"Species {species} not found in dataset. Filling with NaNS."
             )
             dataset[species] = np.full(dataset["energy_table"].data.shape, np.nan)
         else:
-            # Shape: (epoch, esa_steps, spin_sector_index, positions)
-            # repeat denominator along spin_sector_index axis
-            # TODO switch pos and spin index
-            denominator = np.repeat(
-                denominator[:, :, :, np.newaxis],
-                dataset.dims["spin_sector_index"],
-                axis=-1,
-            )
             dataset[species] = dataset[species] / denominator
 
     # transform positions to elevation angles
-    # TODO do we drop redundant positions or average them?
     if positions == SW_POSITIONS:
         pos_to_el = LO_POSITION_TO_ELEVATION_ANGLE["sw"]
     elif positions == NSW_POSITIONS:
@@ -333,8 +328,8 @@ def process_lo_angular_intensity(
     dataset_converted = (
         dataset[species_list]
         .groupby("elevation_angle")
-        .mean(keep_attrs=True)
-        .transpose("epoch", "energy_table", "elevation_angle", "spin_sector_index", ...)
+        .sum(keep_attrs=True)  # One position should always contain zeros so sum is safe
+        .transpose("epoch", "energy_table", "spin_sector_index", "elevation_angle", ...)
     )
 
     dataset = dataset.drop_vars(species_list).merge(dataset_converted)

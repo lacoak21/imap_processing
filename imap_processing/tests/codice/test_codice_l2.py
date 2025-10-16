@@ -308,8 +308,8 @@ def test_process_lo_angular_intensity():
         expected_shape = (
             len(l1b_val_data.epoch),
             len(l1b_val_data.energy_table),
-            3,  # 3 elevation angles map to 5 positions
             len(l1b_val_data.spin_sector_index),
+            3,  # 3 elevation angles map to 5 positions
         )
         np.testing.assert_allclose(
             expected_shape, l1b_val_data_processed[var].shape, rtol=1e-5
@@ -325,9 +325,10 @@ def test_process_lo_angular_intensity():
         expected_intensity = (
             expected_intensity.assign_coords(group=("azimuth_index", [0, 1, 2, 2, 1]))
             .groupby("group")
-            .mean()
+            .sum()
+            # TODO remove the transpose when joey fixes the L1B data
+            .transpose("epoch", "energy_table", "spin_sector_index", "group")
         )
-
         np.testing.assert_allclose(
             l1b_val_data_processed[var].values, expected_intensity.values, rtol=1e-5
         )
