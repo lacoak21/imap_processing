@@ -55,21 +55,27 @@ def codice_lut_path():
             ]
         elif descriptor == "lo-nsw-species":
             return [
-                imap_module_directory
-                / "tests"
-                / "codice"
-                / "data"
-                / "l1a_validation"
+                TEST_DATA_PATH
+                / "l1b_validation"
                 / "imap_codice_l1b_lo-nsw-species_20250814_v006.cdf"
             ]
         elif descriptor == "lo-sw-species":
             return [
-                imap_module_directory
-                / "tests"
-                / "codice"
-                / "data"
-                / "l1a_validation"
+                TEST_DATA_PATH
+                / "l1b_validation"
                 / "imap_codice_l1b_lo-sw-species_20250814_v006.cdf"
+            ]
+        elif descriptor == "lo-nsw-angular":
+            return [
+                TEST_DATA_PATH
+                / "l1b_validation"
+                / "imap_codice_l1b_lo-nsw-angular_20250814_v005.cdf"
+            ]
+        elif descriptor == "lo-sw-angular":
+            return [
+                TEST_DATA_PATH
+                / "l1b_validation"
+                / "imap_codice_l1b_lo-nsw-angular_20250814_v005.cdf"
             ]
         else:
             raise ValueError(f"Unknown descriptor: {descriptor}")

@@ -281,7 +281,7 @@ def test_process_lo_angular_intensity():
         / "codice"
         / "data"
         / "l1b_validation"
-        / "imap_codice_l1b_lo-sw-angular_20250814211100_v0.0.3.cdf"
+        / "imap_codice_l1b_lo-sw-angular_20250814_v005.cdf"
     )
     l1b_val_data = load_cdf(l1b_val_data)
     l1b_val_data_processed = l1b_val_data.copy()
@@ -356,29 +356,16 @@ def test_codice_l2_nsw_species_intensity(processing_dependencies, mock_get_file_
 
 
 def test_codice_l2_nsw_angular_intensity(processing_dependencies, mock_get_file_paths):
-    l1b_val_data = (
-        imap_module_directory
-        / "tests"
-        / "codice"
-        / "data"
-        / "l1b_validation"
-        / "imap_codice_l1b_lo-nsw-angular_20241110193900_v0.0.2.cdf"
-    )
-    ds = process_codice_l2(l1b_val_data, processing_dependencies)
-
+    sci_input = ScienceInput("imap_codice_l1b_lo-nsw-angular_20250814_v005.cdf")
+    processing_dependencies.add(sci_input)
+    ds = process_codice_l2("lo-nsw-angular", processing_dependencies)
     ds.attrs["Data_version"] = "001"
     write_cdf(ds)
 
 
 def test_codice_l2_sw_angular_intensity(processing_dependencies, mock_get_file_paths):
-    l1b_val_data = (
-        imap_module_directory
-        / "tests"
-        / "codice"
-        / "data"
-        / "l1b_validation"
-        / "imap_codice_l1b_lo-sw-angular_20241110193900_v0.0.2.cdf"
-    )
-    ds = process_codice_l2(l1b_val_data, processing_dependencies)
+    sci_input = ScienceInput("imap_codice_l1b_lo-nsw-angular_20250814_v005.cdf")
+    processing_dependencies.add(sci_input)
+    ds = process_codice_l2("lo-sw-angular", processing_dependencies)
     ds.attrs["Data_version"] = "001"
     write_cdf(ds)
