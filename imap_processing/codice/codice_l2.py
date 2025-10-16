@@ -324,6 +324,8 @@ def process_lo_angular_intensity(
         dataset[species_list]
         .groupby("elevation_angle")
         .sum(keep_attrs=True)  # One position should always contain zeros so sum is safe
+        # Restore original dimension order because groupby moves the grouped
+        # dimension to the front
         .transpose("epoch", "energy_table", "spin_sector_index", "elevation_angle", ...)
     )
     # Create a new coordinate for spin angle based on spin_sector_index
