@@ -301,8 +301,6 @@ def test_process_lo_angular_intensity():
             expected_intensity.assign_coords(group=("inst_az", [0, 1, 2, 2, 1]))
             .groupby("group")
             .sum()
-            # TODO remove the transpose when joey fixes the L1B data
-            .transpose("epoch", "energy_table", "spin_sector", "group")
         )
         np.testing.assert_allclose(
             l1b_val_data_processed[var].values, expected_intensity.values, rtol=1e-5
