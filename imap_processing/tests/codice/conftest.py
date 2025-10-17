@@ -69,13 +69,13 @@ def codice_lut_path():
             return [
                 TEST_DATA_PATH
                 / "l1b_validation"
-                / "imap_codice_l1b_lo-nsw-angular_20250814_v005.cdf"
+                / "imap_codice_l1b_lo-nsw-angular_20250814_v006.cdf"
             ]
         elif descriptor == "lo-sw-angular":
             return [
                 TEST_DATA_PATH
                 / "l1b_validation"
-                / "imap_codice_l1b_lo-sw-angular_20250814_v005.cdf"
+                / "imap_codice_l1b_lo-sw-angular_20250814_v006.cdf"
             ]
         else:
             raise ValueError(f"Unknown descriptor: {descriptor}")

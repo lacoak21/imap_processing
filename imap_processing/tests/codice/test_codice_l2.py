@@ -173,12 +173,12 @@ def test_process_lo_species_intensity():
     l1b_val_data_processed = l1b_val_data.copy()
     gf = xr.DataArray(
         np.ones((len(l1b_val_data.epoch), 128, 24)) * 2,
-        dims=("epoch", "energy_table", "azimuth_index"),
+        dims=("epoch", "energy_table", "inst_az"),
     )
     with mock.patch(
         "imap_processing.codice.codice_l2.get_species_efficiency",
         return_value=xr.DataArray(
-            np.ones((128, 24)) * 2, dims=("energy_table", "azimuth_index")
+            np.ones((128, 24)) * 2, dims=("energy_table", "inst_az")
         ),
     ):
         len_pos = 5
@@ -219,12 +219,12 @@ def test_process_lo_missing_species_intensity():
     l1b_val_data_processed = l1b_val_data.copy()
     gf = xr.DataArray(
         np.ones((len(l1b_val_data.epoch), 128, 24)) * 2,
-        dims=("epoch", "energy_table", "azimuth_index"),
+        dims=("epoch", "energy_table", "inst_az"),
     )
     with mock.patch(
         "imap_processing.codice.codice_l2.get_species_efficiency",
         return_value=xr.DataArray(
-            np.ones((128, 24)) * 2, dims=("energy_table", "azimuth_index")
+            np.ones((128, 24)) * 2, dims=("energy_table", "inst_az")
         ),
     ):
         len_pos = 5
@@ -251,18 +251,18 @@ def test_process_lo_angular_intensity():
         / "codice"
         / "data"
         / "l1b_validation"
-        / "imap_codice_l1b_lo-sw-angular_20250814_v005.cdf"
+        / "imap_codice_l1b_lo-sw-angular_20250814_v006.cdf"
     )
     l1b_val_data = load_cdf(l1b_val_data)
     l1b_val_data_processed = l1b_val_data.copy()
     gf = xr.DataArray(
         np.ones((len(l1b_val_data.epoch), 128, 24)) * 2,
-        dims=("epoch", "energy_table", "azimuth_index"),
+        dims=("epoch", "energy_table", "inst_az"),
     )
     with mock.patch(
         "imap_processing.codice.codice_l2.get_species_efficiency",
         return_value=xr.DataArray(
-            np.ones((128, 24)) * 2, dims=("energy_table", "azimuth_index")
+            np.ones((128, 24)) * 2, dims=("energy_table", "inst_az")
         ),
     ):
         l1b_val_data_processed = process_lo_angular_intensity(
@@ -283,7 +283,7 @@ def test_process_lo_angular_intensity():
         expected_shape = (
             len(l1b_val_data.epoch),
             len(l1b_val_data.energy_table),
-            len(l1b_val_data.spin_sector_index),
+            len(l1b_val_data.spin_sector),
             3,  # 3 elevation angles map to 5 positions
         )
         np.testing.assert_allclose(
@@ -298,11 +298,11 @@ def test_process_lo_angular_intensity():
         )
         # convert pos to el
         expected_intensity = (
-            expected_intensity.assign_coords(group=("azimuth_index", [0, 1, 2, 2, 1]))
+            expected_intensity.assign_coords(group=("inst_az", [0, 1, 2, 2, 1]))
             .groupby("group")
             .sum()
             # TODO remove the transpose when joey fixes the L1B data
-            .transpose("epoch", "energy_table", "spin_sector_index", "group")
+            .transpose("epoch", "energy_table", "spin_sector", "group")
         )
         np.testing.assert_allclose(
             l1b_val_data_processed[var].values, expected_intensity.values, rtol=1e-5
@@ -331,7 +331,7 @@ def test_codice_l2_nsw_species_intensity(processing_dependencies, mock_get_file_
 
 
 def test_codice_l2_nsw_angular_intensity(processing_dependencies, mock_get_file_paths):
-    sci_input = ScienceInput("imap_codice_l1b_lo-nsw-angular_20250814_v005.cdf")
+    sci_input = ScienceInput("imap_codice_l1b_lo-nsw-angular_20250814_v006.cdf")
     processing_dependencies.add(sci_input)
     ds = process_codice_l2("lo-nsw-angular", processing_dependencies)
     ds.attrs["Data_version"] = "001"
@@ -339,7 +339,7 @@ def test_codice_l2_nsw_angular_intensity(processing_dependencies, mock_get_file_
 
 
 def test_codice_l2_sw_angular_intensity(processing_dependencies, mock_get_file_paths):
-    sci_input = ScienceInput("imap_codice_l1b_lo-sw-angular_20250814_v005.cdf")
+    sci_input = ScienceInput("imap_codice_l1b_lo-nsw-angular_20250814_v006.cdf")
     processing_dependencies.add(sci_input)
     ds = process_codice_l2("lo-sw-angular", processing_dependencies)
     ds.attrs["Data_version"] = "001"

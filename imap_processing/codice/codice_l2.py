@@ -122,10 +122,10 @@ def get_species_efficiency(species: str, efficiency: pd.DataFrame) -> xr.DataArr
         [col for col in species_efficiency if col.startswith("position")],
         key=lambda x: int(x.split("_")[-1]),
     )
-    # Shape: (energy_table, azimuth_index)
+    # Shape: (energy_table, inst_az)
     return xr.DataArray(
         species_efficiency[position_names_sorted].to_numpy(),
-        dims=("energy_table", "azimuth_index"),
+        dims=("energy_table", "inst_az"),
     )
 
 
@@ -182,9 +182,9 @@ def compute_geometric_factors(
             "reduced"
         ],  # Shape (1, energy_table, 24) - reduced mode
         geometric_factor_lookup["full"],  # Shape (1, energy_table, 24) - full mode
-    )  # Shape: (epoch, energy_table, azimuth_index)
+    )  # Shape: (epoch, energy_table, inst_az)
 
-    return xr.DataArray(gf, dims=("epoch", "energy_table", "azimuth_index"))
+    return xr.DataArray(gf, dims=("epoch", "energy_table", "inst_az"))
 
 
 def calculate_intensity(
@@ -221,10 +221,10 @@ def calculate_intensity(
         The updated L2 dataset with species intensities calculated.
     """
     # Select the relevant positions from the geometric factors
-    geometric_factors = geometric_factors.isel(azimuth_index=positions)
+    geometric_factors = geometric_factors.isel(inst_az=positions)
     if average_across_positions:
         # take the mean geometric factor across positions
-        geometric_factors = geometric_factors.mean(dim="azimuth_index")
+        geometric_factors = geometric_factors.mean(dim="inst_az")
         scalar = len(positions)
     else:
         scalar = 1
@@ -233,9 +233,9 @@ def calculate_intensity(
     # intensity = species_rate / (gm * eff * esa_step) for position and spin angle
     for species in species_list:
         # Select the relevant positions for the species from the efficiency LUT
-        # Shape: (epoch, energy_table, azimuth_index)
+        # Shape: (epoch, energy_table, inst_az)
         species_eff = get_species_efficiency(species, efficiency).isel(
-            azimuth_index=positions
+            inst_az=positions
         )
         if species_eff.size == 0:
             logger.warning(f"No efficiency data found for species {species}. Skipping.")
@@ -243,9 +243,9 @@ def calculate_intensity(
 
         if average_across_positions:
             # Take the mean efficiency across positions
-            species_eff = species_eff.mean(dim="azimuth_index")
+            species_eff = species_eff.mean(dim="inst_az")
 
-        # Shape: (epoch, energy_table, azimuth_index) or
+        # Shape: (epoch, energy_table, inst_az) or
         # (epoch, energy_table) if averaged
         denominator = scalar * geometric_factors * species_eff * dataset["energy_table"]
         if species not in dataset:
@@ -362,11 +362,11 @@ def process_lo_angular_intensity(
     else:
         raise ValueError("Unknown positions for elevation angle mapping.")
 
-    # Create a new coordinate for elevation_angle based on azimuth_index
+    # Create a new coordinate for elevation_angle based on inst_az
     dataset = dataset.assign_coords(
         elevation_angle=(
-            "azimuth_index",
-            [pos_to_el[pos] for pos in dataset["azimuth_index"].data],
+            "inst_az",
+            [pos_to_el[pos] for pos in dataset["inst_az"].data],
         )
     )
     # Take the mean across elevation angles and restore the original dimension order
@@ -376,12 +376,12 @@ def process_lo_angular_intensity(
         .sum(keep_attrs=True)  # One position should always contain zeros so sum is safe
         # Restore original dimension order because groupby moves the grouped
         # dimension to the front
-        .transpose("epoch", "energy_table", "spin_sector_index", "elevation_angle", ...)
+        .transpose("epoch", "energy_table", "spin_sector", "elevation_angle", ...)
     )
-    # Create a new coordinate for spin angle based on spin_sector_index
+    # Create a new coordinate for spin angle based on spin_sector
     # Use equation from section 11.2.2 of algorithm document
     dataset = dataset.assign_coords(
-        spin_angle=("spin_sector_index", dataset["spin_sector_index"].data * 15.0 + 7.5)
+        spin_angle=("spin_sector", dataset["spin_sector"].data * 15.0 + 7.5)
     )
 
     dataset = dataset.drop_vars(species_list).merge(dataset_converted)

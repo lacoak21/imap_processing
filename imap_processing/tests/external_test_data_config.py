@@ -60,10 +60,10 @@ EXTERNAL_TEST_DATA = [
     ("imap_codice_l1b_lo-counters-aggregated_20250814211100_v0.0.5.cdf", "codice/data/l1b_validation"),
     ("imap_codice_l1b_lo-counters-singles_20250814211100_v0.0.5.cdf", "codice/data/l1b_validation"),
     ("imap_codice_l1b_lo-ialirt_20250814211100_v0.0.5.cdf", "codice/data/l1b_validation"),
-    ("imap_codice_l1b_lo-nsw-angular_20250814_v005.cdf", "codice/data/l1b_validation"),
+    ("imap_codice_l1b_lo-nsw-angular_20250814_v006.cdf", "codice/data/l1b_validation"),
     ("imap_codice_l1b_lo-nsw-priority_20250814211100_v0.0.5.cdf", "codice/data/l1b_validation"),
     ("imap_codice_l1b_lo-nsw-species_20250814_v006.cdf", "codice/data/l1b_validation"),
-    ("imap_codice_l1b_lo-sw-angular_20250814_v005.cdf", "codice/data/l1b_validation"),
+    ("imap_codice_l1b_lo-sw-angular_20250814_v006.cdf", "codice/data/l1b_validation"),
     ("imap_codice_l1b_lo-sw-priority_20250814211100_v0.0.5.cdf", "codice/data/l1b_validation"),
     ("imap_codice_l1b_lo-sw-species_20250814_v006.cdf", "codice/data/l1b_validation"),
     # L2 LUT input data
