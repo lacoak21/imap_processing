@@ -147,9 +147,9 @@ class TestHiPointingSet:
     def test_init(self, hi_pset_cdf_path):
         """Test coverage for __init__ method."""
         pset_ds = load_cdf(hi_pset_cdf_path)
-        hi_pset = ena_maps.HiPointingSet(pset_ds, spin_phase="full")
+        hi_pset = ena_maps.HiPointingSet(pset_ds)
         assert isinstance(hi_pset, ena_maps.HiPointingSet)
-        assert hi_pset.spice_reference_frame == geometry.SpiceFrame.ECLIPJ2000
+        assert hi_pset.spice_reference_frame == geometry.SpiceFrame.IMAP_HAE
         assert hi_pset.num_points == 3600
         np.testing.assert_array_equal(hi_pset.az_el_points.shape, (3600, 2))
 
@@ -158,36 +158,29 @@ class TestHiPointingSet:
 
     def test_from_cdf(self, hi_pset_cdf_path):
         """Test coverage for instantiating HiPointingSet from cdf."""
-        hi_pset = ena_maps.HiPointingSet(hi_pset_cdf_path, spin_phase="full")
+        hi_pset = ena_maps.HiPointingSet(hi_pset_cdf_path)
         assert isinstance(hi_pset, ena_maps.HiPointingSet)
 
     def test_spin_phase_filtering(self, hi_pset_cdf_path):
         """Test coverage for filtering pset data by ram or anti-ram directions."""
         pset_ds = load_cdf(hi_pset_cdf_path)
 
-        # Test ram only direction
-        hi_pset = ena_maps.HiPointingSet(pset_ds, spin_phase="ram")
-        assert hi_pset.num_points == 1800
+        # Test ram mask is first 1800 elements
+        hi_pset = ena_maps.HiPointingSet(pset_ds)
         np.testing.assert_array_equal(
-            hi_pset.data["spin_angle_bin"].data, np.arange(1800)
+            np.nonzero(hi_pset.data["ram_mask"].values)[0], np.arange(1800)
         )
 
         # Test anti-ram direction
-        hi_pset = ena_maps.HiPointingSet(pset_ds, spin_phase="anti")
-        assert hi_pset.num_points == 1800
         np.testing.assert_array_equal(
-            hi_pset.data["spin_angle_bin"].data, np.arange(1800) + 1800
+            np.nonzero(~hi_pset.data["ram_mask"].values)[0], np.arange(1800) + 1800
         )
-
-        # Test value error
-        with pytest.raises(ValueError, match="Unrecognized spin_phase value:"):
-            _ = ena_maps.HiPointingSet(pset_ds, spin_phase="foo-phase")
 
     def test_plays_nice_with_rectangular_sky_map(self, hi_pset_cdf_path):
         """Test that HiPointingSet works with RectangularSkyMap"""
-        hi_pset = ena_maps.HiPointingSet(hi_pset_cdf_path, spin_phase="full")
+        hi_pset = ena_maps.HiPointingSet(hi_pset_cdf_path)
         rect_map = ena_maps.RectangularSkyMap(
-            spacing_deg=2, spice_frame=geometry.SpiceFrame.ECLIPJ2000
+            spacing_deg=2, spice_frame=geometry.SpiceFrame.IMAP_HAE
         )
         rect_map.project_pset_values_to_map(hi_pset, ["counts", "exposure_factor"])
         assert rect_map.data_1d["counts"].max() > 0
@@ -296,7 +289,8 @@ class TestLoHiBasePointingSet:
 
     @staticmethod
     def create_hi_pset_with_multidim_coords(
-        hi_pset_cdf_path: str, shape: tuple[int, int, int] = (1, 9, 3600)
+        hi_pset_cdf_path: str,
+        shape: tuple[int, int, int] = (1, 9, 3600),
     ) -> ena_maps.HiPointingSet:
         """
         Create a HiPointingSet with multi-dimensional coordinates.
@@ -315,7 +309,7 @@ class TestLoHiBasePointingSet:
             HiPointingSet with multi-dimensional az_el_points.
         """
         pset_ds = load_cdf(hi_pset_cdf_path)
-        hi_pset = ena_maps.HiPointingSet(pset_ds, spin_phase="full")
+        hi_pset = ena_maps.HiPointingSet(pset_ds)
         hi_pset.data["hae_longitude"] = xr.DataArray(
             np.random.uniform(0, 360, shape),
             dims=["epoch", "hf_energy", "spin_angle_bin"],
@@ -329,7 +323,7 @@ class TestLoHiBasePointingSet:
 
     def test_hi_az_el_points_is_dataarray(self, hi_pset_cdf_path):
         """Test that HiPointingSet.az_el_points is an xarray.DataArray."""
-        hi_pset = ena_maps.HiPointingSet(hi_pset_cdf_path, spin_phase="full")
+        hi_pset = ena_maps.HiPointingSet(hi_pset_cdf_path)
 
         # Verify az_el_points is a DataArray
         assert isinstance(hi_pset.az_el_points, xr.DataArray)
@@ -355,7 +349,7 @@ class TestLoHiBasePointingSet:
 
     def test_inheritance(self, hi_pset_cdf_path, lo_pset_ds):
         """Test that Hi and Lo pointing sets inherit from LoHiBasePointingSet."""
-        hi_pset = ena_maps.HiPointingSet(hi_pset_cdf_path, spin_phase="full")
+        hi_pset = ena_maps.HiPointingSet(hi_pset_cdf_path)
         lo_pset = ena_maps.LoPointingSet(lo_pset_ds)
 
         # Verify inheritance
@@ -408,8 +402,16 @@ class TestLoHiBasePointingSet:
         assert indices.dims == ("hf_energy", "pixel")
         assert indices.shape == (9, 3600)
 
-    def test_broadcasting_with_multidim_pset(self, hi_pset_cdf_path):
+    @mock.patch("imap_processing.spice.geometry.frame_transform_az_el")
+    def test_broadcasting_with_multidim_pset(
+        self, mock_frame_transform, hi_pset_cdf_path
+    ):
         """Test xr broadcasting in project_pset_values_to_map with multi-dim PSET."""
+        # Mock frame_transform to return az_el unchanged
+        mock_frame_transform.side_effect = (
+            lambda et, az_el, from_frame, to_frame, degrees: az_el
+        )
+
         hi_pset = self.create_hi_pset_with_multidim_coords(hi_pset_cdf_path)
 
         # Add a mock multi-dimensional variable to the PSET
@@ -624,7 +626,13 @@ class TestRectangularSkyMap:
         )
 
     @pytest.mark.usefixtures("_setup_ultra_l1c_pset_products")
-    def test_project_pset_values_to_map_errors(self):
+    @mock.patch("imap_processing.spice.geometry.frame_transform_az_el")
+    def test_project_pset_values_to_map_errors(self, mock_frame_transform_az_el):
+        # Mock frame_transform to return the az and el unchanged
+        mock_frame_transform_az_el.side_effect = (
+            lambda et, az_el, from_frame, to_frame, degrees: az_el
+        )
+
         index_matching_method = ena_maps.IndexMatchMethod.PUSH
         rectangular_map = ena_maps.RectangularSkyMap(
             spacing_deg=1,
@@ -632,12 +640,126 @@ class TestRectangularSkyMap:
         )
 
         # An error should be raised if a key is not found in the PSET
-        with pytest.raises(ValueError, match="Value key invalid not found"):
+        with pytest.raises(KeyError, match="Value keys not found in pointing set:"):
             rectangular_map.project_pset_values_to_map(
                 self.ultra_psets[0],
                 value_keys=["invalid"],
                 index_match_method=index_matching_method,
             )
+
+    @pytest.mark.usefixtures("_setup_ultra_l1c_pset_products")
+    @mock.patch("imap_processing.spice.geometry.frame_transform_az_el")
+    def test_project_pset_with_valid_mask_push(self, mock_frame_transform_az_el):
+        """Test projection with pset_valid_mask using PUSH method."""
+        # Mock frame_transform to return the az and el unchanged
+        mock_frame_transform_az_el.side_effect = (
+            lambda et, az_el, from_frame, to_frame, degrees: az_el
+        )
+
+        rectangular_map = ena_maps.RectangularSkyMap(
+            spacing_deg=2,
+            spice_frame=geometry.SpiceFrame.ECLIPJ2000,
+        )
+
+        ultra_pset = self.ultra_psets[0]
+        ultra_pset.data["counts"] = xr.ones_like(ultra_pset.data["counts"])
+
+        # Create a mask that only allows half of the pixels
+        valid_mask = np.zeros(ultra_pset.num_points, dtype=bool)
+        valid_mask[: ultra_pset.num_points // 2] = True
+
+        # Project with mask
+        rectangular_map.project_pset_values_to_map(
+            ultra_pset,
+            value_keys=["counts"],
+            index_match_method=ena_maps.IndexMatchMethod.PUSH,
+            pset_valid_mask=valid_mask,
+        )
+
+        # Total counts in map should be less than total counts in pset
+        map_total_counts = rectangular_map.data_1d["counts"].sum()
+        pset_total_counts = ultra_pset.data["counts"].sum()
+
+        # With mask, map should have approximately half the counts
+        assert map_total_counts < pset_total_counts
+        np.testing.assert_allclose(
+            map_total_counts,
+            pset_total_counts / 2,
+            rtol=0.1,
+        )
+
+    @pytest.mark.usefixtures("_setup_rectangular_l1c_pset_products")
+    @mock.patch("imap_processing.spice.geometry.frame_transform_az_el")
+    def test_project_pset_with_dataarray_mask_push(self, mock_frame_transform_az_el):
+        """Test projection with xr.DataArray mask using PUSH method."""
+        # Mock frame_transform to return the az and el unchanged
+        mock_frame_transform_az_el.side_effect = (
+            lambda et, az_el, from_frame, to_frame, degrees: az_el
+        )
+
+        rectangular_map = ena_maps.RectangularSkyMap(
+            spacing_deg=10,
+            spice_frame=geometry.SpiceFrame.ECLIPJ2000,
+        )
+
+        rect_pset = self.rectangular_psets[0]
+
+        # Create a DataArray mask matching the pset spatial dimensions
+        valid_mask = xr.DataArray(
+            np.ones(rect_pset.data["counts"].shape[2:], dtype=bool),
+            coords={
+                "longitude": rect_pset.data["longitude"],
+                "latitude": rect_pset.data["latitude"],
+            },
+        )
+        # Mask out one quadrant
+        valid_mask[:90, :90] = False
+
+        # Project with DataArray mask
+        rectangular_map.project_pset_values_to_map(
+            rect_pset,
+            value_keys=["counts"],
+            index_match_method=ena_maps.IndexMatchMethod.PUSH,
+            pset_valid_mask=valid_mask,
+        )
+
+        # Map should have data
+        assert "counts" in rectangular_map.data_1d
+        assert rectangular_map.data_1d["counts"].sum() > 0
+
+    @pytest.mark.usefixtures("_setup_rectangular_l1c_pset_products")
+    @mock.patch("imap_processing.spice.geometry.frame_transform_az_el")
+    def test_project_pset_with_valid_mask_pull(self, mock_frame_transform_az_el):
+        """Test projection with pset_valid_mask using PULL method."""
+        # Mock frame_transform to return the az and el unchanged
+        mock_frame_transform_az_el.side_effect = (
+            lambda et, az_el, from_frame, to_frame, degrees: az_el
+        )
+
+        rectangular_map = ena_maps.RectangularSkyMap(
+            spacing_deg=10,
+            spice_frame=geometry.SpiceFrame.ECLIPJ2000,
+        )
+
+        rect_pset = self.rectangular_psets[0]
+
+        # Create a mask that masks out some pixels
+        valid_mask = np.ones(rect_pset.num_points, dtype=bool)
+        valid_mask[: rect_pset.num_points // 4] = False
+
+        # Project with mask using PULL method
+        rectangular_map.project_pset_values_to_map(
+            rect_pset,
+            value_keys=["counts"],
+            index_match_method=ena_maps.IndexMatchMethod.PULL,
+            pset_valid_mask=valid_mask,
+        )
+
+        # Map should have data, but some pixels should be zero due to mask
+        assert "counts" in rectangular_map.data_1d
+        assert rectangular_map.data_1d["counts"].sum() > 0
+        # Some pixels should be zero
+        assert (rectangular_map.data_1d["counts"] == 0).any()
 
     @pytest.mark.usefixtures("_setup_rectangular_l1c_pset_products")
     @mock.patch("imap_processing.spice.geometry.frame_transform_az_el")

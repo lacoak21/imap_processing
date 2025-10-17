@@ -647,28 +647,21 @@ class HiPointingSet(LoHiBasePointingSet):
     ----------
     dataset : xarray.Dataset | str | Path
         Hi L1C pointing set data loaded in a xarray.DataArray.
-    spin_phase : str
-        Include ENAs from "full", "ram" or "anti-ram" phases of the spin.
     """
 
-    def __init__(self, dataset: xr.Dataset | str | Path, spin_phase: str):
-        super().__init__(dataset, spice_reference_frame=geometry.SpiceFrame.ECLIPJ2000)
+    def __init__(self, dataset: xr.Dataset | str | Path):
+        super().__init__(dataset, spice_reference_frame=geometry.SpiceFrame.IMAP_HAE)
 
-        # Filter out ENAs from non-selected portions of the spin.
-        if spin_phase not in ["full", "ram", "anti"]:
-            raise ValueError(f"Unrecognized spin_phase value: {spin_phase}.")
+        self.spatial_coords = ("spin_angle_bin",)
+
+        # Naively generate the ram_mask variable assuming spacecraft frame
+        # binning. The ram_mask variable gets updated in the CG correction
+        # code if the CG correction is applied.
+        ram_mask = xr.zeros_like(self.data["spin_angle_bin"], dtype=bool)
         # ram only includes spin-phase interval [0, 0.5)
         # which is the first half of the spin_angle_bins
-        elif spin_phase == "ram":
-            self.data = self.data.isel(
-                spin_angle_bin=slice(0, self.data["spin_angle_bin"].data.size // 2)
-            )
-        # anti-ram includes spin-phase interval [0.5, 1)
-        # which is the second half of the spin_angle_bins
-        elif spin_phase == "anti":
-            self.data = self.data.isel(
-                spin_angle_bin=slice(self.data["spin_angle_bin"].data.size // 2, None)
-            )
+        ram_mask[slice(0, self.data["spin_angle_bin"].data.size // 2)] = True
+        self.data["ram_mask"] = ram_mask
 
         # Rename some PSET vars to match L2 variables
         self.data = self.data.rename(
@@ -683,8 +676,6 @@ class HiPointingSet(LoHiBasePointingSet):
         self.data["obs_date"] = xr.full_like(
             self.data["exposure_factor"], self.data["epoch"].values[0]
         )
-
-        self.spatial_coords = ("spin_angle_bin",)
 
         # Update az_el_points using the base class method
         self.update_az_el_points()
@@ -810,12 +801,12 @@ class AbstractSkyMap(ABC):
         """
         return self.az_el_points.shape[0]
 
-    def project_pset_values_to_map(
+    def project_pset_values_to_map(  # noqa: PLR0912
         self,
         pointing_set: PointingSet,
         value_keys: list[str] | None = None,
         index_match_method: IndexMatchMethod = IndexMatchMethod.PUSH,
-        pset_valid_mask: NDArray | None = None,
+        pset_valid_mask: NDArray | xr.DataArray | None = None,
     ) -> None:
         """
         Project a pointing set's values to the map grid.
@@ -837,7 +828,7 @@ class AbstractSkyMap(ABC):
         index_match_method : IndexMatchMethod, optional
             The method of index matching to use for all values.
             Default is IndexMatchMethod.PUSH.
-        pset_valid_mask : NDArray, optional
+        pset_valid_mask : xarray.DataArray or NDArray, optional
             A boolean mask of shape (number of pointing set pixels,) indicating
             which pixels in the pointing set should be considered valid for projection.
             If None, all pixels are considered valid. Default is None.
@@ -849,9 +840,9 @@ class AbstractSkyMap(ABC):
         """
         if value_keys is None:
             value_keys = list(pointing_set.data.data_vars.keys())
-        for value_key in value_keys:
-            if value_key not in pointing_set.data.data_vars:
-                raise ValueError(f"Value key {value_key} not found in pointing set.")
+
+        if missing_keys := set(value_keys) - set(pointing_set.data.data_vars):
+            raise KeyError(f"Value keys not found in pointing set: {missing_keys}")
 
         if pset_valid_mask is None:
             pset_valid_mask = np.ones(pointing_set.num_points, dtype=bool)
@@ -876,9 +867,12 @@ class AbstractSkyMap(ABC):
             )
 
         for value_key in value_keys:
+            if value_key not in pointing_set.data.data_vars:
+                raise ValueError(f"Value key {value_key} not found in pointing set.")
+
             # If multiple spatial axes present
             # (i.e (az, el) for rectangular coordinate PSET),
-            # flatten them in the values array to match the raveled indices
+            # stack them into a single coordinate to match the raveled indices
             raveled_pset_data = pointing_set.data[value_key].stack(
                 {CoordNames.GENERIC_PIXEL.value: pointing_set.spatial_coords}
             )
@@ -907,13 +901,22 @@ class AbstractSkyMap(ABC):
                 data_bc, indices_bc = xr.broadcast(
                     raveled_pset_data, matched_indices_push
                 )
+                # If the valid mask is a xr.DataArray, broadcast it to the same shape
+                if isinstance(pset_valid_mask, xr.DataArray):
+                    stacked_valid_mask = pset_valid_mask.stack(
+                        {CoordNames.GENERIC_PIXEL.value: pointing_set.spatial_coords}
+                    )
+                    pset_valid_mask_bc, _ = xr.broadcast(data_bc, stacked_valid_mask)
+                    pset_valid_mask_values = pset_valid_mask_bc.values
+                else:
+                    pset_valid_mask_values = pset_valid_mask
 
                 # Extract numpy arrays for bincount operation
                 pointing_projected_values = map_utils.bin_single_array_at_indices(
                     value_array=data_bc.values,
                     projection_grid_shape=self.binning_grid_shape,
                     projection_indices=indices_bc.values,
-                    input_valid_mask=pset_valid_mask,
+                    input_valid_mask=pset_valid_mask_values,
                 )
                 # TODO: we may need to allow for unweighted/weighted means here by
                 # dividing pointing_projected_values by some binned weights.
@@ -933,10 +936,6 @@ class AbstractSkyMap(ABC):
                 # that correspond to each map pixel as the weights.
                 self.data_1d[value_key].values[..., valid_map_mask] += (
                     pointing_projected_values
-                )
-            else:
-                raise NotImplementedError(
-                    "Only PUSH and PULL index matching methods are supported."
                 )
 
         # TODO: The max epoch needs to include the pset duration. Right now it
