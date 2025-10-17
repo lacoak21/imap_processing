@@ -255,6 +255,20 @@ def calculate_intensity(
             dataset[species] = np.full(dataset["energy_table"].data.shape, np.nan)
         else:
             dataset[species] = dataset[species] / denominator
+
+        # Also calculate uncertainty if available
+        species_uncertainty = f"unc_{species}"
+        if species_uncertainty not in dataset:
+            logger.warning(
+                f"Uncertainty {species_uncertainty} not found in dataset."
+                f" Filling with NaNS."
+            )
+            dataset[species_uncertainty] = np.full(
+                dataset["energy_table"].data.shape, np.nan
+            )
+        else:
+            dataset[species_uncertainty] = dataset[species_uncertainty] / denominator
+
     return dataset
 
 
