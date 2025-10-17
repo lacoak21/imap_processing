@@ -111,7 +111,7 @@ def get_species_efficiency(species: str, efficiency: pd.DataFrame) -> xr.DataArr
 
     Returns
     -------
-    efficiency : xr.DataArray
+    efficiency : xarray.DataArray
         A 2D array of efficiencies with shape (epoch, esa_steps).
     """
     species_efficiency = efficiency[efficiency["species"] == species].sort_values(
