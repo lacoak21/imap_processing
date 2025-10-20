@@ -13,15 +13,17 @@ from imap_processing import imap_module_directory
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
 from imap_processing.cdf.utils import load_cdf, write_cdf
 from imap_processing.codice.codice_l2 import (
-    add_dataset_attributes,
     compute_geometric_factors,
     get_efficiency_lut,
     get_geometric_factor_lut,
     process_codice_l2,
+    process_lo_angular_intensity,
     process_lo_species_intensity,
 )
 from imap_processing.codice.constants import (
+    LO_SW_ANGULAR_VARIABLE_NAMES,
     LO_SW_SOLAR_WIND_SPECIES_VARIABLE_NAMES,
+    SW_POSITIONS,
 )
 
 pytestmark = pytest.mark.external_test_data
@@ -123,45 +125,6 @@ def test_compute_geometric_factors_mixed(mock_half_spin_lut):
     np.testing.assert_array_equal(result, expected)
 
 
-def test_add_dataset_attributes(mock_cdf_attrs):
-    dataset_name = "imap_codice_l2_test-product"
-
-    # Create a sample xarray.Dataset
-    sample_dataset = xr.Dataset(
-        {
-            "var1": (["dim1"], [1, 2, 3]),
-            "var2": (["dim1"], [4, 5, 6]),
-            "var3": (["dim1"], [7, 8, 9]),
-        }
-    )
-
-    # Patch the logger to capture error messages
-    with patch("imap_processing.codice.codice_l2.logger") as mock_logger:
-        # Call the function
-        updated_dataset = add_dataset_attributes(
-            sample_dataset, dataset_name, mock_cdf_attrs
-        )
-
-        # Assert global attributes are updated
-        assert updated_dataset.attrs == {"global_attr_key": "global_attr_value"}
-
-        # Assert variable attributes are updated
-
-        # var1 should get attributes directly
-        assert updated_dataset["var1"].attrs == {"attr1": "value1"}
-
-        # var2 should get attributes with product descriptor prefix (test-product)
-        assert updated_dataset["var2"].attrs == {"attr2": "value2"}
-
-        # var3 should log an error since it doesn't have corresponding attributes
-        assert updated_dataset["var3"].attrs == {}
-
-        # Check logger error call for missing attributes
-        mock_logger.error.assert_called_with(
-            "Field 'var3' and 'test-product-var3' not found in attribute manager."
-        )
-
-
 def test_get_geometric_factor_lut(processing_dependencies, mock_get_file_paths):
     gfactor_lut = get_geometric_factor_lut(processing_dependencies)
 
@@ -208,10 +171,15 @@ def test_process_lo_species_intensity():
     )
     l1b_val_data = load_cdf(l1b_val_data)
     l1b_val_data_processed = l1b_val_data.copy()
-    gf = np.ones((len(l1b_val_data.epoch), 128, 24)) * 2
+    gf = xr.DataArray(
+        np.ones((len(l1b_val_data.epoch), 128, 24)) * 2,
+        dims=("epoch", "energy_table", "inst_az"),
+    )
     with mock.patch(
         "imap_processing.codice.codice_l2.get_species_efficiency",
-        return_value=np.ones((128, 5)) * 2,
+        return_value=xr.DataArray(
+            np.ones((128, 24)) * 2, dims=("energy_table", "inst_az")
+        ),
     ):
         len_pos = 5
         process_lo_species_intensity(
@@ -249,10 +217,15 @@ def test_process_lo_missing_species_intensity():
     )
 
     l1b_val_data_processed = l1b_val_data.copy()
-    gf = np.ones((len(l1b_val_data.epoch), 128, 24)) * 2
+    gf = xr.DataArray(
+        np.ones((len(l1b_val_data.epoch), 128, 24)) * 2,
+        dims=("epoch", "energy_table", "inst_az"),
+    )
     with mock.patch(
         "imap_processing.codice.codice_l2.get_species_efficiency",
-        return_value=np.ones((128, 5)) * 2,
+        return_value=xr.DataArray(
+            np.ones((128, 24)) * 2, dims=("energy_table", "inst_az")
+        ),
     ):
         len_pos = 5
         process_lo_species_intensity(
@@ -271,6 +244,74 @@ def test_process_lo_missing_species_intensity():
         )
 
 
+def test_process_lo_angular_intensity():
+    l1b_val_data = (
+        imap_module_directory
+        / "tests"
+        / "codice"
+        / "data"
+        / "l1b_validation"
+        / "imap_codice_l1b_lo-sw-angular_20250814_v006.cdf"
+    )
+    l1b_val_data = load_cdf(l1b_val_data)
+    l1b_val_data_processed = l1b_val_data.copy()
+    gf = xr.DataArray(
+        np.ones((len(l1b_val_data.epoch), 128, 24)) * 2,
+        dims=("epoch", "energy_table", "inst_az"),
+    )
+    with mock.patch(
+        "imap_processing.codice.codice_l2.get_species_efficiency",
+        return_value=xr.DataArray(
+            np.ones((128, 24)) * 2, dims=("energy_table", "inst_az")
+        ),
+    ):
+        l1b_val_data_processed = process_lo_angular_intensity(
+            l1b_val_data_processed,
+            LO_SW_ANGULAR_VARIABLE_NAMES,
+            gf,
+            None,
+            SW_POSITIONS,
+        )
+
+    for var in LO_SW_ANGULAR_VARIABLE_NAMES:
+        assert var in l1b_val_data_processed, f"Missing variable {var} after processing"
+        # Check that values are non-negative
+        assert np.all(l1b_val_data_processed[var].values >= 0), (
+            f"Variable {var} contains negative values"
+        )
+        # Check shape
+        expected_shape = (
+            len(l1b_val_data.epoch),
+            len(l1b_val_data.energy_table),
+            len(l1b_val_data.spin_sector),
+            3,  # 3 elevation angles map to 5 positions
+        )
+        np.testing.assert_allclose(
+            expected_shape, l1b_val_data_processed[var].shape, rtol=1e-5
+        )
+        # Check that values match expected calculation
+        expected_intensity = (
+            l1b_val_data[var]
+            / (4 * l1b_val_data["energy_table"].data)[
+                np.newaxis, :, np.newaxis, np.newaxis
+            ]
+        )
+        # convert pos to el
+        expected_intensity = (
+            expected_intensity.assign_coords(group=("inst_az", [0, 1, 2, 2, 1]))
+            .groupby("group")
+            .sum()
+        )
+        np.testing.assert_allclose(
+            l1b_val_data_processed[var].values, expected_intensity.values, rtol=1e-5
+        )
+    # Check coords
+    np.testing.assert_allclose(l1b_val_data_processed["elevation_angle"], [0, 15, 30])
+    np.testing.assert_allclose(
+        l1b_val_data_processed["spin_angle"], np.arange(24) * 15 + 7.5
+    )
+
+
 def test_codice_l2_sw_species_intensity(processing_dependencies, mock_get_file_paths):
     sci_input = ScienceInput("imap_codice_l1b_lo-sw-species_20250814_v006.cdf")
     processing_dependencies.add(sci_input)
@@ -283,5 +324,21 @@ def test_codice_l2_nsw_species_intensity(processing_dependencies, mock_get_file_
     sci_input = ScienceInput("imap_codice_l1b_lo-nsw-species_20250814_v006.cdf")
     processing_dependencies.add(sci_input)
     ds = process_codice_l2("lo-nsw-species", processing_dependencies)
+    ds.attrs["Data_version"] = "001"
+    write_cdf(ds)
+
+
+def test_codice_l2_nsw_angular_intensity(processing_dependencies, mock_get_file_paths):
+    sci_input = ScienceInput("imap_codice_l1b_lo-nsw-angular_20250814_v006.cdf")
+    processing_dependencies.add(sci_input)
+    ds = process_codice_l2("lo-nsw-angular", processing_dependencies)
+    ds.attrs["Data_version"] = "001"
+    write_cdf(ds)
+
+
+def test_codice_l2_sw_angular_intensity(processing_dependencies, mock_get_file_paths):
+    sci_input = ScienceInput("imap_codice_l1b_lo-nsw-angular_20250814_v006.cdf")
+    processing_dependencies.add(sci_input)
+    ds = process_codice_l2("lo-sw-angular", processing_dependencies)
     ds.attrs["Data_version"] = "001"
     write_cdf(ds)

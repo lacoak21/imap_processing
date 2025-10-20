@@ -26,11 +26,15 @@ from imap_processing.codice.constants import (
     L2_GEOMETRIC_FACTOR,
     L2_HI_NUMBER_OF_SSD,
     L2_HI_SECTORED_ANGLE,
+    LO_NSW_ANGULAR_VARIABLE_NAMES,
     LO_NSW_SPECIES_VARIABLE_NAMES,
+    LO_POSITION_TO_ELEVATION_ANGLE,
+    LO_SW_ANGULAR_VARIABLE_NAMES,
     LO_SW_PICKUP_ION_SPECIES_VARIABLE_NAMES,
     LO_SW_SPECIES_VARIABLE_NAMES,
     NSW_POSITIONS,
     PUI_POSITIONS,
+    SOLAR_WIND_POSITIONS,
     SW_POSITIONS,
 )
 
@@ -94,7 +98,7 @@ def get_efficiency_lut(dependencies: ProcessingInputCollection) -> pd.DataFrame:
     return pd.read_csv(dependencies.get_file_paths(descriptor="l2-lo-efficiency")[0])
 
 
-def get_species_efficiency(species: str, efficiency: pd.DataFrame) -> np.ndarray:
+def get_species_efficiency(species: str, efficiency: pd.DataFrame) -> xr.DataArray:
     """
     Get the efficiency values for a given species.
 
@@ -107,7 +111,7 @@ def get_species_efficiency(species: str, efficiency: pd.DataFrame) -> np.ndarray
 
     Returns
     -------
-    efficiency : np.ndarray
+    efficiency : xarray.DataArray
         A 2D array of efficiencies with shape (epoch, esa_steps).
     """
     species_efficiency = efficiency[efficiency["species"] == species].sort_values(
@@ -118,13 +122,16 @@ def get_species_efficiency(species: str, efficiency: pd.DataFrame) -> np.ndarray
         [col for col in species_efficiency if col.startswith("position")],
         key=lambda x: int(x.split("_")[-1]),
     )
-    # Shape: (esa_steps, positions)
-    return species_efficiency[position_names_sorted].to_numpy()
+    # Shape: (energy_table, inst_az)
+    return xr.DataArray(
+        species_efficiency[position_names_sorted].to_numpy(),
+        dims=("energy_table", "inst_az"),
+    )
 
 
 def compute_geometric_factors(
     dataset: xr.Dataset, geometric_factor_lookup: dict
-) -> np.ndarray:
+) -> xr.DataArray:
     """
     Calculate geometric factors needed for intensity calculations.
 
@@ -148,7 +155,7 @@ def compute_geometric_factors(
 
     Returns
     -------
-    geometric_factors : np.ndarray
+    geometric_factors : xarray.DataArray
         A 3D array of geometric factors with shape (epoch, esa_steps, positions).
     """
     # Convert the HALF_SPIN_LUT to a reverse mapping of esa_step to half_spin
@@ -170,22 +177,26 @@ def compute_geometric_factors(
 
     # Get the geometric factors based on the modes
     gf = np.where(
-        modes[:, :, np.newaxis],  # Shape (epoch, esa_step, 1)
-        geometric_factor_lookup["reduced"],  # Shape (1, esa_step, 24) - reduced mode
-        geometric_factor_lookup["full"],  # Shape (1, esa_step, 24) - full mode
-    )  # Shape: (epoch, esa_step, positions)
-    return gf
+        modes[:, :, np.newaxis],  # Shape (epoch, energy_table, 1)
+        geometric_factor_lookup[
+            "reduced"
+        ],  # Shape (1, energy_table, 24) - reduced mode
+        geometric_factor_lookup["full"],  # Shape (1, energy_table, 24) - full mode
+    )  # Shape: (epoch, energy_table, inst_az)
+
+    return xr.DataArray(gf, dims=("epoch", "energy_table", "inst_az"))
 
 
-def process_lo_species_intensity(
+def calculate_intensity(
     dataset: xr.Dataset,
     species_list: list,
-    geometric_factors: np.ndarray,
+    geometric_factors: xr.DataArray,
     efficiency: pd.DataFrame,
     positions: list,
+    average_across_positions: bool = False,
 ) -> xr.Dataset:
     """
-    Process the lo-species L2 dataset to calculate species intensities.
+    Calculate species or angular intensities.
 
     Parameters
     ----------
@@ -200,6 +211,9 @@ def process_lo_species_intensity(
     positions : list
         A list of position indices to select from the geometric factor and
         efficiency lookup tables.
+    average_across_positions : bool
+        Whether to average the efficiencies and geometric factors across the selected
+        positions. Default is False.
 
     Returns
     -------
@@ -207,34 +221,170 @@ def process_lo_species_intensity(
         The updated L2 dataset with species intensities calculated.
     """
     # Select the relevant positions from the geometric factors
-    geometric_factors = geometric_factors[:, :, positions]
-    # take the mean geometric factor across positions
-    geometric_factors = np.nanmean(geometric_factors, axis=-1)
-    scaler = len(positions)
-    # Calculate the species intensities using the provided geometric factors and
-    # efficiency. Species_intensity = species_rate / (gm * eff * esa_step)
+    geometric_factors = geometric_factors.isel(inst_az=positions)
+    if average_across_positions:
+        # take the mean geometric factor across positions
+        geometric_factors = geometric_factors.mean(dim="inst_az")
+        scalar = len(positions)
+    else:
+        scalar = 1
+    # Calculate the angular intensities using the provided geometric factors and
+    # efficiency.
+    # intensity = species_rate / (gm * eff * esa_step) for position and spin angle
     for species in species_list:
         # Select the relevant positions for the species from the efficiency LUT
-        # Shape: (epoch, esa_steps, positions)
-        species_eff = get_species_efficiency(species, efficiency)[
-            np.newaxis, :, positions
-        ]
-        if species_eff.size == 0:
-            logger.warning("No efficiency data found for species {species}. Skipping.")
-            continue
-        # Take the mean efficiency across positions
-        species_eff = np.nanmean(species_eff, axis=-1)
-        denominator = (
-            scaler * geometric_factors * species_eff * dataset["energy_table"].data
+        # Shape: (epoch, energy_table, inst_az)
+        species_eff = get_species_efficiency(species, efficiency).isel(
+            inst_az=positions
         )
+        if species_eff.size == 0:
+            logger.warning(f"No efficiency data found for species {species}. Skipping.")
+            continue
+
+        if average_across_positions:
+            # Take the mean efficiency across positions
+            species_eff = species_eff.mean(dim="inst_az")
+
+        # Shape: (epoch, energy_table, inst_az) or
+        # (epoch, energy_table) if averaged
+        denominator = scalar * geometric_factors * species_eff * dataset["energy_table"]
         if species not in dataset:
             logger.warning(
                 f"Species {species} not found in dataset. Filling with NaNS."
             )
             dataset[species] = np.full(dataset["energy_table"].data.shape, np.nan)
         else:
-            dataset[species] = dataset[species] / denominator[:, :, np.newaxis]
+            dataset[species] = dataset[species] / denominator
 
+        # Also calculate uncertainty if available
+        species_uncertainty = f"unc_{species}"
+        if species_uncertainty not in dataset:
+            logger.warning(
+                f"Uncertainty {species_uncertainty} not found in dataset."
+                f" Filling with NaNS."
+            )
+            dataset[species_uncertainty] = np.full(
+                dataset["energy_table"].data.shape, np.nan
+            )
+        else:
+            dataset[species_uncertainty] = dataset[species_uncertainty] / denominator
+
+    return dataset
+
+
+def process_lo_species_intensity(
+    dataset: xr.Dataset,
+    species_list: list,
+    geometric_factors: xr.DataArray,
+    efficiency: pd.DataFrame,
+    positions: list,
+) -> xr.Dataset:
+    """
+    Process the lo-species L2 dataset to calculate species intensities.
+
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        The L2 dataset to process.
+    species_list : list
+        List of species variable names to calculate intensity.
+    geometric_factors : xarray.DataArray
+        The geometric factors array with shape (epoch, esa_steps).
+    efficiency : pandas.DataFrame
+        The efficiency lookup table.
+    positions : list
+        A list of position indices to select from the geometric factor and
+        efficiency lookup tables.
+
+    Returns
+    -------
+    xarray.Dataset
+        The updated L2 dataset with species intensities calculated.
+    """
+    # Calculate the species intensities using the provided geometric factors and
+    # efficiency.
+    dataset = calculate_intensity(
+        dataset,
+        species_list,
+        geometric_factors,
+        efficiency,
+        positions,
+        average_across_positions=True,
+    )
+
+    return dataset
+
+
+def process_lo_angular_intensity(
+    dataset: xr.Dataset,
+    species_list: list,
+    geometric_factors: xr.DataArray,
+    efficiency: pd.DataFrame,
+    positions: list,
+) -> xr.Dataset:
+    """
+    Process the lo-species L2 dataset to calculate angular intensities.
+
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        The L2 dataset to process.
+    species_list : list
+        List of species variable names to calculate intensity.
+    geometric_factors : xarray.DataArray
+        The geometric factors array with shape (epoch, esa_steps).
+    efficiency : pandas.DataFrame
+        The efficiency lookup table.
+    positions : list
+        A list of position indices to select from the geometric factor and
+        efficiency lookup tables.
+
+    Returns
+    -------
+    xarray.Dataset
+        The updated L2 dataset with angular intensities calculated.
+    """
+    # Calculate the angular intensities using the provided geometric factors and
+    # efficiency.
+    dataset = calculate_intensity(
+        dataset,
+        species_list,
+        geometric_factors,
+        efficiency,
+        positions,
+        average_across_positions=False,
+    )
+    # transform positions to elevation angles
+    if positions == SW_POSITIONS:
+        pos_to_el = LO_POSITION_TO_ELEVATION_ANGLE["sw"]
+    elif positions == NSW_POSITIONS:
+        pos_to_el = LO_POSITION_TO_ELEVATION_ANGLE["nsw"]
+    else:
+        raise ValueError("Unknown positions for elevation angle mapping.")
+
+    # Create a new coordinate for elevation_angle based on inst_az
+    dataset = dataset.assign_coords(
+        elevation_angle=(
+            "inst_az",
+            [pos_to_el[pos] for pos in dataset["inst_az"].data],
+        )
+    )
+    # Take the mean across elevation angles and restore the original dimension order
+    dataset_converted = (
+        dataset[species_list]
+        .groupby("elevation_angle")
+        .sum(keep_attrs=True)  # One position should always contain zeros so sum is safe
+        # Restore original dimension order because groupby moves the grouped
+        # dimension to the front
+        .transpose("epoch", "energy_table", "spin_sector", "elevation_angle", ...)
+    )
+    # Create a new coordinate for spin angle based on spin_sector
+    # Use equation from section 11.2.2 of algorithm document
+    dataset = dataset.assign_coords(
+        spin_angle=("spin_sector", dataset["spin_sector"].data * 15.0 + 7.5)
+    )
+
+    dataset = dataset.drop_vars(species_list).merge(dataset_converted)
     return dataset
 
 
@@ -637,6 +787,8 @@ def process_codice_l2(
     if dataset_name in [
         "imap_codice_l2_lo-sw-species",
         "imap_codice_l2_lo-nsw-species",
+        "imap_codice_l2_lo-nsw-angular",
+        "imap_codice_l2_lo-sw-angular",
     ]:
         l2_dataset = load_cdf(file_path).copy()
 
@@ -649,7 +801,7 @@ def process_codice_l2(
             # Filter the efficiency lookup table for solar wind efficiencies
             efficiencies = efficiency_lookup[efficiency_lookup["product"] == "sw"]
             # Calculate the pickup ion sunward solar wind intensities using equation
-            # described in section 11.2.4 of algorithm document.
+            # described in section 11.2.3 of algorithm document.
             process_lo_species_intensity(
                 l2_dataset,
                 LO_SW_PICKUP_ION_SPECIES_VARIABLE_NAMES,
@@ -658,22 +810,43 @@ def process_codice_l2(
                 PUI_POSITIONS,
             )
             # Calculate the sunward solar wind species intensities using equation
-            # described in section 11.2.4 of algorithm document.
+            # described in section 11.2.3 of algorithm document.
             process_lo_species_intensity(
                 l2_dataset,
                 LO_SW_SPECIES_VARIABLE_NAMES,
                 geometric_factors,
                 efficiencies,
-                SW_POSITIONS,
+                SOLAR_WIND_POSITIONS,
             )
-        else:
-            # Filter the efficiency lookup table for non solar wind efficiencies
+        elif dataset_name == "imap_codice_l2_lo-nsw-species":
+            # Filter the efficiency lookup table for non-solar wind efficiencies
             efficiencies = efficiency_lookup[efficiency_lookup["product"] == "nsw"]
             # Calculate the non-sunward species intensities using equation
-            # described in section 11.2.4 of algorithm document.
+            # described in section 11.2.3 of algorithm document.
             process_lo_species_intensity(
                 l2_dataset,
                 LO_NSW_SPECIES_VARIABLE_NAMES,
+                geometric_factors,
+                efficiencies,
+                NSW_POSITIONS,
+            )
+        elif dataset_name == "imap_codice_l2_lo-sw-angular":
+            efficiencies = efficiency_lookup[efficiency_lookup["product"] == "sw"]
+            # Calculate the sunward solar wind angular intensities using equation
+            # described in section 11.2.2 of algorithm document.
+            l2_dataset = process_lo_angular_intensity(
+                l2_dataset,
+                LO_SW_ANGULAR_VARIABLE_NAMES,
+                geometric_factors,
+                efficiencies,
+                SW_POSITIONS,
+            )
+        if dataset_name == "imap_codice_l2_lo-nsw-angular":
+            # Calculate the non sunward angular intensities
+            efficiencies = efficiency_lookup[efficiency_lookup["product"] == "nsw"]
+            l2_dataset = process_lo_angular_intensity(
+                l2_dataset,
+                LO_NSW_ANGULAR_VARIABLE_NAMES,
                 geometric_factors,
                 efficiencies,
                 NSW_POSITIONS,
@@ -727,65 +900,6 @@ def process_codice_l2(
         # See section 11.1.2 of algorithm document
         pass
 
-    elif dataset_name == "imap_codice_l2_lo-sw-angular":
-        # Calculate the sunward angular intensities using equation described in
-        # section 11.2.3 of algorithm document.
-        pass
-
-    elif dataset_name == "imap_codice_l2_lo-nsw-angular":
-        # Calculate the non-sunward angular intensities using equation described
-        # in section 11.2.3 of algorithm document.
-        pass
-
     # logger.info(f"\nFinal data product:\n{l2_dataset}\n")
 
     return l2_dataset
-
-
-def add_dataset_attributes(
-    dataset: xr.Dataset, dataset_name: str, cdf_attrs: ImapCdfAttributes
-) -> xr.Dataset:
-    """
-    Add the global and variable attributes to the dataset.
-
-    Parameters
-    ----------
-    dataset : xarray.Dataset
-        The dataset to update.
-    dataset_name : str
-        The name of the dataset.
-    cdf_attrs : ImapCdfAttributes
-        The attribute manager for CDF attributes.
-
-    Returns
-    -------
-    xarray.Dataset
-        The updated dataset.
-    """
-    cdf_attrs.add_instrument_global_attrs("codice")
-    cdf_attrs.add_instrument_variable_attrs("codice", "l2")
-
-    # Update the global attributes
-    dataset.attrs = cdf_attrs.get_global_attributes(dataset_name)
-
-    # Set the variable attributes
-    for variable_name in dataset.data_vars.keys():
-        try:
-            dataset[variable_name].attrs = cdf_attrs.get_variable_attributes(
-                variable_name, check_schema=False
-            )
-        except KeyError:
-            # Some variables may have a product descriptor prefix in the
-            # cdf attributes key if they are common to multiple products.
-            descriptor = dataset_name.split("imap_codice_l2_")[-1]
-            cdf_attrs_key = f"{descriptor}-{variable_name}"
-            try:
-                dataset[variable_name].attrs = cdf_attrs.get_variable_attributes(
-                    f"{cdf_attrs_key}", check_schema=False
-                )
-            except KeyError:
-                logger.error(
-                    f"Field '{variable_name}' and '{cdf_attrs_key}' not found in "
-                    f"attribute manager."
-                )
-    return dataset

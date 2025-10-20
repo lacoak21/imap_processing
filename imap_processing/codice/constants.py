@@ -2281,8 +2281,9 @@ HALF_SPIN_LUT = {
 }
 
 NSW_POSITIONS = [x for x in range(3, 22)]
-SW_POSITIONS = [0]
-PUI_POSITIONS = [0, 1, 2, 22, 23]
+SW_POSITIONS = [0, 1, 2, 22, 23]
+SOLAR_WIND_POSITIONS = [0]
+PUI_POSITIONS = SW_POSITIONS
 L2_GEOMETRIC_FACTOR = 0.013
 L2_HI_NUMBER_OF_SSD = 12.0
 
@@ -2320,3 +2321,35 @@ HI_L2_ELEVATION_ANGLE = np.array(
     ],
     dtype=float,
 )
+
+
+LO_POSITION_TO_ELEVATION_ANGLE = {
+    "sw": {
+        1: 0,
+        2: 15,
+        24: 15,
+        3: 30,
+        23: 30,
+    },
+    "nsw": {
+        4: 45,
+        22: 45,
+        5: 60,
+        21: 60,
+        6: 75,
+        20: 75,
+        7: 90,
+        19: 90,
+        8: 105,
+        18: 105,
+        9: 120,
+        17: 120,
+        10: 135,
+        16: 135,
+        11: 150,
+        15: 150,
+        12: 165,
+        14: 165,
+        13: 180,
+    },
+}
