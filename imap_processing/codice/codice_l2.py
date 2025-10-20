@@ -275,7 +275,7 @@ def calculate_intensity(
 def process_lo_species_intensity(
     dataset: xr.Dataset,
     species_list: list,
-    geometric_factors: np.ndarray,
+    geometric_factors: xr.DataArray,
     efficiency: pd.DataFrame,
     positions: list,
 ) -> xr.Dataset:
