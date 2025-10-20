@@ -116,7 +116,7 @@ def test_l1b_lo_sw_angular():
         / "codice"
         / "data"
         / "l1b_validation"
-        / "imap_codice_l1b_lo-sw-angular_20250814211100_v0.0.5.cdf"
+        / "imap_codice_l1b_lo-sw-angular_20250814_v005.cdf"
     )
     l1b_val_data = load_cdf(l1b_val_data)
     processed_data = process_codice_l1b(processed_l1a_file)
