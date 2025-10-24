@@ -1,16 +1,16 @@
 """Calculate Pointing Set Grids."""
 
 import logging
+import pickle
 
 import astropy_healpix.healpy as hp
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 from imap_processing.cdf.utils import parse_filename_like
 from imap_processing.quality_flags import ImapPSETUltraFlags
-from imap_processing.spice.repoint import get_pointing_times
 from imap_processing.spice.time import (
-    et_to_met,
     met_to_ttj2000ns,
 )
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
@@ -70,7 +70,7 @@ def calculate_spacecraft_pset(
     """
     repoint = de_dataset.attrs.get("Repointing", "")
     repoint_id = int(repoint.replace("repoint", ""))
-    print(repoint_id)
+
     apply_boundary_scale_factors = False
     pset_dict: dict[str, np.ndarray] = {}
 
@@ -78,6 +78,16 @@ def calculate_spacecraft_pset(
     indices = np.where(np.isin(de_dataset["ebin"].values, species_id))[0]
     species_dataset = de_dataset.isel(epoch=indices)
 
+    spin_data = pd.read_csv(
+        f"/Users/luco3133/projects/ultra_stuff/validation_stuff"
+        f"/other_var_validation_20251024/ultra-{sensor}-inputs/"
+        f"SpinTable-p{repoint_id}.csv"
+    )
+    # Use the last MET_Start from the spin table and add a small offset (minutes)
+    met_offset_minutes = 180  # 3 mins
+    last_met = float(spin_data["MET_Start"].values[-1])
+    pointing_start = last_met + met_offset_minutes
+    pointing_stop = pointing_start
     # If there are no species return None.
     if indices.size == 0:
         logger.info(f"No data available for {name}")
@@ -118,6 +128,15 @@ def calculate_spacecraft_pset(
             instrument_id,
         )
     )
+    # # Save
+    with open(f"pixels_below_scattering_{sensor}.pkl", "wb") as f:
+        pickle.dump(pixels_below_scattering, f)
+
+    # Load
+    # with open("pixels_below_scattering_45.pkl", "rb") as f:
+    #     pixels_below_scattering = pickle.load(f)
+
+    # Determine nside from the lookup table
     # Determine nside from the lookup table
     nside = hp.npix2nside(len(for_indices_by_spin_phase))
     counts, latitude, longitude, n_pix = get_spacecraft_histogram(
@@ -142,9 +161,9 @@ def calculate_spacecraft_pset(
     sensitivity = efficiencies * geometric_function
 
     # Get the start and stop times of the pointing period
-    pointing_start, pointing_stop = get_pointing_times(
-        float(et_to_met(species_dataset["event_times"].data[0]))
-    )
+    # pointing_start, pointing_stop = get_pointing_times(
+    #     float(et_to_met(species_dataset["event_times"].data[0]))
+    # )
     # Calculate exposure times
     logger.info("Calculating spacecraft exposure times with deadtime correction.")
     exposure_pointing, deadtime_ratios = get_spacecraft_exposure_times(

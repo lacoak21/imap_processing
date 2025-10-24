@@ -4,6 +4,7 @@ import logging
 
 import astropy_healpix.healpy as hp
 import numpy as np
+import pandas as pd
 import xarray as xr
 from numpy.typing import NDArray
 from scipy import interpolate
@@ -18,10 +19,6 @@ from imap_processing.ultra.l1b.lookup_utils import (
     get_geometric_factor,
     get_image_params,
     load_geometric_factor_tables,
-)
-from imap_processing.ultra.l1b.ultra_l1b_culling import (
-    get_pulses_per_spin,
-    get_spin_and_duration,
 )
 from imap_processing.ultra.l1b.ultra_l1b_extended import (
     get_efficiency,
@@ -465,35 +462,29 @@ def get_spacecraft_exposure_times(
     exposure_time = calculate_exposure_time(
         nominal_deadtime_ratios, pixels_below_scattering, boundary_scale_factors, n_pix
     )
-    # Use the universal spin table to determine the actual number of spins
-    # nominal_spin_seconds = 15.0
-    # repoint = rates_dataset.attrs.get("Repointing", "")
-    # repoint_id = int(repoint.replace("repoint", ""))
-    # spin_data = pd.read_csv(
-    #     f"/Users/luco3133/projects/ultra_stuff/validation_stuff"
-    #     f"/other_var_validation_20251024/ultra-{sensor}-inputs/"
-    #     f"SpinTable-p{repoint_id}.csv"
-    # )
-
+    # Get number of spins
+    nominal_spin_seconds = 15.0
     # spin_data = get_spin_data()
-    # # Filter for spins only in pointing
-    # spin_data = spin_data[
-    #     (spin_data["spin_start_met"] >= pointing_start_met)
-    #     & (spin_data["spin_start_met"] <= pointing_stop_met)
-    # ]
-    # # Get only valid spin data
+    # # Get valid spin data only
     # valid_mask = (spin_data["spin_phase_valid"].values == 1) & (
     #     spin_data["spin_period_valid"].values == 1
     # )
-    # n_spins_in_pointing: float = np.sum(
-    #     spin_data[valid_mask].spin_period_sec / nominal_spin_seconds
-    # )
-    # logger.info(
-    #     f"Calculated total spins universal spin table. Found {n_spins_in_pointing} "
-    #     f"valid spins."
-    # )
-    # Adjust exposure time by the actual number of valid spins in the pointing
-    n_spins_in_pointing = 10
+    # total_spin = np.sum(spin_data[valid_mask].spin_period_sec / nominal_spin_seconds)
+    repoint = rates_dataset.attrs.get("Repointing", "")
+    repoint_id = int(repoint.replace("repoint", ""))
+    print("pointings:", repoint_id)
+    try:
+        spin_data = pd.read_csv(
+            f"/Users/luco3133/projects/ultra_stuff/validation_stuff"
+            f"/other_var_validation_20251024/ultra-{sensor}-inputs/"
+            f"SpinTable-p{repoint_id}.csv"
+        )
+        n_spins_in_pointing: np.ndarray = np.sum(
+            spin_data["Spin Duration (sec)"] / nominal_spin_seconds
+        )
+    except ValueError:
+        n_spins_in_pointing = np.array([5220])
+
     exposure_pointing_adjusted = n_spins_in_pointing * exposure_time
 
     return exposure_pointing_adjusted, nominal_deadtime_ratios
@@ -782,13 +773,13 @@ def get_spacecraft_background_rates(
     -----
     See Eqn. 3, 8, and 20 in the Algorithm Document for the equation.
     """
-    pulses = get_pulses_per_spin(rates_dataset)
+    # pulses = get_pulses_per_spin(rates_dataset)
     # Pulses for the pointing.
     etof_min = get_image_params("eTOFMin", f"ultra{sensor}", ancillary_files)
     etof_max = get_image_params("eTOFMax", f"ultra{sensor}", ancillary_files)
-    spin_number, _ = get_spin_and_duration(
-        rates_dataset["shcoarse"], rates_dataset["spin"]
-    )
+    # spin_number, _ = get_spin_and_duration(
+    #     rates_dataset["shcoarse"], rates_dataset["spin"]
+    # )
 
     # Get dmin for PH (mm).
     dmin_ctof = UltraConstants.DMIN_PH_CTOF
@@ -800,11 +791,13 @@ def get_spacecraft_background_rates(
     background_rates = np.zeros((len(energy_bin_edges), n_pix))
 
     # Only select pulses from goodtimes.
-    goodtime_mask = np.isin(spin_number, goodtimes_spin_number)
-    mean_start_pulses = np.mean(pulses.start_pulses[goodtime_mask])
-    mean_stop_pulses = np.mean(pulses.stop_pulses[goodtime_mask])
-    mean_coin_pulses = np.mean(pulses.coin_pulses[goodtime_mask])
-
+    # goodtime_mask = np.isin(spin_number, goodtimes_spin_number)
+    # mean_start_pulses = np.mean(pulses.start_pulses[goodtime_mask])
+    # mean_stop_pulses = np.mean(pulses.stop_pulses[goodtime_mask])
+    # mean_coin_pulses = np.mean(pulses.coin_pulses[goodtime_mask])
+    mean_start_pulses = rates_dataset["Start Rate (Hz)"].mean()
+    mean_stop_pulses = rates_dataset["Stop Rate (Hz)"].mean()
+    mean_coin_pulses = rates_dataset["Coin Rate (Hz)"].mean()
     for i, (e_min, e_max) in enumerate(energy_bin_edges):
         # Calculate ctof for the energy bin boundaries by combining Eqn. 3 and 8.
         # Compute speed for min and max energy using E = 1/2mv^2 -> v = sqrt(2E/m)
