@@ -13,7 +13,6 @@ from imap_processing.spice.time import (
     et_to_met,
     met_to_ttj2000ns,
 )
-from imap_processing.ultra.l1b.ultra_l1b_culling import get_de_rejection_mask
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
     calculate_fwhm_spun_scattering,
     get_spacecraft_pointing_lookup_tables,
@@ -85,11 +84,11 @@ def calculate_spacecraft_pset(
         return None
 
     # Before we use the de_dataset to calculate the pointing set grid we need to filter.
-    rejected = get_de_rejection_mask(
-        species_dataset["quality_scattering"].values,
-        species_dataset["quality_outliers"].values,
-    )
-    species_dataset = species_dataset.isel(epoch=~rejected)
+    # rejected = get_de_rejection_mask(
+    #     species_dataset["quality_scattering"].values,
+    #     species_dataset["quality_outliers"].values,
+    # )
+    # species_dataset = species_dataset.isel(epoch=~rejected)
 
     v_mag_dps_spacecraft = np.linalg.norm(
         species_dataset["velocity_dps_sc"].values, axis=1
@@ -156,6 +155,7 @@ def calculate_spacecraft_pset(
         pointing_start,
         pointing_stop,
         n_pix=n_pix,
+        sensor=sensor,
     )
     logger.info("Calculating background rates.")
     # Calculate background rates

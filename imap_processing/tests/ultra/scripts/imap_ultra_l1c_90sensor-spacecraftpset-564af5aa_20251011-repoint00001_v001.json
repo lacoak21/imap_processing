@@ -1,0 +1,74 @@
+[
+  {
+    "type": "science",
+    "files": ["imap_ultra_l1b_90sensor-goodtimes_20260926_v002.cdf"]
+  },
+  {
+    "type": "science",
+    "files": ["imap_ultra_l1b_90sensor-de_20000101_v999.cdf"]
+  },
+  {
+    "type": "science",
+    "files": ["imap_ultra_l1a_90sensor-rates_20000101_v999.cdf"]
+  },
+  {
+    "type": "science",
+    "files": ["imap_ultra_l1a_90sensor-params_20260926_v006.cdf"]
+  },
+  {
+    "type": "ancillary",
+    "files": ["imap_ultra_l1c-90sensor-sc-pointing-bsf_20250101_v000.csv"]
+  },
+  {
+    "type": "ancillary",
+    "files": ["imap_ultra_l1c-90sensor-sc-pointing-theta_20250101_v000.csv"]
+  },
+  {
+    "type": "ancillary",
+    "files": ["imap_ultra_l1c-90sensor-sc-pointing-phi_20250101_v000.csv"]
+  },
+  {
+    "type": "ancillary",
+    "files": ["imap_ultra_l1c-90sensor-sc-pointing-index_20250101_v000.csv"]
+  },
+  {
+    "type": "ancillary",
+    "files": ["imap_ultra_l1b-90sensor-scattering-calibration-data_20250101_v000.csv"]
+  },
+  {
+    "type": "ancillary",
+    "files": ["imap_ultra_l1b-scattering-thresholds-per-energy_20250101_v000.csv"]
+  },
+  {
+    "type": "ancillary",
+    "files": ["imap_ultra_l1b-45sensor-logistic-interpolation_20250101_v000.csv"]
+  },
+  {
+    "type": "ancillary",
+    "files": ["imap_ultra_l1b-90sensor-imgparams-lookup_20250101_v001.csv"]
+  },
+  {
+    "type": "ancillary",
+    "files": ["imap_ultra_l1b-sensor-gf-blades_20250101_v000.csv"]
+  },
+  {
+    "type": "repoint",
+    "files": ["imap_2026_269_05.repoint.csv"]
+  },
+  {
+    "type": "spin",
+    "files": ["imap_2026_268_2026_269_01.spin.csv"]
+  },
+  {
+    "type": "spice",
+    "files": [
+      "imap_recon_20250415_20260415_v01.bsp",
+      "imap_dps_2026_268_2026_268_01.ah.bc",
+      "imap_science_105.tf",
+      "imap_science_100.tf",
+      "naif016.tls",
+      "imap_sclk_005.tsc",
+      "imap_2026_269_2026_269_10.ah.bc"
+    ]
+  }
+]

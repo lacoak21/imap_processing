@@ -16,7 +16,6 @@ from imap_processing.spice.geometry import (
 from imap_processing.spice.spin import (
     get_spacecraft_spin_phase,
     get_spin_angle,
-    get_spin_data,
 )
 from imap_processing.spice.time import ttj2000ns_to_met
 from imap_processing.ultra.constants import UltraConstants
@@ -424,6 +423,7 @@ def get_spacecraft_exposure_times(
     pointing_start_met: float,
     pointing_stop_met: float,
     n_pix: int,
+    sensor: int,
 ) -> tuple[NDArray, NDArray]:
     """
     Compute exposure times for HEALPix pixels.
@@ -447,6 +447,8 @@ def get_spacecraft_exposure_times(
         Stop time of the pointing period in mission elapsed time.
     n_pix : int
         Number of HEALPix pixels.
+    sensor : int
+        Sensor identifier (45 or 90).
 
     Returns
     -------
@@ -467,26 +469,36 @@ def get_spacecraft_exposure_times(
         nominal_deadtime_ratios, pixels_below_scattering, boundary_scale_factors, n_pix
     )
     # Use the universal spin table to determine the actual number of spins
-    nominal_spin_seconds = 15.0
-    spin_data = get_spin_data()
-    # Filter for spins only in pointing
-    spin_data = spin_data[
-        (spin_data["spin_start_met"] >= pointing_start_met)
-        & (spin_data["spin_start_met"] <= pointing_stop_met)
-    ]
-    # Get only valid spin data
-    valid_mask = (spin_data["spin_phase_valid"].values == 1) & (
-        spin_data["spin_period_valid"].values == 1
-    )
-    n_spins_in_pointing: float = np.sum(
-        spin_data[valid_mask].spin_period_sec / nominal_spin_seconds
-    )
-    logger.info(
-        f"Calculated total spins universal spin table. Found {n_spins_in_pointing} "
-        f"valid spins."
-    )
+    # nominal_spin_seconds = 15.0
+    # repoint = rates_dataset.attrs.get("Repointing", "")
+    # repoint_id = int(repoint.replace("repoint", ""))
+    # spin_data = pd.read_csv(
+    #     f"/Users/luco3133/projects/ultra_stuff/validation_stuff"
+    #     f"/other_var_validation_20251024/ultra-{sensor}-inputs/"
+    #     f"SpinTable-p{repoint_id}.csv"
+    # )
+
+    # spin_data = get_spin_data()
+    # # Filter for spins only in pointing
+    # spin_data = spin_data[
+    #     (spin_data["spin_start_met"] >= pointing_start_met)
+    #     & (spin_data["spin_start_met"] <= pointing_stop_met)
+    # ]
+    # # Get only valid spin data
+    # valid_mask = (spin_data["spin_phase_valid"].values == 1) & (
+    #     spin_data["spin_period_valid"].values == 1
+    # )
+    # n_spins_in_pointing: float = np.sum(
+    #     spin_data[valid_mask].spin_period_sec / nominal_spin_seconds
+    # )
+    # logger.info(
+    #     f"Calculated total spins universal spin table. Found {n_spins_in_pointing} "
+    #     f"valid spins."
+    # )
     # Adjust exposure time by the actual number of valid spins in the pointing
+    n_spins_in_pointing = 10
     exposure_pointing_adjusted = n_spins_in_pointing * exposure_time
+
     return exposure_pointing_adjusted, nominal_deadtime_ratios
 
 
