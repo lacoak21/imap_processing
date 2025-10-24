@@ -13,11 +13,6 @@ from imap_processing.spice.geometry import (
     cartesian_to_spherical,
     imap_state,
 )
-from imap_processing.spice.spin import (
-    get_spacecraft_spin_phase,
-    get_spin_angle,
-)
-from imap_processing.spice.time import ttj2000ns_to_met
 from imap_processing.ultra.constants import UltraConstants
 from imap_processing.ultra.l1b.lookup_utils import (
     get_geometric_factor,
@@ -302,49 +297,51 @@ def get_deadtime_ratios_by_spin_phase(
     numpy.ndarray
         Nominal deadtime ratios at every spin phase step (1ms res).
     """
-    deadtime_ratios = get_deadtime_ratios(sectored_rates)
-    # Get the spin phase at the start of each sector rate measurement
-    met_times = ttj2000ns_to_met(sectored_rates.epoch.data)
-    spin_phases = np.asarray(
-        get_spin_angle(get_spacecraft_spin_phase(met_times), degrees=True)
-    )
-    # Assume the sectored rate data is evenly spaced in time, and find the middle spin
-    # phase value for each sector.
-    # The center spin phase is the closest / most accurate spin phase.
-    # There are 24 spin phases per sector so the nominal middle sector spin phases
-    # would be: array([ 12., 36., ..., 300., 324.]) for 15 sectors.
-    spin_phases_centered = (spin_phases[:-1] + spin_phases[1:]) / 2
-    # Assume the last sector is nominal because we dont have enough data to determine
-    # the spin phase at the end of the last sector.
-    # TODO: is this assumption valid?
-    # Add the last spin phase value + half of a nominal sector.
-    spin_phases_centered = np.append(spin_phases_centered, spin_phases[-1] + 12)
-    # Wrap any spin phases > 360 back to [0, 360]
-    spin_phases_centered = spin_phases_centered % 360
-    # Create a dataset with spin phases and dead time ratios
-    deadtime_by_spin_phase = xr.Dataset(
-        {"deadtime_ratio": deadtime_ratios},
-        coords={
-            "spin_phase": xr.DataArray(np.array(spin_phases_centered), dims="epoch")
-        },
-    )
-
-    # Sort the dataset by spin phase (ascending order)
-    deadtime_by_spin_phase = deadtime_by_spin_phase.sortby("spin_phase")
-    # Group by spin phase and calculate the median dead time ratio for each phase
-    deadtime_medians = deadtime_by_spin_phase.groupby("spin_phase").median(skipna=True)
-    if np.any(np.isnan(deadtime_medians["deadtime_ratio"].values)):
-        if not np.any(np.isfinite(deadtime_medians["deadtime_ratio"].values)):
-            raise ValueError("All dead time ratios are NaN, cannot interpolate.")
-        logger.warning(
-            "Dead time ratios contain NaN values, filtering data to only include "
-            "finite values."
-        )
-    deadtime_medians = deadtime_medians.where(
-        np.isfinite(deadtime_medians["deadtime_ratio"]), drop=True
-    )
+    # deadtime_ratios = get_deadtime_ratios(sectored_rates)
+    # # Get the spin phase at the start of each sector rate measurement
+    # met_times = ttj2000ns_to_met(sectored_rates.epoch.data)
+    # spin_phases = np.asarray(
+    #     get_spin_angle(get_spacecraft_spin_phase(met_times), degrees=True)
+    # )
+    # # Assume the sectored rate data is evenly spaced in time, and find the middle spin
+    # # phase value for each sector.
+    # # The center spin phase is the closest / most accurate spin phase.
+    # # There are 24 spin phases per sector so the nominal middle sector spin phases
+    # # would be: array([ 12., 36., ..., 300., 324.]) for 15 sectors.
+    # spin_phases_centered = (spin_phases[:-1] + spin_phases[1:]) / 2
+    # # Assume the last sector is nominal because we dont have enough data to determine
+    # # the spin phase at the end of the last sector.
+    # # TODO: is this assumption valid?
+    # # Add the last spin phase value + half of a nominal sector.
+    # spin_phases_centered = np.append(spin_phases_centered, spin_phases[-1] + 12)
+    # # Wrap any spin phases > 360 back to [0, 360]
+    # spin_phases_centered = spin_phases_centered % 360
+    # # Create a dataset with spin phases and dead time ratios
+    # deadtime_by_spin_phase = xr.Dataset(
+    #     {"deadtime_ratio": deadtime_ratios},
+    #     coords={
+    #         "spin_phase": xr.DataArray(np.array(spin_phases_centered), dims="epoch")
+    #     },
+    # )
+    #
+    # # Sort the dataset by spin phase (ascending order)
+    # deadtime_by_spin_phase = deadtime_by_spin_phase.sortby("spin_phase")
+    # # Group by spin phase and calculate the median dead time ratio for each phase
+    # deadtime_medians = deadtime_by_spin_phase.groupby(
+    # "spin_phase").median(skipna=True)
+    # if np.any(np.isnan(deadtime_medians["deadtime_ratio"].values)):
+    #     if not np.any(np.isfinite(deadtime_medians["deadtime_ratio"].values)):
+    #         raise ValueError("All dead time ratios are NaN, cannot interpolate.")
+    #     logger.warning(
+    #         "Dead time ratios contain NaN values, filtering data to only include "
+    #         "finite values."
+    #     )
+    # deadtime_medians = deadtime_medians.where(
+    #     np.isfinite(deadtime_medians["deadtime_ratio"]), drop=True
+    # )
     interpolator = interpolate.PchipInterpolator(
-        deadtime_medians["spin_phase"].values, deadtime_medians["deadtime_ratio"].values
+        sectored_rates["Spin Phase (deg)"].values,
+        sectored_rates["Dead Time Ratio"].values,
     )
     # Calculate the nominal spin phases at 1 ms resolution and query the pchip
     # interpolator to get the deadtime ratios.
@@ -459,8 +456,8 @@ def get_spacecraft_exposure_times(
     nominal_deadtime_ratios : np.ndarray
         Deadtime ratios at each spin phase step (1ms res).
     """
-    sectored_rates = get_sectored_rates(rates_dataset, params_dataset)
-    nominal_deadtime_ratios = get_deadtime_ratios_by_spin_phase(sectored_rates)
+    # sectored_rates = get_sectored_rates(rates_dataset, params_dataset)
+    nominal_deadtime_ratios = get_deadtime_ratios_by_spin_phase(rates_dataset)
     # The exposure time will be approximately the same per spin, so to save
     # computation time, calculate the exposure time for a single spin and then scale it
     # by the number of spins in the pointing. For more information, see section 3.4.3
