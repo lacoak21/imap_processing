@@ -359,6 +359,7 @@ def calculate_exposure_time(
     pixels_below_scattering: list,
     boundary_scale_factors: NDArray,
     n_pix: int,
+    apply_boundary_scale_factors: bool = True,
 ) -> np.ndarray:
     """
     Adjust the exposure time at each pixel to account for dead time.
@@ -376,6 +377,8 @@ def calculate_exposure_time(
         Boundary scale factors for each pixel at each spin phase.
     n_pix : int
         Number of HEALPix pixels.
+    apply_boundary_scale_factors : bool, optional
+        Whether to apply boundary scale factors when calculating exposure time.
 
     Returns
     -------
@@ -400,10 +403,13 @@ def calculate_exposure_time(
                 continue
             # Apply the nominal exposure time (1 ms) scaled by the deadtime ratio to
             # every pixel in the FOR, that is below the FWHM scattering threshold,
-            counts[energy_bin_idx, pixels_at_energy_and_spin] += (
-                deadtime_ratios[i]
-                * boundary_scale_factors[pixels_at_energy_and_spin, i]
-            )
+            if apply_boundary_scale_factors:
+                counts[energy_bin_idx, pixels_at_energy_and_spin] += (
+                    deadtime_ratios[i]
+                    * boundary_scale_factors[pixels_at_energy_and_spin, i]
+                )
+            else:
+                counts[energy_bin_idx, pixels_at_energy_and_spin] += deadtime_ratios[i]
 
     # Multiply by the nominal spin step to get the exposure time in ms
     exposure_pointing = counts * nominal_ms_step
@@ -491,6 +497,7 @@ def get_efficiencies_and_geometric_function(
     phi_vals: np.ndarray,
     npix: int,
     ancillary_files: dict,
+    apply_boundary_scale_factors: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute the geometric factor and efficiency for each pixel and energy bin.
@@ -514,6 +521,9 @@ def get_efficiencies_and_geometric_function(
         Number of HEALPix pixels.
     ancillary_files : dict
         Dictionary containing ancillary files.
+    apply_boundary_scale_factors : bool, optional
+        Whether to apply boundary scale factors when computing geometric factors
+        and efficiencies. Default is True.
 
     Returns
     -------
@@ -586,12 +596,17 @@ def get_efficiencies_and_geometric_function(
                 interpolator=eff_interpolator,
             )
             # Accumulate gf and eff values
-            gf_summation[energy_bin_idx, pixel_inds] += (
-                gf_values[pixel_inds] * boundary_scale_factors[pixel_inds, i]
-            )
-            eff_summation[energy_bin_idx, pixel_inds] += (
-                eff_values * boundary_scale_factors[pixel_inds, i]
-            )
+            if apply_boundary_scale_factors:
+                gf_summation[energy_bin_idx, pixel_inds] += (
+                    gf_values[pixel_inds] * boundary_scale_factors[pixel_inds, i]
+                )
+                eff_summation[energy_bin_idx, pixel_inds] += (
+                    eff_values * boundary_scale_factors[pixel_inds, i]
+                )
+            else:
+                gf_summation[energy_bin_idx, pixel_inds] += gf_values[pixel_inds]
+                eff_summation[energy_bin_idx, pixel_inds] += eff_values
+
             sample_count[energy_bin_idx, pixel_inds] += 1
 
     # return averaged geometric factors and efficiencies across all spin phases

@@ -69,6 +69,10 @@ def calculate_spacecraft_pset(
     dataset : xarray.Dataset
         Dataset containing the data.
     """
+    repoint = de_dataset.attrs.get("Repointing", "")
+    repoint_id = int(repoint.replace("repoint", ""))
+    print(repoint_id)
+    apply_boundary_scale_factors = False
     pset_dict: dict[str, np.ndarray] = {}
 
     sensor = parse_filename_like(name)["sensor"][0:2]
@@ -134,6 +138,7 @@ def calculate_spacecraft_pset(
         phi_vals,
         n_pix,
         ancillary_files,
+        apply_boundary_scale_factors,
     )
     sensitivity = efficiencies * geometric_function
 
@@ -214,5 +219,5 @@ def calculate_spacecraft_pset(
     pset_dict["energy_delta_plus"] = energy_delta_plus
 
     dataset = create_dataset(pset_dict, name, "l1c")
-
+    dataset.attrs["Repointing"] = repoint
     return dataset
