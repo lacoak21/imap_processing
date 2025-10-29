@@ -517,6 +517,8 @@ def flag_scattering(
 
     for (e_min, e_max), threshold in scattering_thresholds.items():
         event_mask = (tof_energy >= e_min) & (tof_energy < e_max)
+        # use the geometric mean of the energy bin
+        energy_geom_mean = np.sqrt(e_min * e_max)
         # Input the theta and phi values for the current energy range.
         # Returns a_theta_val, g_theta_val, a_phi_val, g_phi_val
         theta_coeffs, phi_coeffs = get_scattering_coefficients(
@@ -528,8 +530,9 @@ def flag_scattering(
         )
         # FWHM_PHI = A_PHI * E^G_PHI
         # FWHM_THETA = A_THETA * E^G_THETA
-        fwhm_theta = theta_coeffs[:, 0] * tof_energy[event_mask] ** theta_coeffs[:, 1]
-        fwhm_phi = phi_coeffs[:, 0] * tof_energy[event_mask] ** phi_coeffs[:, 1]
+        fwhm_theta = theta_coeffs[:, 0] * energy_geom_mean ** theta_coeffs[:, 1]
+        fwhm_phi = phi_coeffs[:, 0] * energy_geom_mean ** phi_coeffs[:, 1]
+
         is_nan = np.isnan(fwhm_theta) | np.isnan(fwhm_phi)
         quality_flags[np.where(event_mask)[0][is_nan]] |= (
             ImapDEScatteringUltraFlags.NAN_PHI_OR_THETA.value
@@ -564,13 +567,13 @@ def get_de_rejection_mask(
         Rejected events where True = rejected.
     """
     # Bitmasks from the DE_QUALITY_FLAG_FILTERS
+    # CORRECT - Use bitwise OR
     scattering_mask = sum(
         flag.value for flag in DE_QUALITY_FLAG_FILTERS["quality_scattering"]
     )
     outliers_mask = sum(
         flag.value for flag in DE_QUALITY_FLAG_FILTERS["quality_outliers"]
     )
-
     # Boolean mask where event is rejected due to relevant flags
     rejected = ((quality_scattering & scattering_mask) != 0) | (
         (quality_outliers & outliers_mask) != 0

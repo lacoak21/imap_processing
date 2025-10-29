@@ -101,7 +101,10 @@ def create_dataset(  # noqa: PLR0912
             "pixel_index",
             "spin_phase_step",
         ]:
-            continue
+            dataset[key].attrs.update(
+                cdf_manager.get_variable_attributes(key, check_schema=False)
+            )
+
         elif key in velocity_keys:
             dataset[key] = xr.DataArray(
                 data,

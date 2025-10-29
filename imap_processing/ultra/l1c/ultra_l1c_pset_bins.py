@@ -337,11 +337,12 @@ def get_deadtime_ratios_by_spin_phase(
     #     np.isfinite(deadtime_medians["deadtime_ratio"]), drop=True
     # )
     interpolator = interpolate.PchipInterpolator(
-        sectored_rates["Spin Phase (deg)"].values,
-        sectored_rates["Dead Time Ratio"].values,
+        sectored_rates["spin_phase"].values,
+        sectored_rates["dead_time_ratio"].values,
     )
     # Calculate the nominal spin phases at 1 ms resolution and query the pchip
     # interpolator to get the deadtime ratios.
+    # TODO this should be same resolution as pixels below scattering value
     steps = 15 * 1000  # 15 seconds at 1 ms resolution
     nominal_spin_phases_1ms_res = np.arange(0, 360, 360 / steps)
     return interpolator(nominal_spin_phases_1ms_res)
@@ -379,6 +380,7 @@ def calculate_exposure_time(
         Adjusted exposure times accounting for dead time.
     """
     # Get energy bin geometric means
+    logger.info(f"apply boundary scale factors{apply_boundary_scale_factors}")
     energy_bin_geometric_means = build_energy_bins()[2]
     # Exposure time should now be of shape (energy, npix)
     counts = np.zeros((len(energy_bin_geometric_means), n_pix))
@@ -394,6 +396,7 @@ def calculate_exposure_time(
             pixels_at_energy_and_spin = pixels_at_spin[energy_bin_idx]
             if pixels_at_energy_and_spin.size == 0:
                 continue
+
             # Apply the nominal exposure time (1 ms) scaled by the deadtime ratio to
             # every pixel in the FOR, that is below the FWHM scattering threshold,
             if apply_boundary_scale_factors:
@@ -418,6 +421,7 @@ def get_spacecraft_exposure_times(
     pointing_stop_met: float,
     n_pix: int,
     sensor: int,
+    apply_boundary_scale_factors: bool = True,
 ) -> tuple[NDArray, NDArray]:
     """
     Compute exposure times for HEALPix pixels.
@@ -443,6 +447,8 @@ def get_spacecraft_exposure_times(
         Number of HEALPix pixels.
     sensor : int
         Sensor identifier (45 or 90).
+    apply_boundary_scale_factors : bool, optional
+        Whether to apply boundary scale factors when calculating exposure time.
 
     Returns
     -------
@@ -460,7 +466,11 @@ def get_spacecraft_exposure_times(
     # by the number of spins in the pointing. For more information, see section 3.4.3
     # of the Ultra Algorithm Document.
     exposure_time = calculate_exposure_time(
-        nominal_deadtime_ratios, pixels_below_scattering, boundary_scale_factors, n_pix
+        nominal_deadtime_ratios,
+        pixels_below_scattering,
+        boundary_scale_factors,
+        n_pix,
+        apply_boundary_scale_factors,
     )
     # Get number of spins
     nominal_spin_seconds = 15.0
@@ -484,7 +494,7 @@ def get_spacecraft_exposure_times(
         )
     except ValueError:
         n_spins_in_pointing = np.array([5220])
-
+    logger.info("Number of spins in pointing: %s", n_spins_in_pointing)
     exposure_pointing_adjusted = n_spins_in_pointing * exposure_time
 
     return exposure_pointing_adjusted, nominal_deadtime_ratios
@@ -623,11 +633,12 @@ def get_helio_adjusted_data(
     exposure_time: np.ndarray,
     geometric_factor: np.ndarray,
     efficiency: np.ndarray,
+    background_rates: np.ndarray,
     ra: np.ndarray,
     dec: np.ndarray,
     nside: int = 128,
     nested: bool = False,
-) -> tuple[NDArray, NDArray, NDArray]:
+) -> tuple[NDArray, NDArray, NDArray, NDArray]:
     """
     Compute 2D (Healpix index, energy) arrays for in the helio frame.
 
@@ -643,6 +654,8 @@ def get_helio_adjusted_data(
         Geometric factor values. Shape = (energy, npix).
     efficiency : np.ndarray
         Efficiency values. Shape = (energy, npix).
+    background_rates : np.ndarray
+        Background rates. Shape = (energy, npix).
     ra : np.ndarray
         Right ascension in the spacecraft frame (degrees).
     dec : np.ndarray
@@ -659,6 +672,8 @@ def get_helio_adjusted_data(
     helio_efficiency : np.ndarray
         A 2D array of shape (n_energy_bins, npix).
     helio_geometric_factors : np.ndarray
+        A 2D array of shape (n_energy_bins, npix).
+    helio_background_rate : np.ndarray
         A 2D array of shape (n_energy_bins, npix).
 
     Notes
@@ -692,6 +707,7 @@ def get_helio_adjusted_data(
     helio_exposure = np.zeros(shape)
     helio_efficiency = np.zeros(shape)
     helio_geometric_factors = np.zeros(shape)
+    helio_background_rates = np.zeros(shape)
 
     # Loop through energy bins and compute transformed exposure.
     for i, energy_mean in enumerate(energy_bin_geometric_means):
@@ -732,8 +748,16 @@ def get_helio_adjusted_data(
         helio_geometric_factors[i, :] = np.bincount(
             hpix_idx, weights=geometric_factor[i, :], minlength=npix
         )
+        helio_background_rates[i, :] = np.bincount(
+            hpix_idx, weights=background_rates[i, :], minlength=npix
+        )
 
-    return helio_exposure, helio_efficiency, helio_geometric_factors
+    return (
+        helio_exposure,
+        helio_efficiency,
+        helio_geometric_factors,
+        helio_background_rates,
+    )
 
 
 def get_spacecraft_background_rates(
@@ -795,9 +819,9 @@ def get_spacecraft_background_rates(
     # mean_start_pulses = np.mean(pulses.start_pulses[goodtime_mask])
     # mean_stop_pulses = np.mean(pulses.stop_pulses[goodtime_mask])
     # mean_coin_pulses = np.mean(pulses.coin_pulses[goodtime_mask])
-    mean_start_pulses = rates_dataset["Start Rate (Hz)"].mean()
-    mean_stop_pulses = rates_dataset["Stop Rate (Hz)"].mean()
-    mean_coin_pulses = rates_dataset["Coin Rate (Hz)"].mean()
+    mean_start_pulses = rates_dataset["start_rate"].mean()
+    mean_stop_pulses = rates_dataset["stop_rate"].mean()
+    mean_coin_pulses = rates_dataset["coin_rate"].mean()
     for i, (e_min, e_max) in enumerate(energy_bin_edges):
         # Calculate ctof for the energy bin boundaries by combining Eqn. 3 and 8.
         # Compute speed for min and max energy using E = 1/2mv^2 -> v = sqrt(2E/m)

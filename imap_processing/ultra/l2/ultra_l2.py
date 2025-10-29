@@ -19,6 +19,7 @@ from imap_processing.ena_maps.utils.naming import (
     ns_to_duration_months,
 )
 from imap_processing.quality_flags import ImapPSETUltraFlags
+from imap_processing.spice.time import et_to_utc, ttj2000ns_to_et
 from imap_processing.ultra.l1c.ultra_l1c_pset_bins import get_energy_delta_minus_plus
 
 logger = logging.getLogger(__name__)
@@ -300,13 +301,12 @@ def generate_ultra_healpix_skymap(  # noqa: PLR0912
         good_pixel_mask = (
             (flags_1d & ImapPSETUltraFlags.EARTH_FOV.value) == 0
         ).to_numpy()
-
+        print(good_pixel_mask.sum(), "good pixels out of", len(good_pixel_mask))
         # Only count the number of pointing set pixels which are not flagged.
         pointing_set.data["num_pointing_set_pixel_members"] = xr.DataArray(
             good_pixel_mask.astype(int),
             dims=(CoordNames.HEALPIX_INDEX.value),
         )
-
         # The obs_date is the same for all pixels in a pointing set, and the same
         # dimension as the exposure_factor.
         pointing_set.data["obs_date"] = xr.full_like(
@@ -326,6 +326,7 @@ def generate_ultra_healpix_skymap(  # noqa: PLR0912
         pointing_set.data["pointing_set_exposure_times_solid_angle"] = (
             pointing_set.data["exposure_factor"] * pointing_set.solid_angle
         )
+        print("epoch", et_to_utc(ttj2000ns_to_et(pointing_set.epoch)))
         # TODO add generalized code in ena_maps to handle this
         # if the variable does not have an epoch dimension, add one temporarily
         # to allow for correct broadcasting during weighting.
@@ -383,7 +384,7 @@ def generate_ultra_healpix_skymap(  # noqa: PLR0912
         # Get corrected count rate with background subtraction applied
         skymap.data_1d["corrected_count_rate"] = (
             skymap.data_1d["counts"].astype(float) / skymap.data_1d["exposure_factor"]
-        ) - skymap.data_1d["background_rates"]
+        )  # - skymap.data_1d["background_rates"]
 
         # Calculate ena_intensity = corrected_counts / (
         # sensitivity * solid_angle * delta_energy)
@@ -504,6 +505,7 @@ def ultra_l2(
     )
 
     # TODO: replace 1 day in ns below with the actual end time of the last PSET.
+    # TODO Store in ttj2000 ns
     # Currently assumes the end time of the last PSET is 1 day after its start.
     map_duration_ns = (pset_epochs.max() + (86400 * 1e9)) - pset_epochs.min()
     map_duration_months_int = ns_to_duration_months(map_duration_ns)
@@ -566,8 +568,14 @@ def ultra_l2(
         map_dataset = rectangular_skymap.to_dataset()
 
         # Add longitude_delta, latitude_delta to the map dataset
-        map_dataset["longitude_delta"] = rectangular_skymap.spacing_deg / 2
-        map_dataset["latitude_delta"] = rectangular_skymap.spacing_deg / 2
+        map_dataset["longitude_delta"] = (
+            "longitude",
+            np.full(map_dataset["longitude"].shape, rectangular_skymap.spacing_deg / 2),
+        )
+        map_dataset["latitude_delta"] = (
+            "latitude",
+            np.full(map_dataset["latitude"].shape, rectangular_skymap.spacing_deg / 2),
+        )
 
         map_attrs = {
             "Spacing_degrees": str(output_map_structure.spacing_deg),
@@ -644,6 +652,9 @@ def ultra_l2(
 
     # Add the energy delta plus/minus to the map dataset
     energy_delta_minus, energy_delta_plus = get_energy_delta_minus_plus()
+    print(map_dataset.sizes)
+    print(len(energy_delta_minus))
+    print(len(energy_delta_plus))
     map_dataset.coords["energy_delta_minus"] = xr.DataArray(
         energy_delta_minus,
         dims=(CoordNames.ENERGY_L2.value,),

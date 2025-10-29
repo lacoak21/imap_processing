@@ -1,7 +1,6 @@
 """Calculate Pointing Set Grids."""
 
 import logging
-import pickle
 
 import astropy_healpix.healpy as hp
 import numpy as np
@@ -11,8 +10,10 @@ import xarray as xr
 from imap_processing.cdf.utils import parse_filename_like
 from imap_processing.quality_flags import ImapPSETUltraFlags
 from imap_processing.spice.time import (
+    et_to_met,
     met_to_ttj2000ns,
 )
+from imap_processing.ultra.l1b.ultra_l1b_culling import get_de_rejection_mask
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
     calculate_fwhm_spun_scattering,
     get_spacecraft_pointing_lookup_tables,
@@ -76,7 +77,6 @@ def calculate_spacecraft_pset(
 
     sensor = parse_filename_like(name)["sensor"][0:2]
     indices = np.where(np.isin(de_dataset["ebin"].values, species_id))[0]
-    species_dataset = de_dataset.isel(epoch=indices)
 
     spin_data = pd.read_csv(
         f"/Users/luco3133/projects/ultra_stuff/validation_stuff"
@@ -84,21 +84,22 @@ def calculate_spacecraft_pset(
         f"SpinTable-p{repoint_id}.csv"
     )
     # Use the last MET_Start from the spin table and add a small offset (minutes)
-    met_offset_minutes = 180  # 3 mins
-    last_met = float(spin_data["MET_Start"].values[-1])
-    pointing_start = last_met + met_offset_minutes
-    pointing_stop = pointing_start
+    pointing_start = et_to_met(float(spin_data["Spin Start (tdb)"].values[0]))
+    pointing_stop = et_to_met(float(spin_data["Spin Start (tdb)"].values[-1]))
     # If there are no species return None.
     if indices.size == 0:
         logger.info(f"No data available for {name}")
         return None
 
-    # Before we use the de_dataset to calculate the pointing set grid we need to filter.
-    # rejected = get_de_rejection_mask(
-    #     species_dataset["quality_scattering"].values,
-    #     species_dataset["quality_outliers"].values,
-    # )
-    # species_dataset = species_dataset.isel(epoch=~rejected)
+    species_dataset = de_dataset.isel(epoch=indices)
+
+    # Call rejection mask
+    rejected = get_de_rejection_mask(
+        species_dataset["quality_scattering"].values,
+        species_dataset["quality_outliers"].values,
+    )
+
+    species_dataset = species_dataset.isel(epoch=~rejected)
 
     v_mag_dps_spacecraft = np.linalg.norm(
         species_dataset["velocity_dps_sc"].values, axis=1
@@ -119,6 +120,7 @@ def calculate_spacecraft_pset(
     ) = get_spacecraft_pointing_lookup_tables(ancillary_files, instrument_id)
 
     logger.info("calculating spun FWHM scattering values.")
+    # Calculate the results
     pixels_below_scattering, scattering_theta, scattering_phi, scattering_thresholds = (
         calculate_fwhm_spun_scattering(
             for_indices_by_spin_phase,
@@ -128,15 +130,23 @@ def calculate_spacecraft_pset(
             instrument_id,
         )
     )
-    # # Save
-    with open(f"pixels_below_scattering_{sensor}.pkl", "wb") as f:
-        pickle.dump(pixels_below_scattering, f)
+    # # Save all four arrays
+    # with open(f"scattering_results_{sensor}.pkl", "wb") as f:
+    #     pickle.dump({
+    #         'pixels_below_scattering': pixels_below_scattering,
+    #         'scattering_theta': scattering_theta,
+    #         'scattering_phi': scattering_phi,
+    #         'scattering_thresholds': scattering_thresholds
+    #     }, f)
 
-    # Load
-    # with open("pixels_below_scattering_45.pkl", "rb") as f:
-    #     pixels_below_scattering = pickle.load(f)
-
-    # Determine nside from the lookup table
+    # # Load all four arrays
+    # with open(f"scattering_results_{sensor}.pkl", "rb") as f:
+    #     data = pickle.load(f)
+    #     pixels_below_scattering = data["pixels_below_scattering"]
+    #     scattering_theta = data["scattering_theta"]
+    #     scattering_phi = data["scattering_phi"]
+    #     scattering_thresholds = data["scattering_thresholds"]
+    # print(scattering_thresholds)
     # Determine nside from the lookup table
     nside = hp.npix2nside(len(for_indices_by_spin_phase))
     counts, latitude, longitude, n_pix = get_spacecraft_histogram(
@@ -158,9 +168,8 @@ def calculate_spacecraft_pset(
         ancillary_files,
         apply_boundary_scale_factors,
     )
-    sensitivity = efficiencies * geometric_function
 
-    # Get the start and stop times of the pointing period
+    # # Get the start and stop times of the pointing period
     # pointing_start, pointing_stop = get_pointing_times(
     #     float(et_to_met(species_dataset["event_times"].data[0]))
     # )
@@ -174,8 +183,19 @@ def calculate_spacecraft_pset(
         pointing_start,
         pointing_stop,
         n_pix=n_pix,
+        apply_boundary_scale_factors=apply_boundary_scale_factors,
         sensor=sensor,
     )
+
+    # # Load all four arrays
+    # with open(f"eff_gf_exp{sensor}.pkl", "rb") as f:
+    #     data = pickle.load(f)
+    #     # exposure_pointing = data["exposure_pointing"]
+    #     deadtime_ratios = data["deadtime_ratios"]
+    #     geometric_function = data["geometric_function"]
+    #     efficiencies = data["efficiencies"]
+
+    sensitivity = efficiencies * geometric_function
     logger.info("Calculating background rates.")
     # Calculate background rates
     background_rates = get_spacecraft_background_rates(

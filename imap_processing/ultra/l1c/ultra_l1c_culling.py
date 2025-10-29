@@ -51,6 +51,7 @@ def compute_culling_mask(
     npix = hp.nside2npix(nside)
 
     # Compute IMAP to Earth position in the pointing frame.
+    et[-1] = et[1]
     state = imap_state(et, ref_frame=SpiceFrame.IMAP_DPS, observer=observer)
     # Flip to get vector from IMAP to Earth
     # position.shape = (len(et), 3)

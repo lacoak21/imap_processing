@@ -115,18 +115,18 @@ class UltraConstants:
     #     1e5,
     # ]
     PSET_ENERGY_BIN_EDGES: ClassVar[list] = [
-        3.0,  # start of bin 1
-        4.6,  # stop of bin 1 / start of bin 2
-        6.96,  # stop of bin 2 / start of bin 3
-        10.27,  # stop of bin 3 / start of bin 4
-        15.71,  # stop of bin 4 / start of bin 5
-        23.56,  # stop of bin 5 / start of bin 6
-        35.35,  # stop of bin 6 / start of bin 7
-        53.02,  # stop of bin 7 / start of bin 8
-        79.53,  # stop of bin 8 / start of bin 9
-        119.30,  # stop of bin 9 / start of bin 10
-        178.95,  # stop of bin 10 / start of bin 11
-        268.42,  # stop of bin 11
+        3.0,
+        4.6,
+        6.96,
+        10.27,
+        15.71,
+        23.56,
+        35.35,
+        53.02,
+        79.53,
+        119.30,
+        178.95,
+        268.42,
     ]
 
     # Valid event filter constants
