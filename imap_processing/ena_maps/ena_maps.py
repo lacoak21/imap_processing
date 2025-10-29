@@ -845,6 +845,7 @@ class AbstractSkyMap(ABC):
             raise KeyError(f"Value keys not found in pointing set: {missing_keys}")
 
         if pset_valid_mask is None:
+            logger.debug("No pset_valid_mask provided, using all pixels as valid.")
             pset_valid_mask = np.ones(pointing_set.num_points, dtype=bool)
 
         if index_match_method is IndexMatchMethod.PUSH:
@@ -906,7 +907,7 @@ class AbstractSkyMap(ABC):
                     stacked_valid_mask = pset_valid_mask.stack(
                         {CoordNames.GENERIC_PIXEL.value: pointing_set.spatial_coords}
                     )
-                    pset_valid_mask_bc, _ = xr.broadcast(data_bc, stacked_valid_mask)
+                    _, pset_valid_mask_bc = xr.broadcast(data_bc, stacked_valid_mask)
                     pset_valid_mask_values = pset_valid_mask_bc.values
                 else:
                     pset_valid_mask_values = pset_valid_mask
