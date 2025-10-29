@@ -31,8 +31,9 @@ from imap_processing.codice.constants import (
     LO_POSITION_TO_ELEVATION_ANGLE,
     LO_SW_ANGULAR_VARIABLE_NAMES,
     LO_SW_PICKUP_ION_SPECIES_VARIABLE_NAMES,
-    LO_SW_SPECIES_VARIABLE_NAMES,
+    LO_SW_SOLAR_WIND_SPECIES_VARIABLE_NAMES,
     NSW_POSITIONS,
+    PIXEL_ORIENTATIONS,
     PUI_POSITIONS,
     SOLAR_WIND_POSITIONS,
     SW_POSITIONS,
@@ -354,11 +355,14 @@ def process_lo_angular_intensity(
         positions,
         average_across_positions=False,
     )
+
     # transform positions to elevation angles
     if positions == SW_POSITIONS:
         pos_to_el = LO_POSITION_TO_ELEVATION_ANGLE["sw"]
+        position_index_to_adjust = 0
     elif positions == NSW_POSITIONS:
         pos_to_el = LO_POSITION_TO_ELEVATION_ANGLE["nsw"]
+        position_index_to_adjust = 9
     else:
         raise ValueError("Unknown positions for elevation angle mapping.")
 
@@ -369,6 +373,8 @@ def process_lo_angular_intensity(
             [pos_to_el[pos] for pos in dataset["inst_az"].data],
         )
     )
+    # add uncertainties to species list
+    species_list = species_list + [f"unc_{var}" for var in species_list]
     # Take the mean across elevation angles and restore the original dimension order
     dataset_converted = (
         dataset[species_list]
@@ -383,8 +389,41 @@ def process_lo_angular_intensity(
     dataset = dataset.assign_coords(
         spin_angle=("spin_sector", dataset["spin_sector"].data * 15.0 + 7.5)
     )
-
     dataset = dataset.drop_vars(species_list).merge(dataset_converted)
+    # Positions 0 and 10 only observe half of the 24 spins for each esa step.
+    # To account for this, we replicate the counts observed in position 0 and 10 for
+    # each esa step to either spin angles 0-11 or 12-23, depending on the pixel
+    # orientation (A/B). See section 11.2.2 of the CoDICE algorithm document
+    a_inds = np.array(
+        [pos for pos, orientation in PIXEL_ORIENTATIONS.items() if orientation == "A"]
+    )
+    b_inds = np.array(
+        [pos for pos, orientation in PIXEL_ORIENTATIONS.items() if orientation == "B"]
+    )
+
+    position_index = position_index_to_adjust
+    for species in species_list:
+        # Determine the correct spin indices based on the position
+        spin_sectors = dataset["spin_sector"].data
+        spin_inds_1 = np.where(spin_sectors >= 12)[0]
+        spin_inds_2 = np.where(spin_sectors < 12)[0]
+        # if position_index is 9, swap the spin indices
+        if position_index == 9:
+            spin_inds_1, spin_inds_2 = spin_inds_2, spin_inds_1
+
+        # Assign the values to the correct positions and spin sectors
+        dataset[species].values[
+            :, a_inds[:, np.newaxis], spin_inds_1, position_index
+        ] = dataset[species].values[
+            :, a_inds[:, np.newaxis], spin_inds_2, position_index
+        ]
+
+        dataset[species].values[
+            :, b_inds[:, np.newaxis], spin_inds_2, position_index
+        ] = dataset[species].values[
+            :, b_inds[:, np.newaxis], spin_inds_1, position_index
+        ]
+
     return dataset
 
 
@@ -777,7 +816,6 @@ def process_codice_l2(
     # This should get science files since ancillary or spice doesn't have data_type
     # as data level.
     file_path = dependencies.get_file_paths(descriptor=descriptor)[0]
-
     # Now form product name from descriptor
     descriptor = ScienceFilePath(file_path).descriptor
     dataset_name = f"imap_codice_l2_{descriptor}"
@@ -790,6 +828,9 @@ def process_codice_l2(
         "imap_codice_l2_lo-nsw-angular",
         "imap_codice_l2_lo-sw-angular",
     ]:
+        cdf_attrs = ImapCdfAttributes()
+        cdf_attrs.add_instrument_global_attrs("codice")
+
         l2_dataset = load_cdf(file_path).copy()
 
         geometric_factor_lookup = get_geometric_factor_lut(dependencies)
@@ -797,12 +838,13 @@ def process_codice_l2(
         geometric_factors = compute_geometric_factors(
             l2_dataset, geometric_factor_lookup
         )
+
         if dataset_name == "imap_codice_l2_lo-sw-species":
             # Filter the efficiency lookup table for solar wind efficiencies
             efficiencies = efficiency_lookup[efficiency_lookup["product"] == "sw"]
             # Calculate the pickup ion sunward solar wind intensities using equation
             # described in section 11.2.3 of algorithm document.
-            process_lo_species_intensity(
+            l2_dataset = process_lo_species_intensity(
                 l2_dataset,
                 LO_SW_PICKUP_ION_SPECIES_VARIABLE_NAMES,
                 geometric_factors,
@@ -811,24 +853,30 @@ def process_codice_l2(
             )
             # Calculate the sunward solar wind species intensities using equation
             # described in section 11.2.3 of algorithm document.
-            process_lo_species_intensity(
+            l2_dataset = process_lo_species_intensity(
                 l2_dataset,
-                LO_SW_SPECIES_VARIABLE_NAMES,
+                LO_SW_SOLAR_WIND_SPECIES_VARIABLE_NAMES,
                 geometric_factors,
                 efficiencies,
                 SOLAR_WIND_POSITIONS,
+            )
+            l2_dataset.attrs.update(
+                cdf_attrs.get_global_attributes("imap_codice_l2_lo-sw-species")
             )
         elif dataset_name == "imap_codice_l2_lo-nsw-species":
             # Filter the efficiency lookup table for non-solar wind efficiencies
             efficiencies = efficiency_lookup[efficiency_lookup["product"] == "nsw"]
             # Calculate the non-sunward species intensities using equation
             # described in section 11.2.3 of algorithm document.
-            process_lo_species_intensity(
+            l2_dataset = process_lo_species_intensity(
                 l2_dataset,
                 LO_NSW_SPECIES_VARIABLE_NAMES,
                 geometric_factors,
                 efficiencies,
                 NSW_POSITIONS,
+            )
+            l2_dataset.attrs.update(
+                cdf_attrs.get_global_attributes("imap_codice_l2_lo-nsw-species")
             )
         elif dataset_name == "imap_codice_l2_lo-sw-angular":
             efficiencies = efficiency_lookup[efficiency_lookup["product"] == "sw"]
@@ -841,6 +889,9 @@ def process_codice_l2(
                 efficiencies,
                 SW_POSITIONS,
             )
+            l2_dataset.attrs.update(
+                cdf_attrs.get_global_attributes("imap_codice_l2_lo-sw-angular")
+            )
         if dataset_name == "imap_codice_l2_lo-nsw-angular":
             # Calculate the non sunward angular intensities
             efficiencies = efficiency_lookup[efficiency_lookup["product"] == "nsw"]
@@ -851,7 +902,9 @@ def process_codice_l2(
                 efficiencies,
                 NSW_POSITIONS,
             )
-
+            l2_dataset.attrs.update(
+                cdf_attrs.get_global_attributes("imap_codice_l2_lo-nsw-angular")
+            )
     if dataset_name in [
         "imap_codice_l2_hi-counters-singles",
         "imap_codice_l2_hi-counters-aggregated",
