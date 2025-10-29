@@ -86,3 +86,6 @@ echo "Total time: ${total_minutes}m ${total_seconds}s"
 
 # run l2
 # imap_cli --instrument ultra --data-level l2 --start-date 20250415 --version v000 --descriptor u45-ena-h-sc-nsp-full-hae-nside32-3mo --dependency imap_ultra_l2_u45-ena-h-sc-nsp-full-hae-2deg-3mo-564af5aa_20251011_v001.json
+
+# helio
+imap_cli --instrument ultra --data-level l2 --start-date 20250415 --version v000 --descriptor u45-ena-h-hf-nsp-full-hae-nside32-3mo --dependency imap_ultra_l2_u45-ena-h-hf-nsp-full-hae-2deg-3mo-564af5aa_20251011_v001.json
