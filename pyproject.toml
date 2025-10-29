@@ -68,6 +68,10 @@ test = ["openpyxl", "pytest", "pytest-cov", "pytest-xdist", "requests", "netcdf4
 tools = ["openpyxl", "pandas"]
 map_visualization = ["healpy"]
 
+[project]
+name = "imap-processing"
+dynamic = ["version"]
+
 [project.urls]
 homepage = "https://github.com/IMAP-Science-Operations-Center"
 repository = "https://github.com/IMAP-Science-Operations-Center/imap_processing"
