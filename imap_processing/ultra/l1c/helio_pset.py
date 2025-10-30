@@ -199,17 +199,14 @@ def calculate_helio_pset(
     mid_time = ttj2000ns_to_et(met_to_ttj2000ns(pointing_mid_time))
 
     logger.info("Adjusting data for helio frame.")
-    exposure_time, efficiencies, geometric_function, background_rates = (
-        get_helio_adjusted_data(
-            mid_time,
-            exposure_time,
-            geometric_function,
-            efficiencies,
-            background_rates,
-            ra_and_dec[:, 0],
-            ra_and_dec[:, 1],
-            nside=nside,
-        )
+    exposure_time, efficiencies, geometric_function = get_helio_adjusted_data(
+        mid_time,
+        exposure_time,
+        geometric_function,
+        efficiencies,
+        ra_and_dec[:, 0],
+        ra_and_dec[:, 1],
+        nside=nside,
     )
     sensitivity = efficiencies * geometric_function
 
@@ -256,5 +253,5 @@ def calculate_helio_pset(
     pset_dict["energy_delta_plus"] = energy_delta_plus
 
     dataset = create_dataset(pset_dict, name, "l1c")
-
+    dataset.attrs["Repointing"] = repoint
     return dataset

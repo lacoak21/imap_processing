@@ -633,12 +633,11 @@ def get_helio_adjusted_data(
     exposure_time: np.ndarray,
     geometric_factor: np.ndarray,
     efficiency: np.ndarray,
-    background_rates: np.ndarray,
     ra: np.ndarray,
     dec: np.ndarray,
     nside: int = 128,
     nested: bool = False,
-) -> tuple[NDArray, NDArray, NDArray, NDArray]:
+) -> tuple[NDArray, NDArray, NDArray]:
     """
     Compute 2D (Healpix index, energy) arrays for in the helio frame.
 
@@ -654,8 +653,6 @@ def get_helio_adjusted_data(
         Geometric factor values. Shape = (energy, npix).
     efficiency : np.ndarray
         Efficiency values. Shape = (energy, npix).
-    background_rates : np.ndarray
-        Background rates. Shape = (energy, npix).
     ra : np.ndarray
         Right ascension in the spacecraft frame (degrees).
     dec : np.ndarray
@@ -672,8 +669,6 @@ def get_helio_adjusted_data(
     helio_efficiency : np.ndarray
         A 2D array of shape (n_energy_bins, npix).
     helio_geometric_factors : np.ndarray
-        A 2D array of shape (n_energy_bins, npix).
-    helio_background_rate : np.ndarray
         A 2D array of shape (n_energy_bins, npix).
 
     Notes
@@ -707,7 +702,6 @@ def get_helio_adjusted_data(
     helio_exposure = np.zeros(shape)
     helio_efficiency = np.zeros(shape)
     helio_geometric_factors = np.zeros(shape)
-    helio_background_rates = np.zeros(shape)
 
     # Loop through energy bins and compute transformed exposure.
     for i, energy_mean in enumerate(energy_bin_geometric_means):
@@ -748,15 +742,11 @@ def get_helio_adjusted_data(
         helio_geometric_factors[i, :] = np.bincount(
             hpix_idx, weights=geometric_factor[i, :], minlength=npix
         )
-        helio_background_rates[i, :] = np.bincount(
-            hpix_idx, weights=background_rates[i, :], minlength=npix
-        )
 
     return (
         helio_exposure,
         helio_efficiency,
         helio_geometric_factors,
-        helio_background_rates,
     )
 
 

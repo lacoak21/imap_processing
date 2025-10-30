@@ -94,8 +94,9 @@ def create_dataset(  # noqa: PLR0912
 
     for key, data in data_dict.items():
         # Skip keys that are coordinates.
-        if key in [
-            "epoch",
+        if key == "epoch":
+            continue
+        elif key in [
             "spin_number",
             "energy_bin_geometric_mean",
             "pixel_index",
