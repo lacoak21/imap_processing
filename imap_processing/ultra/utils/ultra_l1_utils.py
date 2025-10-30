@@ -102,6 +102,12 @@ def create_dataset(  # noqa: PLR0912
             "spin_phase_step",
         ]:
             continue
+        elif key == "epoch_delta":
+            dataset[key] = xr.DataArray(
+                data,
+                dims=["epoch"],
+                attrs=cdf_manager.get_variable_attributes(key, check_schema=False),
+            )
         elif key in velocity_keys:
             dataset[key] = xr.DataArray(
                 data,
