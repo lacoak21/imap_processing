@@ -91,3 +91,12 @@ echo "Total time: ${total_minutes}m ${total_seconds}s"
 
 # IMAP_DATA_ACCESS_URL=https://api.dev.imap-mission.com
 # imap_cli --instrument ultra --data-level l2 --descriptor u45-ena-h-sc-nsp-full-hae-2deg-3mo --start-date 20250415 --version v001 --dependency imap_ultra_l2_u45-ena-h-sc-nsp-full-hae-2deg-3mo-564af5aa_20251011_v001.json
+# imap_cli --instrument ultra --data-level l2 --descriptor u90-ena-h-sc-nsp-full-hae-2deg-3mo --start-date 20250415 --version v001 --dependency imap_ultra_l2_u90-ena-h-sc-nsp-full-hae-2deg-3mo-564af5aa_20251011_v001.json
+# imap_cli --instrument ultra --data-level l2 --descriptor u45-ena-h-hf-nsp-full-hae-2deg-3mo --start-date 20250415 --version v001 --dependency imap_ultra_l2_u45-ena-h-hf-nsp-full-hae-2deg-3mo-564af5aa_20251011_v001.json
+# imap_cli --instrument ultra --data-level l2 --descriptor u90-ena-h-hf-nsp-full-hae-2deg-3mo --start-date 20250415 --version v001 --dependency imap_ultra_l2_u90-ena-h-hf-nsp-full-hae-2deg-3mo-564af5aa_20251011_v001.json
+
+# healpix
+# imap_cli --instrument ultra --data-level l2 --descriptor u45-ena-h-hf-nsp-full-hae-nside32-3mo --start-date 20250415 --version v001 --dependency imap_ultra_l2_u45-ena-h-hf-nsp-full-hae-2deg-3mo-564af5aa_20251011_v001.json
+# imap_cli --instrument ultra --data-level l2 --descriptor u90-ena-h-hf-nsp-full-hae-nside32-3mo --start-date 20250415 --version v001 --dependency imap_ultra_l2_u90-ena-h-hf-nsp-full-hae-2deg-3mo-564af5aa_20251011_v001.json
+# imap_cli --instrument ultra --data-level l2 --descriptor u45-ena-h-sc-nsp-full-hae-nside32-3mo --start-date 20250415 --version v001 --dependency imap_ultra_l2_u45-ena-h-sc-nsp-full-hae-2deg-3mo-564af5aa_20251011_v001.json
+# imap_cli --instrument ultra --data-level l2 --descriptor u90-ena-h-sc-nsp-full-hae-nside32-3mo --start-date 20250415 --version v001 --dependency imap_ultra_l2_u90-ena-h-sc-nsp-full-hae-2deg-3mo-564af5aa_20251011_v001.json

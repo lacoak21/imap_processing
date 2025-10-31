@@ -568,11 +568,13 @@ def ultra_l2(
         map_dataset = rectangular_skymap.to_dataset()
 
         # Add longitude_delta, latitude_delta to the map dataset
-        map_dataset["longitude_delta"] = np.full(
-            map_dataset["longitude"].shape, rectangular_skymap.spacing_deg / 2
+        map_dataset["longitude_delta"] = (
+            "longitude",
+            np.full(map_dataset["longitude"].shape, rectangular_skymap.spacing_deg / 2),
         )
-        map_dataset["latitude_delta"] = np.full(
-            map_dataset["latitude"].shape, rectangular_skymap.spacing_deg / 2
+        map_dataset["latitude_delta"] = (
+            "latitude",
+            np.full(map_dataset["latitude"].shape, rectangular_skymap.spacing_deg / 2),
         )
 
         map_attrs = {
@@ -650,9 +652,7 @@ def ultra_l2(
 
     # Add the energy delta plus/minus to the map dataset
     energy_delta_minus, energy_delta_plus = get_energy_delta_minus_plus()
-    print(map_dataset.sizes)
-    print(len(energy_delta_minus))
-    print(len(energy_delta_plus))
+
     map_dataset.coords["energy_delta_minus"] = xr.DataArray(
         energy_delta_minus,
         dims=(CoordNames.ENERGY_L2.value,),
