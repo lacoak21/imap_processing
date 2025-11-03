@@ -1,13 +1,15 @@
 """Functions to support I-ALiRT CoDICE processing."""
 
 import logging
+import pathlib
 from decimal import Decimal
 from typing import Any
 
 import numpy as np
 import xarray as xr
 
-from imap_processing.codice import decompress
+from imap_processing.codice.codice_l1a import process_ialirt_data_streams
+from imap_processing.codice.codice_l1a_lo_species import l1a_lo_species
 from imap_processing.ialirt.utils.grouping import find_groups
 
 logger = logging.getLogger(__name__)
@@ -46,18 +48,79 @@ def concatenate_bytes(grouped_data: xr.Dataset, group: int, sensor: str) -> byte
         "hi": COD_HI_RANGE,
     }
 
-    # Loop through all data fields.
-    for field in cod_ranges[sensor]:
-        data_array = grouped_data[f"cod_{sensor}_data_{field:02}"].values[group_mask]
+    # Stack all cod_* fields into a 2D NumPy array [n_rows, n_fields]
+    arrays = [
+        grouped_data[f"cod_{sensor}_data_{field:02}"].values[group_mask]
+        for field in cod_ranges[sensor]
+    ]
 
-        # Convert each value to uint8 and extend the byte stream
-        current_data_stream.extend(np.uint8(data_array).tobytes())
+    # Shape → (n_fields, n_rows)
+    stacked = np.vstack(arrays)
+
+    # Transpose to get (n_rows, n_fields), then flatten row-wise
+    flattened = stacked.T.flatten()
+
+    # Convert to bytes and extend the stream
+    current_data_stream.extend(np.uint8(flattened).tobytes())
 
     return current_data_stream
 
 
+def create_xarray_dataset(
+    science_values: list,
+    metadata_values: dict,
+    sensor: str,
+    lut_file: pathlib.Path,
+) -> xr.Dataset:
+    """
+    Create a xarray Dataset from science and metadata values.
+
+    Parameters
+    ----------
+    science_values : list
+        List of binary strings (bit representations) for each species.
+    metadata_values : dict
+        Dictionary of metadata values.
+    sensor : str
+        The sensor type, either 'lo' or 'hi'.
+    lut_file : pathlib.Path
+        Path to the LUT file.
+
+    Returns
+    -------
+    xr.Dataset
+        The constructed xarray Dataset compatible with l1a_lo_species().
+    """
+    apid = {"lo": 1152, "hi": 1168}
+
+    packet_bytes = [
+        int(bits, 2).to_bytes(len(bits) // 8, byteorder="big")
+        for bits in science_values
+    ]
+
+    # Fake epoch time.
+    num_epochs = len(np.array(metadata_values["ACQ_START_SECONDS"]))
+    epoch = np.arange(num_epochs)
+
+    epoch_time = xr.DataArray(epoch, name="epoch", dims=["epoch"])
+    dataset = xr.Dataset(coords={"epoch": epoch_time})
+
+    # Metadata value for each field
+    for key, value in metadata_values.items():
+        data = np.array(value)
+        dataset[key.lower()] = xr.DataArray(data, dims=["epoch"])
+
+    dataset["data"] = xr.DataArray(np.array(packet_bytes, dtype=object), dims=["epoch"])
+    dataset["pkt_apid"] = xr.DataArray(
+        np.full(len(epoch), apid[sensor]), dims=["epoch"]
+    )
+
+    return dataset
+
+
 def process_codice(
     dataset: xr.Dataset,
+    lut_path: pathlib.Path,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """
     Create final data products.
@@ -66,6 +129,8 @@ def process_codice(
     ----------
     dataset : xr.Dataset
         Decommed L0 data.
+    lut_path : pathlib.Path
+        L1A LUT path.
 
     Returns
     -------
@@ -89,24 +154,38 @@ def process_codice(
     unique_cod_lo_groups = np.unique(grouped_cod_lo_data["group"])
     unique_cod_hi_groups = np.unique(grouped_cod_hi_data["group"])
 
-    for group in unique_cod_lo_groups:
-        cod_lo_data_stream = concatenate_bytes(grouped_cod_lo_data, group, "lo")
+    cod_lo_grouped = []
+    cod_hi_grouped = []
 
-        # Decompress binary stream
-        decompressed_data = decompress._apply_pack_24_bit(bytes(cod_lo_data_stream))
+    # Processing for l1a.
+    if unique_cod_lo_groups.size > 0:
+        for group in unique_cod_lo_groups:
+            cod_lo_data_stream = concatenate_bytes(grouped_cod_lo_data, group, "lo")
 
-    for group in unique_cod_hi_groups:
-        cod_hi_data_stream = concatenate_bytes(grouped_cod_hi_data, group, "lo")
+            # Decompress binary stream
+            cod_lo_grouped.append(cod_lo_data_stream)
 
-        # Decompress binary stream
-        decompressed_data = decompress._apply_lossy_a(bytes(cod_hi_data_stream))  # noqa
+        cod_lo_science_values, cod_lo_metadata_values = process_ialirt_data_streams(
+            cod_lo_grouped
+        )
+        cod_lo_dataset = create_xarray_dataset(
+            cod_lo_science_values, cod_lo_metadata_values, "lo", lut_path
+        )
+        result = l1a_lo_species(cod_lo_dataset, lut_path)  # noqa
 
-    # For I-ALiRT SIT, the test data being used has all zeros and thus no
-    # groups can be found, thus there is no data to process
-    # TODO: Once I-ALiRT test data is acquired that actually has data in it,
-    #       this can be turned back on
-    # codicelo_data = create_ialirt_dataset(CODICEAPID.COD_LO_IAL, dataset)
-    # codicehi_data = create_ialirt_dataset(CODICEAPID.COD_HI_IAL, dataset)
+    if unique_cod_hi_groups.size > 0:
+        for group in unique_cod_hi_groups:
+            cod_hi_data_stream = concatenate_bytes(grouped_cod_hi_data, group, "hi")
+
+            # Decompress binary stream
+            cod_hi_grouped.append(cod_hi_data_stream)
+
+        cod_hi_science_values, cod_hi_metadata_values = process_ialirt_data_streams(
+            cod_hi_grouped
+        )
+        cod_hi_dataset = create_xarray_dataset(  # noqa
+            cod_hi_science_values, cod_hi_metadata_values, "hi", lut_path
+        )
 
     # TODO: calculate rates
     #       This will be done in codice.codice_l1b

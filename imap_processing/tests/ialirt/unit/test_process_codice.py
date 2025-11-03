@@ -4,6 +4,7 @@ See tests.codice.test_codice_l[1a|1b|2] for more unit tests related to this
 code.
 """
 
+import pickle
 from pathlib import Path
 from unittest.mock import patch
 
@@ -14,14 +15,16 @@ import xarray as xr
 from imap_processing import imap_module_directory
 from imap_processing.cdf.utils import load_cdf
 from imap_processing.codice import constants
+from imap_processing.codice.codice_l1a import process_ialirt_data_streams
+from imap_processing.codice.codice_l1a_lo_species import l1a_lo_species
 from imap_processing.codice.codice_l1b import convert_to_rates
+from imap_processing.codice.decompress import decompress
 from imap_processing.ialirt.l0.process_codice import (
     COD_HI_COUNTER,
-    COD_HI_RANGE,
     COD_LO_COUNTER,
-    COD_LO_RANGE,
     FILLVAL_UINT8,
     concatenate_bytes,
+    create_xarray_dataset,
     process_codice,
 )
 from imap_processing.ialirt.utils.grouping import find_groups
@@ -74,6 +77,23 @@ def cod_lo_test_dataset(cod_lo_test_file):
 
 
 @pytest.fixture(scope="session")
+def cod_lo_l1a_test_data():
+    """Returns the test data directory."""
+    data_path = (
+        imap_module_directory
+        / "tests"
+        / "codice"
+        / "data"
+        / "l1a_validation"
+        / "imap_codice_l1a_lo-ialirt_20250814_v007.cdf"
+    )
+
+    data = load_cdf(data_path)
+
+    return data
+
+
+@pytest.fixture(scope="session")
 def cod_hi_test_file():
     return Path(
         imap_module_directory
@@ -104,20 +124,27 @@ def codice_test_data(test_datasets):
 
 
 @pytest.fixture(scope="session")
-def cod_lo_l1a_test_data():
-    """Returns the test data directory."""
-    data_path = (
+def cod_lo_decom_test_file():
+    return Path(
         imap_module_directory
         / "tests"
-        / "codice"
+        / "ialirt"
         / "data"
-        / "l1a_validation"
-        / "imap_codice_l1a_lo-ialirt_20250814_v007.cdf"
+        / "l0"
+        / "imap_codice_l1a_lo-ialirt.pickle"
     )
 
-    data = load_cdf(data_path)
 
-    return data
+@pytest.fixture(scope="session")
+def cod_hi_decom_test_file():
+    return Path(
+        imap_module_directory
+        / "tests"
+        / "ialirt"
+        / "data"
+        / "l0"
+        / "imap_codice_l1a_hi-ialirt.pickle"
+    )
 
 
 @pytest.fixture(scope="session")
@@ -247,9 +274,51 @@ def test_l1b_ialirt_cod_hi(cod_hi_l1a_test_data, cod_hi_l1b_test_data):
         np.testing.assert_allclose(actual, expected, atol=1e-5)
 
 
+@pytest.fixture
+def lut_path():
+    """Returns the calibration data."""
+    lut_path = (
+        imap_module_directory
+        / "tests"
+        / "codice"
+        / "data"
+        / "l1a_lut"
+        / "imap_codice_l1a-sci-lut_20251007_v001.json"
+    )
+
+    return lut_path
+
+
+def test_create_xarray_dataset_basic(lut_path):
+    """Test create_xarray_dataset function."""
+
+    science_values = ["0000000100100011"]
+    metadata_values = {
+        "VIEW_ID": np.array([0]),
+        "TABLE_ID": np.array([3952862729]),
+        "ACQ_START_SECONDS": np.array([1625078400]),
+        "ACQ_START_SUBSECONDS": np.array([0]),
+        "SPIN_PERIOD": np.array([24]),
+    }
+
+    ds = create_xarray_dataset(science_values, metadata_values, "lo", lut_path)
+
+    for key in metadata_values:
+        assert key.lower() in ds.variables
+
+    assert ds["pkt_apid"].item() == 1152
+
+    combined_bytes = b"".join(
+        int(val, 2).to_bytes(len(val) // 8, byteorder="big") for val in science_values
+    )
+    assert ds["data"].item() == combined_bytes
+
+
 @pytest.mark.external_test_data
-def test_group_and_decompress_ialirt_cod_lo(cod_lo_test_dataset):
-    "Test that I-ALiRT CoDICE-Lo data can be grouped properly."
+def test_group_and_decompress_ialirt_cod_lo(
+    cod_lo_test_dataset, cod_lo_decom_test_file, lut_path, cod_lo_l1a_test_data
+):
+    "Test that I-ALiRT CoDICE-Lo data can be grouped and decompressed properly."
 
     grouped_cod_lo_data = find_groups(
         cod_lo_test_dataset, (0, COD_LO_COUNTER), "cod_lo_counter", "cod_lo_acq"
@@ -273,18 +342,69 @@ def test_group_and_decompress_ialirt_cod_lo(cod_lo_test_dataset):
 
     unique_groups = np.unique(grouped_cod_lo_data["group"])
 
-    for group in unique_groups:
+    # Test data.
+    with open(cod_lo_decom_test_file, "rb") as handle:
+        data = pickle.load(handle)  # noqa: S301
+    test_grouped_data = data["grouped_lo_ialirt"][0]
+    test_decom_data = data["decompressed_lo_ialirt"][0]
+
+    header_len = 6  # Test data header at start of block
+    checksum_len = 2  # Test data checksum at end of block
+    data_len = 3484  # Data length in decompressed packet
+    block_size = header_len + data_len + checksum_len
+
+    test_grouped_data_array = []
+
+    for i, group in enumerate(unique_groups):
         compressed_data = concatenate_bytes(grouped_cod_lo_data, group, "lo")
-        byte_data = np.frombuffer(compressed_data, dtype=np.uint8)
-        num_bits = byte_data.size * 8
-        assert num_bits == (COD_LO_COUNTER + 1) * len(COD_LO_RANGE) * 8
-        # TODO: left off here. Need to validate decompression with test data.
-        # decompressed_data = decompress._apply_pack_24_bit(compressed_data)
+
+        start = header_len + i * block_size
+        end = start + data_len
+        expected_slice = test_grouped_data[start:end]
+
+        test_grouped_data_array.append(expected_slice)
+
+        assert expected_slice == compressed_data[:data_len]
+
+    science_values, metadata_values = process_ialirt_data_streams(
+        test_grouped_data_array
+    )
+
+    for i in range(len(science_values)):
+        values = int(science_values[i], 2).to_bytes(
+            len(science_values[i]) // 8, byteorder="big"
+        )
+
+        decompressed_values = decompress(values, metadata_values["VIEW_ID"][0])
+        test_decom_data_array = test_decom_data[i]
+
+        np.testing.assert_array_equal(decompressed_values, test_decom_data_array)
+
+    dataset = create_xarray_dataset(science_values, metadata_values, "lo", lut_path)
+    result = l1a_lo_species(dataset, lut_path)
+
+    expected_species = [
+        "heplusplus",
+        "cplus5",
+        "cplus6",
+        "oplus6",
+        "oplus7",
+        "oplus8",
+        "mg",
+        "fe_loq",
+        "fe_hiq",
+    ]
+
+    # Returns data for all expected species at 128 esa steps.
+    for species in expected_species:
+        np.array_equal(result[species].values, cod_lo_l1a_test_data["heplusplus"].data)
 
 
 @pytest.mark.external_test_data
-def test_group_and_decompress_ialirt_cod_hi(cod_hi_test_dataset):
-    "Test that I-ALiRT CoDICE-Hi data can be grouped properly."
+def test_group_and_decompress_ialirt_cod_hi(
+    cod_hi_test_dataset, cod_hi_decom_test_file, lut_path
+):
+    "Test that I-ALiRT CoDICE-Hi data can be grouped and decompressed properly."
 
     grouped_cod_hi_data = find_groups(
         cod_hi_test_dataset, (0, COD_HI_COUNTER), "cod_hi_counter", "cod_hi_acq"
@@ -308,16 +428,49 @@ def test_group_and_decompress_ialirt_cod_hi(cod_hi_test_dataset):
 
     unique_groups = np.unique(grouped_cod_hi_data["group"])
 
-    for group in unique_groups:
+    # Test data.
+    with open(cod_hi_decom_test_file, "rb") as handle:
+        data = pickle.load(handle)  # noqa: S301
+    test_grouped_data = data["grouped_hi_ialirt"][0]
+    test_decom_data = data["decompressed_hi_ialirt"][0]
+
+    header_len = 6  # Test data header at start of block
+    checksum_len = 2  # Test data checksum at end of block
+    data_len = 988  # Data length in decompressed packet
+    block_size = header_len + data_len + checksum_len
+
+    test_grouped_data_array = []
+
+    for i, group in enumerate(unique_groups):
         compressed_data = concatenate_bytes(grouped_cod_hi_data, group, "hi")
-        byte_data = np.frombuffer(compressed_data, dtype=np.uint8)
-        num_bits = byte_data.size * 8
-        assert num_bits == (COD_HI_COUNTER + 1) * len(COD_HI_RANGE) * 8
-        # TODO: left off here. Need to validate decompression with test data.
-        # decompressed_data = decompress._apply_loggy_a(compressed_data)
+
+        start = header_len + i * block_size
+        end = start + data_len
+        expected_slice = test_grouped_data[start:end]
+
+        test_grouped_data_array.append(expected_slice)
+
+        assert expected_slice == compressed_data[:data_len]
+
+    science_values, metadata_values = process_ialirt_data_streams(
+        test_grouped_data_array
+    )
+
+    for i in range(len(science_values)):
+        values = int(science_values[i], 2).to_bytes(
+            len(science_values[i]) // 8, byteorder="big"
+        )
+
+        decompressed_values = decompress(values, metadata_values["VIEW_ID"][0])
+
+        np.testing.assert_array_equal(decompressed_values, test_decom_data[i])
+
+    dataset = create_xarray_dataset(science_values, metadata_values, "hi", lut_path)  # noqa
+    # TODO: add function l1a_hi_species
 
 
-def test_process_codice(codice_test_data, caplog):
+@pytest.mark.external_test_data
+def test_process_codice(codice_test_data, caplog, lut_path):
     """Ensure that the ``process_codice`` function creates a dataset
 
     Here we just need to make sure the function is returning the expected data.
@@ -326,7 +479,7 @@ def test_process_codice(codice_test_data, caplog):
     """
 
     with caplog.at_level("WARNING"):
-        cod_lo_data, cod_hi_data = process_codice(codice_test_data)
+        cod_lo_data, cod_hi_data = process_codice(codice_test_data, lut_path)
 
     assert isinstance(cod_lo_data, list)
     assert all(isinstance(item, dict) for item in cod_lo_data)
