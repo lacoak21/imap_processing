@@ -5,11 +5,16 @@ code.
 """
 
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import pytest
+import xarray as xr
 
 from imap_processing import imap_module_directory
+from imap_processing.cdf.utils import load_cdf
+from imap_processing.codice import constants
+from imap_processing.codice.codice_l1b import convert_to_rates
 from imap_processing.ialirt.l0.process_codice import (
     COD_HI_COUNTER,
     COD_HI_RANGE,
@@ -51,7 +56,7 @@ def cod_lo_test_file():
         / "codice"
         / "data"
         / "l1a_input"
-        / "imap_codice_lo-ialirt_20250814_v001.pkts"
+        / "imap_codice_l0_lo-ialirt_20250814_v001.pkts"
     )
 
 
@@ -76,7 +81,7 @@ def cod_hi_test_file():
         / "codice"
         / "data"
         / "l1a_input"
-        / "imap_codice_hi-ialirt_20250814_v001.pkts"
+        / "imap_codice_l0_hi-ialirt_20250814_v001.pkts"
     )
 
 
@@ -96,6 +101,97 @@ def cod_hi_test_dataset(cod_hi_test_file):
 @pytest.fixture
 def codice_test_data(test_datasets):
     return test_datasets[478]
+
+
+@pytest.fixture(scope="session")
+def cod_lo_l1a_test_data():
+    """Returns the test data directory."""
+    data_path = (
+        imap_module_directory
+        / "tests"
+        / "codice"
+        / "data"
+        / "l1a_validation"
+        / "imap_codice_l1a_lo-ialirt_20250814_v007.cdf"
+    )
+
+    data = load_cdf(data_path)
+
+    return data
+
+
+@pytest.fixture(scope="session")
+def cod_lo_l1b_test_data():
+    """Returns the test data directory."""
+    data_path = (
+        imap_module_directory
+        / "tests"
+        / "codice"
+        / "data"
+        / "l1b_validation"
+        / "imap_codice_l1b_lo-ialirt_20250814_v007.cdf"
+    )
+
+    data = load_cdf(data_path)
+
+    return data
+
+
+def make_codice_lo_ialirt_dataset(cod_lo_l1a_test_data, descriptor):
+    coords = {
+        "epoch": cod_lo_l1a_test_data["epoch"],
+        "esa_step": cod_lo_l1a_test_data["esa_step"],
+        "spin_sector": cod_lo_l1a_test_data["spin_sector"],
+    }
+
+    data_vars = {
+        "k_factor": ("dim0", cod_lo_l1a_test_data["k_factor"].data),
+        "voltage_table": ("esa_step", cod_lo_l1a_test_data["voltage_table"].data),
+        "data_quality": ("epoch", cod_lo_l1a_test_data["data_quality"].data),
+        "acquisition_time_per_step": (
+            "esa_step",
+            cod_lo_l1a_test_data["acquisition_time_per_step"].data,
+        ),
+        "epoch_delta_minus": ("epoch", cod_lo_l1a_test_data["epoch_delta_minus"].data),
+        "epoch_delta_plus": ("epoch", cod_lo_l1a_test_data["epoch_delta_plus"].data),
+    }
+
+    variables_to_convert = getattr(
+        constants, f"{descriptor.upper().replace('-', '_')}_VARIABLE_NAMES"
+    )
+
+    for variable in variables_to_convert:
+        data_vars[variable] = (
+            ("epoch", "esa_step", "spin_sector"),
+            cod_lo_l1a_test_data[variable].data,
+        )
+        data_vars[f"unc_{variable}"] = (
+            ("epoch", "esa_step", "spin_sector"),
+            cod_lo_l1a_test_data[f"unc_{variable}"].data,
+        )
+
+    ds = xr.Dataset(data_vars=data_vars, coords=coords)
+    return ds
+
+
+@patch("xarray.Dataset.drop_vars", new=lambda self, *args, **kwargs: self)
+@pytest.mark.external_test_data
+def test_l1b_ialirt_cod_lo(cod_lo_l1a_test_data, cod_lo_l1b_test_data):
+    "Test I-ALiRT CoDICE-Lo l1b data."
+    descriptor = "lo-ialirt"
+    dataset = make_codice_lo_ialirt_dataset(cod_lo_l1a_test_data, descriptor)
+    l1b = convert_to_rates(
+        dataset,
+        descriptor,
+    )
+    variables_to_convert = getattr(
+        constants, f"{descriptor.upper().replace('-', '_')}_VARIABLE_NAMES"
+    )
+    for variable in variables_to_convert:
+        actual = l1b[variable].data
+        expected = cod_lo_l1b_test_data[variable].data
+
+        np.testing.assert_allclose(actual, expected, rtol=1e-5)
 
 
 @pytest.mark.external_test_data
