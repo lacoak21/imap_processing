@@ -615,9 +615,13 @@ class LoHiBasePointingSet(PointingSet):
         """
         Update the az_el_points instance variable with new az/el coordinates.
 
-        The values store in the "hae_longitude" and "hae_latitude" variables
+        The values stored in the "hae_longitude" and "hae_latitude" variables
         are used to construct the azimuth and elevation coordinates.
         """
+        logger.info(
+            "Updating az/el points based on data in hae_longitude and"
+            "hae_latitude variables."
+        )
         # Get lon/lat coordinates, squeeze the epoch dimension and stack along
         # the spatial dimensions. xarray.stack() takes possibly multiple spatial
         # dimensions and reshapes those into a single dimension.
@@ -653,15 +657,6 @@ class HiPointingSet(LoHiBasePointingSet):
         super().__init__(dataset, spice_reference_frame=geometry.SpiceFrame.IMAP_HAE)
 
         self.spatial_coords = ("spin_angle_bin",)
-
-        # Naively generate the ram_mask variable assuming spacecraft frame
-        # binning. The ram_mask variable gets updated in the CG correction
-        # code if the CG correction is applied.
-        ram_mask = xr.zeros_like(self.data["spin_angle_bin"], dtype=bool)
-        # ram only includes spin-phase interval [0, 0.5)
-        # which is the first half of the spin_angle_bins
-        ram_mask[slice(0, self.data["spin_angle_bin"].data.size // 2)] = True
-        self.data["ram_mask"] = ram_mask
 
         # Rename some PSET vars to match L2 variables
         self.data = self.data.rename(
