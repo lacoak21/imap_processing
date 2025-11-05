@@ -8,9 +8,8 @@ import xarray as xr
 
 from imap_processing.cdf.utils import parse_filename_like
 from imap_processing.quality_flags import ImapPSETUltraFlags
-from imap_processing.spice.repoint import get_pointing_times
+from imap_processing.spice.repoint import get_pointing_times_from_id
 from imap_processing.spice.time import (
-    et_to_met,
     met_to_ttj2000ns,
     ttj2000ns_to_et,
 )
@@ -127,10 +126,13 @@ def calculate_helio_pset(
     )
     healpix = np.arange(n_pix)
 
-    # Get midpoint timestamp for pointing.
-    pointing_range_met = get_pointing_times(
-        et_to_met(species_dataset["event_times"].mean())
-    )
+    # Get the start and stop times of the pointing period
+    repoint_id = species_dataset.attrs.get("Repointing", None)
+    if repoint_id is None:
+        raise ValueError("Repointing ID attribute is missing from the dataset.")
+
+    pointing_range_met = get_pointing_times_from_id(repoint_id)
+
     logger.info("Calculating spacecraft exposure times with deadtime correction.")
     exposure_time, deadtime_ratios = get_spacecraft_exposure_times(
         rates_dataset,
@@ -182,8 +184,13 @@ def calculate_helio_pset(
     start: float = np.min(species_dataset["event_times"].values)
     end: float = np.max(species_dataset["event_times"].values)
 
+    # Convert pointing start and end time to ttj2000ns
+    pointing_range_ns = met_to_ttj2000ns(pointing_range_met)
+    # use either the pointing end time + 30 mins or the max event time,
+    # whichever is smaller.
+    end = min(end + 1800, ttj2000ns_to_et(pointing_range_ns[1]))
     # Time bins in 30 minute intervals
-    time_bins = np.arange(start, end + 1800, 1800)
+    time_bins = np.arange(start, end, 1800)
 
     # Compute mask for culling the Earth
     compute_culling_mask(
@@ -192,8 +199,6 @@ def calculate_helio_pset(
         helio_pset_quality_flags,
         nside=nside,
     )
-    # Convert pointing start and end time to ttj2000ns
-    pointing_range_ns = met_to_ttj2000ns(pointing_range_met)
     # Epoch should be the start of the pointing
     pset_dict["epoch"] = np.atleast_1d(pointing_range_ns[0]).astype(np.int64)
     pset_dict["epoch_delta"] = np.atleast_1d(np.diff(pointing_range_ns)).astype(

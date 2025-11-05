@@ -8,10 +8,10 @@ import xarray as xr
 
 from imap_processing.cdf.utils import parse_filename_like
 from imap_processing.quality_flags import ImapPSETUltraFlags
-from imap_processing.spice.repoint import get_pointing_times
+from imap_processing.spice.repoint import get_pointing_times_from_id
 from imap_processing.spice.time import (
-    et_to_met,
     met_to_ttj2000ns,
+    ttj2000ns_to_et,
 )
 from imap_processing.ultra.l1b.ultra_l1b_culling import get_de_rejection_mask
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
@@ -125,9 +125,11 @@ def calculate_spacecraft_pset(
     )
     healpix = np.arange(n_pix)
     # Get the start and stop times of the pointing period
-    pointing_range_met = get_pointing_times(
-        float(et_to_met(species_dataset["event_times"].mean()))
-    )
+    repoint_id = species_dataset.attrs.get("Repointing", None)
+    if repoint_id is None:
+        raise ValueError("Repointing ID attribute is missing from the dataset.")
+
+    pointing_range_met = get_pointing_times_from_id(repoint_id)
 
     # Calculate exposure times
     logger.info("Calculating spacecraft exposure times with deadtime correction.")
@@ -167,11 +169,17 @@ def calculate_spacecraft_pset(
         n_pix, ImapPSETUltraFlags.NONE.value, dtype=np.uint16
     )
 
+    # Convert pointing start and end time to ttj2000ns
+    pointing_range_ns = met_to_ttj2000ns(pointing_range_met)
+
     start: float = np.min(species_dataset["event_times"].values)
     end: float = np.max(species_dataset["event_times"].values)
 
+    # use either the pointing end time + 30 mins or the max event time,
+    # whichever is smaller.
+    end = min(end + 1800, ttj2000ns_to_et(pointing_range_ns[1]))
     # Time bins in 30 minute intervals
-    time_bins = np.arange(start, end + 1800, 1800)
+    time_bins = np.arange(start, end, 1800)
 
     # Compute mask for culling the Earth
     compute_culling_mask(
@@ -180,8 +188,6 @@ def calculate_spacecraft_pset(
         spacecraft_pset_quality_flags,
         nside=nside,
     )
-    # Convert pointing start and end time to ttj2000ns
-    pointing_range_ns = met_to_ttj2000ns(pointing_range_met)
     # Epoch should be the start of the pointing
     pset_dict["epoch"] = np.atleast_1d(pointing_range_ns[0]).astype(np.int64)
     pset_dict["epoch_delta"] = np.atleast_1d(np.diff(pointing_range_ns)).astype(
