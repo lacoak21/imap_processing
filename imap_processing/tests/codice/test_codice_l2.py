@@ -7,11 +7,12 @@ import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
-from imap_data_access import AncillaryInput, ProcessingInputCollection, ScienceInput
+from imap_data_access import AncillaryInput, ProcessingInputCollection
 
 from imap_processing import imap_module_directory
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
 from imap_processing.cdf.utils import load_cdf, write_cdf
+from imap_processing.codice.codice_l1b import process_codice_l1b
 from imap_processing.codice.codice_l2 import (
     compute_geometric_factors,
     get_efficiency_lut,
@@ -20,6 +21,7 @@ from imap_processing.codice.codice_l2 import (
     process_lo_angular_intensity,
     process_lo_species_intensity,
 )
+from imap_processing.codice.codice_new_l1a import process_l1a
 from imap_processing.codice.constants import (
     LO_NSW_ANGULAR_VARIABLE_NAMES,
     LO_SW_ANGULAR_VARIABLE_NAMES,
@@ -117,16 +119,16 @@ def test_compute_geometric_factors_all_reduced_mode(mock_half_spin_lut):
 
 
 def test_compute_geometric_factors_mixed(mock_half_spin_lut):
-    # rgfo_half_spin = 2
-    dataset = xr.Dataset({"rgfo_half_spin": (("epoch",), np.array([2]))})
+    # rgfo_half_spin = 1
+    dataset = xr.Dataset({"rgfo_half_spin": (("epoch",), np.array([1]))})
     geometric_factor_lut = {
         "full": np.zeros((128, 24)),
         "reduced": np.ones((128, 24)),
     }
     result = compute_geometric_factors(dataset, geometric_factor_lut)
 
-    # ESA steps 0-63 (half_spin=1) -> 1 < 2 → mode=full → 1
-    # ESA steps 64-127 (half_spin=2) -> 2 !< 2 → mode=reduced → 0
+    # ESA steps 0-63 (half_spin=1) -> 2 > 1 → mode=full → 1
+    # ESA steps 64-127 (half_spin=2) -> 1 !>1 → mode=reduced → 0
     expected = np.repeat(np.array([[[0]] * 64 + [[1]] * 64]), 24, -1)
     np.testing.assert_array_equal(result, expected)
 
@@ -166,26 +168,21 @@ def test_get_efficiency_lut(processing_dependencies, mock_get_file_paths):
         assert col in efficiency_lut.columns, f"Missing column {col} in efficiency LUT"
 
 
-def test_process_lo_species_intensity():
-    l1b_val_data = (
-        imap_module_directory
-        / "tests"
-        / "codice"
-        / "data"
-        / "l1b_validation"
-        / "imap_codice_l1b_lo-sw-species_20250814_v007.cdf"
-    )
-    l1b_val_data = load_cdf(l1b_val_data)
-    l1b_val_data_processed = l1b_val_data.copy()
+def test_process_lo_species_intensity(mock_get_file_paths, codice_lut_path):
+    mock_get_file_paths.side_effect = [
+        codice_lut_path(descriptor="lo-sw-species", data_type="l0"),
+        codice_lut_path(descriptor="l1a-sci-lut"),
+    ]
+    processed_l1a_file = write_cdf(process_l1a(ProcessingInputCollection())[0])
+    l1b_data = process_codice_l1b(processed_l1a_file)
+    l1b_val_data_processed = l1b_data.copy()
     gf = xr.DataArray(
-        np.ones((len(l1b_val_data.epoch), 128, 24)) * 2,
-        dims=("epoch", "energy_table", "inst_az"),
+        np.ones((len(l1b_data.epoch), 128, 24)) * 2,
+        dims=("epoch", "esa_step", "inst_az"),
     )
     with mock.patch(
         "imap_processing.codice.codice_l2.get_species_efficiency",
-        return_value=xr.DataArray(
-            np.ones((128, 24)) * 2, dims=("energy_table", "inst_az")
-        ),
+        return_value=xr.DataArray(np.ones((128, 24)) * 2, dims=("esa_step", "inst_az")),
     ):
         len_pos = 5
         process_lo_species_intensity(
@@ -204,10 +201,8 @@ def test_process_lo_species_intensity():
         )
         # Check that values match expected calculation
         expected_intensity = (
-            l1b_val_data[var]
-            / (len_pos * 4 * l1b_val_data["energy_table"].data)[
-                np.newaxis, :, np.newaxis
-            ]
+            l1b_data[var]
+            / (len_pos * 4 * l1b_data["energy_table"].data)[np.newaxis, :, np.newaxis]
         )
         np.testing.assert_allclose(
             l1b_val_data_processed[var].values, expected_intensity.values, rtol=1e-5
@@ -250,26 +245,21 @@ def test_process_lo_missing_species_intensity():
         )
 
 
-def test_process_lo_angular_intensity():
-    l1b_val_data = (
-        imap_module_directory
-        / "tests"
-        / "codice"
-        / "data"
-        / "l1b_validation"
-        / "imap_codice_l1b_lo-sw-angular_20250814_v007.cdf"
-    )
-    l1b_val_data = load_cdf(l1b_val_data)
-    l1b_val_data_processed = l1b_val_data.copy()
+def test_process_lo_angular_intensity(mock_get_file_paths, codice_lut_path):
+    mock_get_file_paths.side_effect = [
+        codice_lut_path(descriptor="lo-sw-angular", data_type="l0"),
+        codice_lut_path(descriptor="l1a-sci-lut"),
+    ]
+    processed_l1a_file = write_cdf(process_l1a(ProcessingInputCollection())[0])
+    l1b_data = process_codice_l1b(processed_l1a_file)
+    l1b_val_data_processed = l1b_data.copy()
     gf = xr.DataArray(
-        np.ones((len(l1b_val_data.epoch), 128, 24)) * 2,
-        dims=("epoch", "energy_table", "inst_az"),
+        np.ones((len(l1b_data.epoch), 128, 24)) * 2,
+        dims=("epoch", "esa_step", "inst_az"),
     )
     with mock.patch(
         "imap_processing.codice.codice_l2.get_species_efficiency",
-        return_value=xr.DataArray(
-            np.ones((128, 24)) * 2, dims=("energy_table", "inst_az")
-        ),
+        return_value=xr.DataArray(np.ones((128, 24)) * 2, dims=("esa_step", "inst_az")),
     ):
         l1b_val_data_processed = process_lo_angular_intensity(
             l1b_val_data_processed,
@@ -287,9 +277,9 @@ def test_process_lo_angular_intensity():
         )
         # Check shape
         expected_shape = (
-            len(l1b_val_data.epoch),
-            len(l1b_val_data.energy_table),
-            len(l1b_val_data.spin_sector),
+            len(l1b_data.epoch),
+            len(l1b_data.energy_table),
+            len(l1b_data.spin_sector),
             3,  # 3 elevation angles map to 5 positions
         )
         np.testing.assert_allclose(
@@ -297,10 +287,8 @@ def test_process_lo_angular_intensity():
         )
         # Check that values match expected calculation
         expected_intensity = (
-            l1b_val_data[var]
-            / (4 * l1b_val_data["energy_table"].data)[
-                np.newaxis, :, np.newaxis, np.newaxis
-            ]
+            l1b_data[var]
+            / (4 * l1b_data["energy_table"].data)[np.newaxis, :, np.newaxis, np.newaxis]
         )
         # convert pos to el
         expected_intensity = (
@@ -322,10 +310,21 @@ def test_process_lo_angular_intensity():
     )
 
 
-def test_codice_l2_sw_species_intensity(processing_dependencies, mock_get_file_paths):
-    sci_input = ScienceInput("imap_codice_l1b_lo-sw-species_20250814_v007.cdf")
-    processing_dependencies.add(sci_input)
-
+@patch("imap_data_access.processing_input.ProcessingInputCollection.get_file_paths")
+def test_codice_l2_sw_species_intensity(mock_get_file_paths, codice_lut_path):
+    mock_get_file_paths.side_effect = [
+        codice_lut_path(descriptor="lo-sw-species", data_type="l0"),
+        codice_lut_path(descriptor="l1a-sci-lut"),
+    ]
+    processed_l1a_file = write_cdf(process_l1a(ProcessingInputCollection())[0])
+    processed_l1b_file = write_cdf(process_codice_l1b(processed_l1a_file))
+    # Mock get_files for l2
+    mock_get_file_paths.side_effect = [
+        [processed_l1b_file.as_posix()],
+        codice_lut_path(descriptor="l2-lo-gfactor"),
+        codice_lut_path(descriptor="l2-lo-efficiency"),
+    ]
+    processed_2_ds = process_codice_l2("lo-sw-species", ProcessingInputCollection())
     l2_val_data = (
         imap_module_directory
         / "tests"
@@ -335,22 +334,34 @@ def test_codice_l2_sw_species_intensity(processing_dependencies, mock_get_file_p
         / "imap_codice_l2_lo-sw-species_20250814_v007.cdf"
     )
     l2_val_data = load_cdf(l2_val_data)
-    ds = process_codice_l2("lo-sw-species", processing_dependencies)
     for variable in l2_val_data.data_vars:
-        processed_val = ds[variable].values
+        processed_val = processed_2_ds[variable].values
         np.testing.assert_allclose(
             processed_val,
             l2_val_data[variable].values,
             rtol=1e-5,
             err_msg=f"Mismatch in variable '{variable}'",
         )
-    ds.attrs["Data_version"] = "001"
-    write_cdf(ds, istp=False)
+    processed_2_ds.attrs["Data_version"] = "001"
+    assert processed_2_ds.attrs["Logical_source"] == "imap_codice_l2_lo-sw-species"
+    write_cdf(processed_2_ds)
 
 
-def test_codice_l2_nsw_species_intensity(processing_dependencies, mock_get_file_paths):
-    sci_input = ScienceInput("imap_codice_l1b_lo-nsw-species_20250814_v007.cdf")
-    processing_dependencies.add(sci_input)
+@patch("imap_data_access.processing_input.ProcessingInputCollection.get_file_paths")
+def test_codice_l2_nsw_species_intensity(mock_get_file_paths, codice_lut_path):
+    mock_get_file_paths.side_effect = [
+        codice_lut_path(descriptor="lo-nsw-species", data_type="l0"),
+        codice_lut_path(descriptor="l1a-sci-lut"),
+    ]
+    processed_l1a_file = write_cdf(process_l1a(ProcessingInputCollection())[0])
+    processed_l1b_file = write_cdf(process_codice_l1b(processed_l1a_file))
+    # Mock get_files for l2
+    mock_get_file_paths.side_effect = [
+        [processed_l1b_file.as_posix()],
+        codice_lut_path(descriptor="l2-lo-gfactor"),
+        codice_lut_path(descriptor="l2-lo-efficiency"),
+    ]
+    processed_2_ds = process_codice_l2("lo-nsw-angular", ProcessingInputCollection())
     l2_val_data = (
         imap_module_directory
         / "tests"
@@ -360,21 +371,33 @@ def test_codice_l2_nsw_species_intensity(processing_dependencies, mock_get_file_
         / "imap_codice_l2_lo-nsw-species_20250814_v007.cdf"
     )
     l2_val_data = load_cdf(l2_val_data)
-    ds = process_codice_l2("lo-nsw-species", processing_dependencies)
     for variable in l2_val_data.data_vars:
         np.testing.assert_allclose(
-            ds[variable].values,
+            processed_2_ds[variable].values,
             l2_val_data[variable].values,
             rtol=1e-5,
             err_msg=f"Mismatch in variable '{variable}'",
         )
-    ds.attrs["Data_version"] = "001"
-    write_cdf(ds, istp=False)
+    processed_2_ds.attrs["Data_version"] = "001"
+    assert processed_2_ds.attrs["Logical_source"] == "imap_codice_l2_lo-nsw-species"
+    write_cdf(processed_2_ds)
 
 
-def test_codice_l2_nsw_angular_intensity(processing_dependencies, mock_get_file_paths):
-    sci_input = ScienceInput("imap_codice_l1b_lo-nsw-angular_20250814_v007.cdf")
-    processing_dependencies.add(sci_input)
+@patch("imap_data_access.processing_input.ProcessingInputCollection.get_file_paths")
+def test_codice_l2_nsw_angular_intensity(mock_get_file_paths, codice_lut_path):
+    mock_get_file_paths.side_effect = [
+        codice_lut_path(descriptor="lo-nsw-angular", data_type="l0"),
+        codice_lut_path(descriptor="l1a-sci-lut"),
+    ]
+    processed_l1a_file = write_cdf(process_l1a(ProcessingInputCollection())[0])
+    processed_l1b_file = write_cdf(process_codice_l1b(processed_l1a_file))
+    # Mock get_files for l2
+    mock_get_file_paths.side_effect = [
+        [processed_l1b_file.as_posix()],
+        codice_lut_path(descriptor="l2-lo-gfactor"),
+        codice_lut_path(descriptor="l2-lo-efficiency"),
+    ]
+    processed_2_ds = process_codice_l2("lo-nsw-species", ProcessingInputCollection())
     l2_val_data = (
         imap_module_directory
         / "tests"
@@ -384,22 +407,33 @@ def test_codice_l2_nsw_angular_intensity(processing_dependencies, mock_get_file_
         / "imap_codice_l2_lo-nsw-angular_20250814_v007.cdf"
     )
     l2_val_data = load_cdf(l2_val_data)
-    ds = process_codice_l2("lo-nsw-angular", processing_dependencies)
     for variable in LO_NSW_ANGULAR_VARIABLE_NAMES:
         np.testing.assert_allclose(
-            ds[variable].values,
+            processed_2_ds[variable].values,
             l2_val_data[variable].values,
             rtol=1e-5,
             err_msg=f"Mismatch in variable '{variable}'",
         )
-    ds.attrs["Data_version"] = "001"
-    # TODO fix attrs
-    write_cdf(ds, istp=False)
+    processed_2_ds.attrs["Data_version"] = "001"
+    assert processed_2_ds.attrs["Logical_source"] == "imap_codice_l2_lo-nsw-angular"
+    write_cdf(processed_2_ds)
 
 
-def test_codice_l2_sw_angular_intensity(processing_dependencies, mock_get_file_paths):
-    sci_input = ScienceInput("imap_codice_l1b_lo-sw-angular_20250814_v007.cdf")
-    processing_dependencies.add(sci_input)
+@patch("imap_data_access.processing_input.ProcessingInputCollection.get_file_paths")
+def test_codice_l2_sw_angular_intensity(mock_get_file_paths, codice_lut_path):
+    mock_get_file_paths.side_effect = [
+        codice_lut_path(descriptor="lo-sw-angular", data_type="l0"),
+        codice_lut_path(descriptor="l1a-sci-lut"),
+    ]
+    processed_l1a_file = write_cdf(process_l1a(ProcessingInputCollection())[0])
+    processed_l1b_file = write_cdf(process_codice_l1b(processed_l1a_file))
+    # Mock get_files for l2
+    mock_get_file_paths.side_effect = [
+        [processed_l1b_file.as_posix()],
+        codice_lut_path(descriptor="l2-lo-gfactor"),
+        codice_lut_path(descriptor="l2-lo-efficiency"),
+    ]
+    processed_2_ds = process_codice_l2("lo-sw-angular", ProcessingInputCollection())
     l2_val_data = (
         imap_module_directory
         / "tests"
@@ -409,16 +443,15 @@ def test_codice_l2_sw_angular_intensity(processing_dependencies, mock_get_file_p
         / "imap_codice_l2_lo-sw-angular_20250814_v007.cdf"
     )
     l2_val_data = load_cdf(l2_val_data)
-    ds = process_codice_l2("lo-sw-angular", processing_dependencies)
     for variable in LO_SW_ANGULAR_VARIABLE_NAMES:
         np.testing.assert_allclose(
-            ds[variable].values,
+            processed_2_ds[variable].values,
             l2_val_data[variable].values,
             # TODO is 1e-4 ok?
             rtol=1e-4,
             err_msg=f"Mismatch in variable '{variable}'",
         )
 
-    ds.attrs["Data_version"] = "001"
-    # TODO fix attrs
-    write_cdf(ds, istp=False)
+    processed_2_ds.attrs["Data_version"] = "001"
+    assert processed_2_ds.attrs["Logical_source"] == "imap_codice_l2_lo-sw-angular"
+    write_cdf(processed_2_ds)
