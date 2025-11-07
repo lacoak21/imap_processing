@@ -25,6 +25,7 @@ class ValidFrames(Enum):
     DSRF = SpiceFrame.IMAP_DPS
     SRF = SpiceFrame.IMAP_SPACECRAFT
     GSE = SpiceFrame.IMAP_GSE
+    GSM = SpiceFrame.IMAP_GSM
     RTN = SpiceFrame.IMAP_RTN
 
 
@@ -215,6 +216,9 @@ class MagL2L1dBase:
         self.quality_flags = self.quality_flags[day_start_index:day_end_index]
         self.quality_bitmask = self.quality_bitmask[day_start_index:day_end_index]
 
+        if self.epoch_et is not None:
+            self.epoch_et = self.epoch_et[day_start_index:day_end_index]
+
     @staticmethod
     def calculate_magnitude(
         vectors: np.ndarray,
@@ -315,6 +319,7 @@ class MagL2L1dBase:
             self.vectors,
             from_frame=self.frame.value,
             to_frame=end_frame.value,
+            allow_spice_noframeconnect=True,
         )
         self.frame = end_frame
 

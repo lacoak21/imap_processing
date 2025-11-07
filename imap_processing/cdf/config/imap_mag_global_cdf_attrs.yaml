@@ -195,3 +195,17 @@ imap_mag_l2_burst-gse:
     Logical_source: imap_mag_l2_burst-gse
     Logical_source_description: IMAP Mission Burst Rate Instrument Level-2 Data in
         Geocentric Solar Ecliptic Reference Frame.
+
+imap_mag_l2_norm-gsm:
+    <<: *default
+    Data_type: L2_norm-gsm>Level 2 normal rate data in GSM
+    Logical_source: imap_mag_l2_norm-gsm
+    Logical_source_description: IMAP Mission Normal Rate Instrument Level-2 Data in
+        Geocentric Solar Magnetospheric Reference Frame.
+
+imap_mag_l2_burst-gsm:
+    <<: *default
+    Data_type: L2_burst-gsm>Level 2 burst rate data in GSM
+    Logical_source: imap_mag_l2_burst-gsm
+    Logical_source_description: IMAP Mission Burst Rate Instrument Level-2 Data in
+        Geocentric Solar Magnetospheric Reference Frame.
