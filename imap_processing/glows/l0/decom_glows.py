@@ -3,12 +3,11 @@
 from enum import Enum
 from pathlib import Path
 
-from space_packet_parser import definitions
-
 from imap_processing import imap_module_directory
 from imap_processing.ccsds.ccsds_data import CcsdsData
 from imap_processing.glows import __version__
 from imap_processing.glows.l0.glows_l0_data import DirectEventL0, HistogramL0
+from imap_processing.utils import packet_generator, separate_ccsds_header_userdata
 
 
 class GlowsParams(Enum):
@@ -49,32 +48,27 @@ def decom_packets(
         f"{imap_module_directory}/glows/packet_definitions/GLX_COMBINED.xml"
     )
 
-    packet_definition = definitions.XtcePacketDefinition(xtce_document)
-
     histdata = []
     dedata = []
 
     filename = packet_file_path.name
 
-    with open(packet_file_path, "rb") as binary_data:
-        glows_packets = packet_definition.packet_generator(binary_data)
+    for packet in packet_generator(packet_file_path, xtce_document):
+        apid = packet["PKT_APID"]
+        # Do something with the packet data
+        if apid == GlowsParams.HIST_APID.value:
+            header, userdata = separate_ccsds_header_userdata(packet)
+            hist_l0 = HistogramL0(
+                __version__, filename, CcsdsData(header), *list(userdata.values())
+            )
+            histdata.append(hist_l0)
 
-        for packet in glows_packets:
-            apid = packet["PKT_APID"]
-            # Do something with the packet data
-            if apid == GlowsParams.HIST_APID.value:
-                values = [item.raw_value for item in packet.user_data.values()]
-                hist_l0 = HistogramL0(
-                    __version__, filename, CcsdsData(packet.header), *values
-                )
-                histdata.append(hist_l0)
+        if apid == GlowsParams.DE_APID.value:
+            values = [item.raw_value for i, item in enumerate(packet.values()) if i > 6]
+            header = {
+                key: value for i, (key, value) in enumerate(packet.items()) if i <= 6
+            }
+            de_l0 = DirectEventL0(__version__, filename, CcsdsData(header), *values)
+            dedata.append(de_l0)
 
-            if apid == GlowsParams.DE_APID.value:
-                values = [item.raw_value for item in packet.user_data.values()]
-
-                de_l0 = DirectEventL0(
-                    __version__, filename, CcsdsData(packet.header), *values
-                )
-                dedata.append(de_l0)
-
-        return histdata, dedata
+    return histdata, dedata

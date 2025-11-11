@@ -9,7 +9,6 @@ from pathlib import Path
 
 import numpy as np
 import xarray as xr
-from space_packet_parser import definitions
 
 from imap_processing import imap_module_directory
 from imap_processing.ccsds.ccsds_data import CcsdsData
@@ -17,6 +16,7 @@ from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
 from imap_processing.mag.constants import DataMode
 from imap_processing.mag.l0.mag_l0_data import MagL0, Mode
 from imap_processing.spice.time import met_to_ttj2000ns
+from imap_processing.utils import packet_generator, separate_ccsds_header_userdata
 
 logger = logging.getLogger(__name__)
 
@@ -41,25 +41,20 @@ def decom_packets(packet_file_path: str | Path) -> dict[str, list[MagL0]]:
         f"{imap_module_directory}/mag/packet_definitions/MAG_SCI_COMBINED.xml"
     )
 
-    packet_definition = definitions.XtcePacketDefinition(xtce_document)
-
     # Store in a dict for de-duplication. Only the keys are returned as a list.
     norm_dict: dict[MagL0, None] = {}
     burst_dict: dict[MagL0, None] = {}
 
-    with open(packet_file_path, "rb") as binary_data:
-        mag_packets = packet_definition.packet_generator(binary_data)
-
-        for packet in mag_packets:
-            apid = packet["PKT_APID"]
-            if apid in (Mode.BURST, Mode.NORMAL):
-                values = [item.raw_value for item in packet.user_data.values()]
-                mag_l0 = MagL0(CcsdsData(packet.header), *values)
-                if apid == Mode.NORMAL:
-                    if mag_l0 not in norm_dict:
-                        norm_dict[mag_l0] = None
-                elif mag_l0 not in burst_dict:
-                    burst_dict[mag_l0] = None
+    for packet in packet_generator(packet_file_path, xtce_document):
+        apid = packet["PKT_APID"]
+        if apid in (Mode.BURST, Mode.NORMAL):
+            header, userdata = separate_ccsds_header_userdata(packet)
+            mag_l0 = MagL0(CcsdsData(header), *list(userdata.values()))
+            if apid == Mode.NORMAL:
+                if mag_l0 not in norm_dict:
+                    norm_dict[mag_l0] = None
+            elif mag_l0 not in burst_dict:
+                burst_dict[mag_l0] = None
 
     return {"norm": list(norm_dict.keys()), "burst": list(burst_dict.keys())}
 
