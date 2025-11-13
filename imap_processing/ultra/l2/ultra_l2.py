@@ -19,6 +19,7 @@ from imap_processing.ena_maps.utils.naming import (
     ns_to_duration_months,
 )
 from imap_processing.quality_flags import ImapPSETUltraFlags
+from imap_processing.spice.time import et_to_utc, ttj2000ns_to_et
 from imap_processing.ultra.l1c.ultra_l1c_pset_bins import get_energy_delta_minus_plus
 
 logger = logging.getLogger(__name__)
@@ -300,7 +301,7 @@ def generate_ultra_healpix_skymap(  # noqa: PLR0912
         good_pixel_mask = (
             (flags_1d & ImapPSETUltraFlags.EARTH_FOV.value) == 0
         ).to_numpy()
-
+        print("epoch", et_to_utc(ttj2000ns_to_et(pointing_set.epoch)))
         # Only count the number of pointing set pixels which are not flagged.
         pointing_set.data["num_pointing_set_pixel_members"] = xr.DataArray(
             good_pixel_mask.astype(int),

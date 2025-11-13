@@ -1,27 +1,27 @@
 """Calculate Pointing Set Grids."""
 
 import logging
+import pickle
 
 import astropy_healpix.healpy as hp
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 from imap_processing.cdf.utils import parse_filename_like
 from imap_processing.quality_flags import ImapPSETUltraFlags
-from imap_processing.spice.repoint import get_pointing_times_from_id
 from imap_processing.spice.time import (
+    et_to_met,
     met_to_ttj2000ns,
     ttj2000ns_to_et,
 )
 from imap_processing.ultra.l1b.ultra_l1b_culling import get_de_rejection_mask
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
     build_energy_bins,
-    calculate_fwhm_spun_scattering,
     get_spacecraft_pointing_lookup_tables,
 )
 from imap_processing.ultra.l1c.ultra_l1c_culling import compute_culling_mask
 from imap_processing.ultra.l1c.ultra_l1c_pset_bins import (
-    get_efficiencies_and_geometric_function,
     get_energy_delta_minus_plus,
     get_spacecraft_background_rates,
     get_spacecraft_exposure_times,
@@ -70,7 +70,7 @@ def calculate_spacecraft_pset(
         Dataset containing the data.
     """
     pset_dict: dict[str, np.ndarray] = {}
-
+    apply_boundary_scale_factors = False
     sensor_id = int(parse_filename_like(name)["sensor"][0:2])
     indices = np.where(np.isin(de_dataset["ebin"].values, species_id))[0]
     species_dataset = de_dataset.isel(epoch=indices)
@@ -106,15 +106,32 @@ def calculate_spacecraft_pset(
     ) = get_spacecraft_pointing_lookup_tables(ancillary_files, instrument_id)
 
     logger.info("calculating spun FWHM scattering values.")
-    pixels_below_scattering, scattering_theta, scattering_phi, scattering_thresholds = (
-        calculate_fwhm_spun_scattering(
-            for_indices_by_spin_phase,
-            theta_vals,
-            phi_vals,
-            ancillary_files,
-            instrument_id,
-        )
-    )
+    # pixels_below_scattering, scattering_theta, scattering_phi, scattering_thresholds = (
+    #     calculate_fwhm_spun_scattering(
+    #         for_indices_by_spin_phase,
+    #         theta_vals,
+    #         phi_vals,
+    #         ancillary_files,
+    #         instrument_id,
+    #     )
+    # )
+    # # Save all four arrays
+    # with open(f"scattering_results_{sensor_id}.pkl", "wb") as f:
+    #     pickle.dump({
+    #         'pixels_below_scattering': pixels_below_scattering,
+    #         'scattering_theta': scattering_theta,
+    #         'scattering_phi': scattering_phi,
+    #         'scattering_thresholds': scattering_thresholds
+    #     }, f)
+
+    # # Load all four arrays
+    with open(f"scattering_results_{sensor_id}.pkl", "rb") as f:
+        data = pickle.load(f)
+        pixels_below_scattering = data["pixels_below_scattering"]
+        scattering_theta = data["scattering_theta"]
+        scattering_phi = data["scattering_phi"]
+        scattering_thresholds = data["scattering_thresholds"]
+    print(scattering_thresholds)
     # Determine nside from the lookup table
     nside = hp.npix2nside(len(for_indices_by_spin_phase))
     counts, latitude, longitude, n_pix = get_spacecraft_histogram(
@@ -129,8 +146,19 @@ def calculate_spacecraft_pset(
     if repoint_id is None:
         raise ValueError("Repointing ID attribute is missing from the dataset.")
 
-    pointing_range_met = get_pointing_times_from_id(repoint_id)
+    # pointing_range_met = get_pointing_times_from_id(repoint_id)
 
+    spin_data = pd.read_csv(
+        f"/Users/luco3133/projects/ultra_stuff/validation_stuff"
+        f"/other_var_validation_20251024/ultra-{sensor_id}-inputs/"
+        f"SpinTable-p{int(repoint_id.replace('repoint', ''))}.csv"
+    )
+    pointing_start = et_to_met(float(spin_data["Spin Start (tdb)"].values[0]))
+    pointing_mid_time = (
+        pointing_start + et_to_met(float(spin_data["Spin Start (tdb)"].values[-1]))
+    ) / 2
+    pointing_stop = et_to_met(float(spin_data["Spin Start (tdb)"].values[-1]))
+    pointing_range_met = (pointing_start, pointing_stop)
     # Calculate exposure times
     logger.info("Calculating spacecraft exposure times with deadtime correction.")
     exposure_pointing, deadtime_ratios = get_spacecraft_exposure_times(
@@ -140,19 +168,36 @@ def calculate_spacecraft_pset(
         boundary_scale_factors,
         pointing_range_met,
         n_pix=n_pix,
+        apply_boundary_scale_factors=apply_boundary_scale_factors,
         sensor_id=sensor_id,
         ancillary_files=ancillary_files,
     )
     logger.info("Calculating spun efficiencies and geometric function.")
     # calculate efficiency and geometric function as a function of energy
-    geometric_function, efficiencies = get_efficiencies_and_geometric_function(
-        pixels_below_scattering,
-        boundary_scale_factors,
-        theta_vals,
-        phi_vals,
-        n_pix,
-        ancillary_files,
-    )
+    # geometric_function, efficiencies = get_efficiencies_and_geometric_function(
+    #     pixels_below_scattering,
+    #     boundary_scale_factors,
+    #     theta_vals,
+    #     phi_vals,
+    #     n_pix,
+    #     ancillary_files,
+    #     apply_boundary_scale_factors,
+    # )
+    # Save all four arrays
+    # with open(f"eff_gf_exp{sensor_id}.pkl", "wb") as f:
+    #     pickle.dump({
+    #         'exposure_pointing': exposure_pointing,
+    #         'deadtime_ratios': deadtime_ratios,
+    #         'geometric_function': geometric_function,
+    #         'efficiencies': efficiencies
+    #     }, f)
+    # Load all four arrays
+    with open(f"eff_gf_exp{sensor_id}.pkl", "rb") as f:
+        data = pickle.load(f)
+        # exposure_time = data["exposure_pointing"]
+        deadtime_ratios = data["deadtime_ratios"]
+        geometric_function = data["geometric_function"]
+        efficiencies = data["efficiencies"]
     sensitivity = efficiencies * geometric_function
 
     logger.info("Calculating background rates.")
@@ -224,5 +269,5 @@ def calculate_spacecraft_pset(
     pset_dict["energy_delta_plus"] = energy_delta_plus
 
     dataset = create_dataset(pset_dict, name, "l1c")
-
+    dataset.attrs["Repointing"] = species_dataset.attrs.get("Repointing")
     return dataset

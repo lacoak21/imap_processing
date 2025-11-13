@@ -1,9 +1,11 @@
 """Module to create pointing sets."""
 
+# ruff: noqa
 import logging
 
 import astropy_healpix.healpy as hp
 import numpy as np
+import pandas as pd
 import xarray as xr
 from numpy.typing import NDArray
 from scipy import interpolate
@@ -13,21 +15,11 @@ from imap_processing.spice.geometry import (
     cartesian_to_spherical,
     imap_state,
 )
-from imap_processing.spice.spin import (
-    get_spacecraft_spin_phase,
-    get_spin_angle,
-    get_spin_data,
-)
-from imap_processing.spice.time import ttj2000ns_to_met
 from imap_processing.ultra.constants import UltraConstants
 from imap_processing.ultra.l1b.lookup_utils import (
     get_geometric_factor,
     get_image_params,
     load_geometric_factor_tables,
-)
-from imap_processing.ultra.l1b.ultra_l1b_culling import (
-    get_pulses_per_spin,
-    get_spin_and_duration,
 )
 from imap_processing.ultra.l1b.ultra_l1b_extended import (
     get_efficiency,
@@ -35,7 +27,6 @@ from imap_processing.ultra.l1b.ultra_l1b_extended import (
 )
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
     build_energy_bins,
-    get_static_deadtime_ratios,
 )
 
 # TODO: add species binning.
@@ -292,62 +283,63 @@ def get_deadtime_ratios_by_spin_phase(
     numpy.ndarray
         Nominal deadtime ratios at every spin phase step.
     """
-    if sectored_rates is None or sectored_rates.epoch.size == 0:
-        logger.warning(
-            "No sector mode data found in the parameters dataset. Using "
-            "static dead time ratios from an ancillary file."
-        )
-        if sensor_id is None or ancillary_files is None:
-            raise ValueError(
-                "sensor_id and ancillary_files must be provided to "
-                "get static deadtime ratios."
-            )
-        spin_phases_centered, deadtime_ratios = get_static_deadtime_ratios(
-            sensor_id, ancillary_files
-        )
-    else:
-        deadtime_ratios = get_deadtime_ratios(sectored_rates).data
-        # Get the spin phase at the start of each sector rate measurement
-        met_times = ttj2000ns_to_met(sectored_rates.epoch.data)
-        spin_phases = np.asarray(
-            get_spin_angle(get_spacecraft_spin_phase(met_times), degrees=True)
-        )
-        # Assume the sectored rate data is evenly spaced in time, and find the middle
-        # spin phase value for each sector.
-        # The center spin phase is the closest / most accurate spin phase.
-        # There are 24 spin phases per sector so the nominal middle sector spin phases
-        # would be: array([ 12., 36., ..., 300., 324.]) for 15 sectors.
-        spin_phases_centered = (spin_phases[:-1] + spin_phases[1:]) / 2
-        # Assume the last sector is nominal because we dont have enough data to
-        # determine the spin phase at the end of the last sector.
-        # TODO: is this assumption valid?
-        # Add the last spin phase value + half of a nominal sector.
-        spin_phases_centered = np.append(spin_phases_centered, spin_phases[-1] + 12)
-        # Wrap any spin phases > 360 back to [0, 360]
-        spin_phases_centered = np.array(spin_phases_centered % 360)
-
-    # Create a dataset with spin phases and dead time ratios
-    deadtime_by_spin_phase = xr.Dataset(
-        {"deadtime_ratio": (("spin_phase",), deadtime_ratios)},
-        coords={"spin_phase": xr.DataArray(spin_phases_centered, dims="spin_phase")},
-    )
-
-    # Sort the dataset by spin phase (ascending order)
-    deadtime_by_spin_phase = deadtime_by_spin_phase.sortby("spin_phase")
-    # Group by spin phase and calculate the median dead time ratio for each phase
-    deadtime_medians = deadtime_by_spin_phase.groupby("spin_phase").median(skipna=True)
-    if np.any(np.isnan(deadtime_medians["deadtime_ratio"].values)):
-        if not np.any(np.isfinite(deadtime_medians["deadtime_ratio"].values)):
-            raise ValueError("All dead time ratios are NaN, cannot interpolate.")
-        logger.warning(
-            "Dead time ratios contain NaN values, filtering data to only include "
-            "finite values."
-        )
-    deadtime_medians = deadtime_medians.where(
-        np.isfinite(deadtime_medians["deadtime_ratio"]), drop=True
-    )
+    # if sectored_rates is None or sectored_rates.epoch.size == 0:
+    #     logger.warning(
+    #         "No sector mode data found in the parameters dataset. Using "
+    #         "static dead time ratios from an ancillary file."
+    #     )
+    #     if sensor_id is None or ancillary_files is None:
+    #         raise ValueError(
+    #             "sensor_id and ancillary_files must be provided to "
+    #             "get static deadtime ratios."
+    #         )
+    #     spin_phases_centered, deadtime_ratios = get_static_deadtime_ratios(
+    #         sensor_id, ancillary_files
+    #     )
+    # else:
+    #     deadtime_ratios = get_deadtime_ratios(sectored_rates).data
+    #     # Get the spin phase at the start of each sector rate measurement
+    #     met_times = ttj2000ns_to_met(sectored_rates.epoch.data)
+    #     spin_phases = np.asarray(
+    #         get_spin_angle(get_spacecraft_spin_phase(met_times), degrees=True)
+    #     )
+    #     # Assume the sectored rate data is evenly spaced in time, and find the middle
+    #     # spin phase value for each sector.
+    #     # The center spin phase is the closest / most accurate spin phase.
+    #     # There are 24 spin phases per sector so the nominal middle sector spin phases
+    #     # would be: array([ 12., 36., ..., 300., 324.]) for 15 sectors.
+    #     spin_phases_centered = (spin_phases[:-1] + spin_phases[1:]) / 2
+    #     # Assume the last sector is nominal because we dont have enough data to
+    #     # determine the spin phase at the end of the last sector.
+    #     # TODO: is this assumption valid?
+    #     # Add the last spin phase value + half of a nominal sector.
+    #     spin_phases_centered = np.append(spin_phases_centered, spin_phases[-1] + 12)
+    #     # Wrap any spin phases > 360 back to [0, 360]
+    #     spin_phases_centered = np.array(spin_phases_centered % 360)
+    #
+    # # Create a dataset with spin phases and dead time ratios
+    # deadtime_by_spin_phase = xr.Dataset(
+    #     {"deadtime_ratio": (("spin_phase",), deadtime_ratios)},
+    #     coords={"spin_phase": xr.DataArray(spin_phases_centered, dims="spin_phase")},
+    # )
+    #
+    # # Sort the dataset by spin phase (ascending order)
+    # deadtime_by_spin_phase = deadtime_by_spin_phase.sortby("spin_phase")
+    # # Group by spin phase and calculate the median dead time ratio for each phase
+    # deadtime_medians = deadtime_by_spin_phase.groupby("spin_phase").median(skipna=True)
+    # if np.any(np.isnan(deadtime_medians["deadtime_ratio"].values)):
+    #     if not np.any(np.isfinite(deadtime_medians["deadtime_ratio"].values)):
+    #         raise ValueError("All dead time ratios are NaN, cannot interpolate.")
+    #     logger.warning(
+    #         "Dead time ratios contain NaN values, filtering data to only include "
+    #         "finite values."
+    #     )
+    # deadtime_medians = deadtime_medians.where(
+    #     np.isfinite(deadtime_medians["deadtime_ratio"]), drop=True
+    # )
     interpolator = interpolate.PchipInterpolator(
-        deadtime_medians["spin_phase"].values, deadtime_medians["deadtime_ratio"].values
+        sectored_rates["spin_phase"].values,
+        sectored_rates["dead_time_ratio"].values,
     )
     # Calculate the nominal spin phases at the supplied resolution and query the pchip
     # interpolator to get the deadtime ratios.
@@ -360,6 +352,7 @@ def calculate_exposure_time(
     pixels_below_scattering: list,
     boundary_scale_factors: NDArray,
     n_pix: int,
+    apply_boundary_scale_factors: bool = True,
 ) -> np.ndarray:
     """
     Adjust the exposure time at each pixel to account for dead time.
@@ -401,10 +394,13 @@ def calculate_exposure_time(
                 continue
             # Apply the nominal exposure time (1 ms) scaled by the deadtime ratio to
             # every pixel in the FOR, that is below the FWHM scattering threshold,
-            counts[energy_bin_idx, pixels_at_energy_and_spin] += (
-                deadtime_ratios[i]
-                * boundary_scale_factors[pixels_at_energy_and_spin, i]
-            )
+            if apply_boundary_scale_factors:
+                counts[energy_bin_idx, pixels_at_energy_and_spin] += (
+                    deadtime_ratios[i]
+                    * boundary_scale_factors[pixels_at_energy_and_spin, i]
+                )
+            else:
+                counts[energy_bin_idx, pixels_at_energy_and_spin] += deadtime_ratios[i]
 
     # Multiply by the nominal spin step to get the exposure time in ms
     exposure_pointing = counts * nominal_ms_step
@@ -418,6 +414,7 @@ def get_spacecraft_exposure_times(
     boundary_scale_factors: NDArray,
     pointing_range_met: tuple[float, float],
     n_pix: int,
+    apply_boundary_scale_factors: bool = False,
     sensor_id: int | None = None,
     ancillary_files: dict | None = None,
 ) -> tuple[NDArray, NDArray]:
@@ -456,43 +453,61 @@ def get_spacecraft_exposure_times(
         Deadtime ratios at each spin phase step (1ms res).
     """
     # filter rates dataset to only include data during a pointing
-    rates_time = ttj2000ns_to_met(rates_dataset.epoch.data)
-    pointing_mask = (rates_time >= pointing_range_met[0]) & (
-        rates_time <= pointing_range_met[1]
-    )
-    rates_dataset.isel(epoch=pointing_mask)
-    sectored_rates = get_sectored_rates(rates_dataset, params_dataset)
+    # rates_time = et_to_met(rates_dataset.epoch.data)
+    # pointing_mask = (rates_time >= pointing_range_met[0]) & (
+    #     rates_time <= pointing_range_met[1]
+    # )
+    # rates_dataset.isel(epoch=pointing_mask)
+    # sectored_rates = get_sectored_rates(rates_dataset, params_dataset)
     # Get the number of steps used in the spun pointing lookup tables
     spin_steps = len(pixels_below_scattering)
     nominal_deadtime_ratios = get_deadtime_ratios_by_spin_phase(
-        sectored_rates, spin_steps, sensor_id, ancillary_files
+        rates_dataset,
+        spin_steps,
+        sensor_id,
+        ancillary_files,
     )
     # The exposure time will be approximately the same per spin, so to save
     # computation time, calculate the exposure time for a single spin and then scale it
     # by the number of spins in the pointing. For more information, see section 3.4.3
     # of the Ultra Algorithm Document.
     exposure_time = calculate_exposure_time(
-        nominal_deadtime_ratios, pixels_below_scattering, boundary_scale_factors, n_pix
+        nominal_deadtime_ratios,
+        pixels_below_scattering,
+        boundary_scale_factors,
+        n_pix,
+        apply_boundary_scale_factors,
     )
     # Use the universal spin table to determine the actual number of spins
     nominal_spin_seconds = 15.0
-    spin_data = get_spin_data()
-    # Filter for spins only in pointing
-    spin_data = spin_data[
-        (spin_data["spin_start_met"] >= pointing_range_met[0])
-        & (spin_data["spin_start_met"] <= pointing_range_met[1])
-    ]
-    # Get only valid spin data
-    valid_mask = (spin_data["spin_phase_valid"].values == 1) & (
-        spin_data["spin_period_valid"].values == 1
-    )
-    n_spins_in_pointing: float = np.sum(
-        spin_data[valid_mask].spin_period_sec / nominal_spin_seconds
-    )
-    logger.info(
-        f"Calculated total spins universal spin table. Found {n_spins_in_pointing} "
-        f"valid spins."
-    )
+    # spin_data = get_spin_data()
+    # # Filter for spins only in pointing
+    # spin_data = spin_data[
+    #     (spin_data["spin_start_met"] >= pointing_range_met[0])
+    #     & (spin_data["spin_start_met"] <= pointing_range_met[1])
+    # ]
+    # # Get only valid spin data
+    # valid_mask = (spin_data["spin_phase_valid"].values == 1) & (
+    #     spin_data["spin_period_valid"].values == 1
+    # )
+    # n_spins_in_pointing: float = np.sum(
+    #     spin_data[valid_mask].spin_period_sec / nominal_spin_seconds
+    # )
+    repoint = rates_dataset.attrs.get("Repointing", "")
+    repoint_id = int(repoint.replace("repoint", ""))
+    print("pointings:", repoint_id)
+    try:
+        spin_data = pd.read_csv(
+            f"/Users/luco3133/projects/ultra_stuff/validation_stuff"
+            f"/other_var_validation_20251024/ultra-{sensor_id}-inputs/"
+            f"SpinTable-p{repoint_id}.csv"
+        )
+        n_spins_in_pointing: np.ndarray = np.sum(
+            spin_data["Spin Duration (sec)"] / nominal_spin_seconds
+        )
+    except ValueError:
+        n_spins_in_pointing = np.array([5220])
+    logger.info("Number of spins in pointing: %s", n_spins_in_pointing)
     # Adjust exposure time by the actual number of valid spins in the pointing
     exposure_pointing_adjusted = n_spins_in_pointing * exposure_time
     return exposure_pointing_adjusted, nominal_deadtime_ratios
@@ -505,6 +520,7 @@ def get_efficiencies_and_geometric_function(
     phi_vals: np.ndarray,
     npix: int,
     ancillary_files: dict,
+    apply_boundary_scale_factors: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute the geometric factor and efficiency for each pixel and energy bin.
@@ -600,13 +616,16 @@ def get_efficiencies_and_geometric_function(
                 interpolator=eff_interpolator,
             )
             # Accumulate gf and eff values
-            gf_summation[energy_bin_idx, pixel_inds] += (
-                gf_values[pixel_inds] * boundary_scale_factors[pixel_inds, i]
-            )
-            eff_summation[energy_bin_idx, pixel_inds] += (
-                eff_values * boundary_scale_factors[pixel_inds, i]
-            )
-            sample_count[energy_bin_idx, pixel_inds] += 1
+            if apply_boundary_scale_factors:
+                gf_summation[energy_bin_idx, pixel_inds] += (
+                    gf_values[pixel_inds] * boundary_scale_factors[pixel_inds, i]
+                )
+                eff_summation[energy_bin_idx, pixel_inds] += (
+                    eff_values * boundary_scale_factors[pixel_inds, i]
+                )
+            else:
+                gf_summation[energy_bin_idx, pixel_inds] += gf_values[pixel_inds]
+                eff_summation[energy_bin_idx, pixel_inds] += eff_values
 
     # return averaged geometric factors and efficiencies across all spin phases
     # These are now energy dependent.
@@ -772,13 +791,13 @@ def get_spacecraft_background_rates(
     -----
     See Eqn. 3, 8, and 20 in the Algorithm Document for the equation.
     """
-    pulses = get_pulses_per_spin(rates_dataset)
+    # pulses = get_pulses_per_spin(rates_dataset)
     # Pulses for the pointing.
     etof_min = get_image_params("eTOFMin", f"ultra{sensor_id}", ancillary_files)
     etof_max = get_image_params("eTOFMax", f"ultra{sensor_id}", ancillary_files)
-    spin_number, _ = get_spin_and_duration(
-        rates_dataset["shcoarse"], rates_dataset["spin"]
-    )
+    # spin_number, _ = get_spin_and_duration(
+    #     rates_dataset["shcoarse"], rates_dataset["spin"]
+    # )
 
     # Get dmin for PH (mm).
     dmin_ctof = UltraConstants.DMIN_PH_CTOF
@@ -790,10 +809,13 @@ def get_spacecraft_background_rates(
     background_rates = np.zeros((len(energy_bin_edges), n_pix))
 
     # Only select pulses from goodtimes.
-    goodtime_mask = np.isin(spin_number, goodtimes_spin_number)
-    mean_start_pulses = np.mean(pulses.start_pulses[goodtime_mask])
-    mean_stop_pulses = np.mean(pulses.stop_pulses[goodtime_mask])
-    mean_coin_pulses = np.mean(pulses.coin_pulses[goodtime_mask])
+    # goodtime_mask = np.isin(spin_number, goodtimes_spin_number)
+    # mean_start_pulses = np.mean(pulses.start_pulses[goodtime_mask])
+    # mean_stop_pulses = np.mean(pulses.stop_pulses[goodtime_mask])
+    # mean_coin_pulses = np.mean(pulses.coin_pulses[goodtime_mask])
+    mean_start_pulses = rates_dataset["start_rate"].mean()
+    mean_stop_pulses = rates_dataset["stop_rate"].mean()
+    mean_coin_pulses = rates_dataset["coin_rate"].mean()
 
     for i, (e_min, e_max) in enumerate(energy_bin_edges):
         # Calculate ctof for the energy bin boundaries by combining Eqn. 3 and 8.

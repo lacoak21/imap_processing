@@ -4,12 +4,13 @@ import logging
 
 import astropy_healpix.healpy as hp
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 from imap_processing.cdf.utils import parse_filename_like
 from imap_processing.quality_flags import ImapPSETUltraFlags
-from imap_processing.spice.repoint import get_pointing_times_from_id
 from imap_processing.spice.time import (
+    et_to_met,
     met_to_ttj2000ns,
     ttj2000ns_to_et,
 )
@@ -70,6 +71,10 @@ def calculate_helio_pset(
     dataset : xarray.Dataset
         Dataset containing the data.
     """
+    repoint = de_dataset.attrs.get("Repointing", "")
+    repoint_id = int(repoint.replace("repoint", ""))
+
+    apply_boundary_scale_factors = False
     sensor_id = int(parse_filename_like(name)["sensor"][0:2])
     pset_dict: dict[str, np.ndarray] = {}
     # Select only the species we are interested in.
@@ -79,6 +84,17 @@ def calculate_helio_pset(
         return None
 
     species_dataset = de_dataset.isel(epoch=indices)
+
+    spin_data = pd.read_csv(
+        f"/Users/luco3133/projects/ultra_stuff/validation_stuff"
+        f"/other_var_validation_20251024/ultra-{sensor_id}-inputs/"
+        f"SpinTable-p{repoint_id}.csv"
+    )
+    pointing_start = et_to_met(float(spin_data["Spin Start (tdb)"].values[0]))
+    pointing_mid_time = (
+        pointing_start + et_to_met(float(spin_data["Spin Start (tdb)"].values[-1]))
+    ) / 2
+    pointing_stop = et_to_met(float(spin_data["Spin Start (tdb)"].values[-1]))
 
     rejected = get_de_rejection_mask(
         species_dataset["quality_scattering"].values,
@@ -113,6 +129,13 @@ def calculate_helio_pset(
             instrument_id,
         )
     )
+    # Load all four arrays
+    # with open(f"scattering_results_{sensor}.pkl", "rb") as f:
+    #     data = pickle.load(f)
+    #     pixels_below_scattering = data["pixels_below_scattering"]
+    #     scattering_theta = data["scattering_theta"]
+    #     scattering_phi = data["scattering_phi"]
+    #     scattering_thresholds = data["scattering_thresholds"]
 
     nside = hp.npix2nside(for_indices_by_spin_phase.shape[0])
     counts, latitude, longitude, n_pix = get_spacecraft_histogram(
@@ -131,8 +154,8 @@ def calculate_helio_pset(
     if repoint_id is None:
         raise ValueError("Repointing ID attribute is missing from the dataset.")
 
-    pointing_range_met = get_pointing_times_from_id(repoint_id)
-
+    # pointing_range_met = get_pointing_times_from_id(repoint_id)
+    pointing_range_met = (pointing_start, pointing_stop)
     logger.info("Calculating spacecraft exposure times with deadtime correction.")
     exposure_time, deadtime_ratios = get_spacecraft_exposure_times(
         rates_dataset,
@@ -141,6 +164,7 @@ def calculate_helio_pset(
         boundary_scale_factors,
         pointing_range_met,
         n_pix=n_pix,
+        apply_boundary_scale_factors=apply_boundary_scale_factors,
         sensor_id=sensor_id,
         ancillary_files=ancillary_files,
     )
@@ -153,6 +177,7 @@ def calculate_helio_pset(
         phi_vals,
         n_pix,
         ancillary_files,
+        apply_boundary_scale_factors,
     )
 
     logger.info("Calculating background rates.")
@@ -167,10 +192,11 @@ def calculate_helio_pset(
         nside=nside,
     )
 
-    mid_time = ttj2000ns_to_et(met_to_ttj2000ns((np.sum(pointing_range_met)) / 2))
+    # mid_time = ttj2000ns_to_et(met_to_ttj2000ns((np.sum(pointing_range_met)) / 2))
+    mid_time = ttj2000ns_to_et(met_to_ttj2000ns(pointing_mid_time))
 
     logger.info("Adjusting data for helio frame.")
-    exposure_time, _efficiency, geometric_function = get_helio_adjusted_data(
+    exposure_time, efficiencies, geometric_function = get_helio_adjusted_data(
         mid_time,
         exposure_time,
         geometric_function,
@@ -231,5 +257,5 @@ def calculate_helio_pset(
     pset_dict["energy_delta_plus"] = energy_delta_plus
 
     dataset = create_dataset(pset_dict, name, "l1c")
-
+    dataset.attrs["Repointing"] = repoint
     return dataset
