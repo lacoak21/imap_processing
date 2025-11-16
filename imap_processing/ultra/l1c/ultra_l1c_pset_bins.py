@@ -352,7 +352,7 @@ def calculate_exposure_time(
     pixels_below_scattering: list,
     boundary_scale_factors: NDArray,
     n_pix: int,
-    apply_boundary_scale_factors: bool = True,
+    apply_boundary_scale_factors: bool = False,
 ) -> np.ndarray:
     """
     Adjust the exposure time at each pixel to account for dead time.
@@ -376,6 +376,9 @@ def calculate_exposure_time(
     exposure_pointing_adjusted : np.ndarray
         Adjusted exposure times accounting for dead time.
     """
+    # Track accumulation for bin 0
+    bin0_accumulation = 0
+
     # Get energy bin geometric means
     energy_bin_geometric_means = build_energy_bins()[2]
     # Exposure time should now be of shape (energy, npix)
@@ -388,6 +391,7 @@ def calculate_exposure_time(
     # 1 ms steps in the despun frame.
     for i, pixels_at_spin in enumerate(pixels_below_scattering):
         # Loop through energy bins
+        # DEBUG: Check pixel counts per energy bin
         for energy_bin_idx in range(len(energy_bin_geometric_means)):
             pixels_at_energy_and_spin = pixels_at_spin[energy_bin_idx]
             if pixels_at_energy_and_spin.size == 0:
@@ -400,10 +404,26 @@ def calculate_exposure_time(
                     * boundary_scale_factors[pixels_at_energy_and_spin, i]
                 )
             else:
+                # Track bin 0
+                contribution = deadtime_ratios[i]
+                if energy_bin_idx == 0 and i < 10:  # First 10 spin phases
+                    bin0_accumulation += contribution.sum()
+                    logger.info(
+                        f"  Spin {i}, Bin 0: pixels={pixels_at_energy_and_spin.size}, "
+                        f"deadtime={deadtime_ratios[i]:.6f}, "
+                        f"{boundary_scale_factors[pixels_at_energy_and_spin, i].max():.6f}, "
+                        f"contribution sum={contribution.sum():.6f}")
                 counts[energy_bin_idx, pixels_at_energy_and_spin] += deadtime_ratios[i]
 
     # Multiply by the nominal spin step to get the exposure time in ms
     exposure_pointing = counts * nominal_ms_step
+    # DEBUG: Check output
+    logger.info("Exposure time (before n_spins scaling):")
+    for i in range(min(5, len(exposure_pointing))):  # Check first 5 bins
+        non_zero = np.sum(exposure_pointing[i, :] > 0)
+        logger.info(f"  Bin {i}: non-zero pixels={non_zero}, "
+                    f"sum={exposure_pointing[i, :].sum():.2e}, "
+                    f"mean={exposure_pointing[i, :].mean():.2e}")
     return exposure_pointing
 
 
@@ -461,6 +481,7 @@ def get_spacecraft_exposure_times(
     # sectored_rates = get_sectored_rates(rates_dataset, params_dataset)
     # Get the number of steps used in the spun pointing lookup tables
     spin_steps = len(pixels_below_scattering)
+    logger.info("Calculating nominal deadtime ratios at %d spin phase steps.", spin_steps)
     nominal_deadtime_ratios = get_deadtime_ratios_by_spin_phase(
         rates_dataset,
         spin_steps,
@@ -497,6 +518,7 @@ def get_spacecraft_exposure_times(
     repoint_id = int(repoint.replace("repoint", ""))
     print("pointings:", repoint_id)
     try:
+        print("HELLO")
         spin_data = pd.read_csv(
             f"/Users/luco3133/projects/ultra_stuff/validation_stuff"
             f"/other_var_validation_20251024/ultra-{sensor_id}-inputs/"
@@ -507,9 +529,12 @@ def get_spacecraft_exposure_times(
         )
     except ValueError:
         n_spins_in_pointing = np.array([5220])
+    # Adjust exposure time by the actual number of valid spins in the pointing
     logger.info("Number of spins in pointing: %s", n_spins_in_pointing)
+
     # Adjust exposure time by the actual number of valid spins in the pointing
     exposure_pointing_adjusted = n_spins_in_pointing * exposure_time
+
     return exposure_pointing_adjusted, nominal_deadtime_ratios
 
 
@@ -627,6 +652,7 @@ def get_efficiencies_and_geometric_function(
                 gf_summation[energy_bin_idx, pixel_inds] += gf_values[pixel_inds]
                 eff_summation[energy_bin_idx, pixel_inds] += eff_values
 
+            sample_count[energy_bin_idx, pixel_inds] += 1
     # return averaged geometric factors and efficiencies across all spin phases
     # These are now energy dependent.
     gf_averaged = np.zeros_like(gf_summation)

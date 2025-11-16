@@ -18,14 +18,14 @@ from imap_processing.spice.time import (
 from imap_processing.ultra.l1b.ultra_l1b_culling import get_de_rejection_mask
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
     build_energy_bins,
-    get_spacecraft_pointing_lookup_tables,
+    get_spacecraft_pointing_lookup_tables, calculate_fwhm_spun_scattering,
 )
 from imap_processing.ultra.l1c.ultra_l1c_culling import compute_culling_mask
 from imap_processing.ultra.l1c.ultra_l1c_pset_bins import (
     get_energy_delta_minus_plus,
     get_spacecraft_background_rates,
     get_spacecraft_exposure_times,
-    get_spacecraft_histogram,
+    get_spacecraft_histogram, get_efficiencies_and_geometric_function,
 )
 from imap_processing.ultra.utils.ultra_l1_utils import create_dataset
 
@@ -124,7 +124,7 @@ def calculate_spacecraft_pset(
     #         'scattering_thresholds': scattering_thresholds
     #     }, f)
 
-    # # Load all four arrays
+    # Load all four arrays
     with open(f"scattering_results_{sensor_id}.pkl", "rb") as f:
         data = pickle.load(f)
         pixels_below_scattering = data["pixels_below_scattering"]
@@ -172,6 +172,14 @@ def calculate_spacecraft_pset(
         sensor_id=sensor_id,
         ancillary_files=ancillary_files,
     )
+    # ADD THIS IMMEDIATELY AFTER:
+    logger.info("IMMEDIATELY after get_spacecraft_exposure_times:")
+    logger.info(f"exposure_pointing type: {type(exposure_pointing)}")
+    logger.info(f"exposure_pointing shape: {exposure_pointing.shape}")
+    for i in range(min(5, exposure_pointing.shape[0])):
+        logger.info(f"  Bin {i}: non-zero={np.sum(exposure_pointing[i, :] > 0)}, "
+                    f"sum={exposure_pointing[i, :].sum():.2e}, "
+                    f"mean={exposure_pointing[i, :].mean():.2e}")
     logger.info("Calculating spun efficiencies and geometric function.")
     # calculate efficiency and geometric function as a function of energy
     # geometric_function, efficiencies = get_efficiencies_and_geometric_function(
@@ -183,10 +191,9 @@ def calculate_spacecraft_pset(
     #     ancillary_files,
     #     apply_boundary_scale_factors,
     # )
-    # Save all four arrays
+    # #Save all four arrays
     # with open(f"eff_gf_exp{sensor_id}.pkl", "wb") as f:
     #     pickle.dump({
-    #         'exposure_pointing': exposure_pointing,
     #         'deadtime_ratios': deadtime_ratios,
     #         'geometric_function': geometric_function,
     #         'efficiencies': efficiencies
@@ -194,7 +201,6 @@ def calculate_spacecraft_pset(
     # Load all four arrays
     with open(f"eff_gf_exp{sensor_id}.pkl", "rb") as f:
         data = pickle.load(f)
-        # exposure_time = data["exposure_pointing"]
         deadtime_ratios = data["deadtime_ratios"]
         geometric_function = data["geometric_function"]
         efficiencies = data["efficiencies"]
