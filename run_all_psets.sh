@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-helio=true
+helio=false
 
 # ...do something interesting...
 if [ "$helio" = true ]
