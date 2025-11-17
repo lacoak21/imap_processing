@@ -11,6 +11,10 @@ from imap_processing.cdf.utils import load_cdf, write_cdf
 from imap_processing.codice.codice_l1a import process_codice_l1a
 from imap_processing.codice.codice_l1b import process_codice_l1b
 from imap_processing.codice.codice_new_l1a import process_l1a
+from imap_processing.tests.codice.conftest import (
+    VALIDATION_FILE_DATE,
+    VALIDATION_FILE_VERSION,
+)
 
 pytestmark = pytest.mark.external_test_data
 
@@ -37,7 +41,10 @@ def test_l1b_lo_sw_species(mock_get_file_paths, codice_lut_path):
         / "codice"
         / "data"
         / "l1b_validation"
-        / "imap_codice_l1b_lo-sw-species_20250814_v007.cdf"
+        / (
+            f"imap_codice_l1b_lo-sw-species_{VALIDATION_FILE_DATE}"
+            f"_{VALIDATION_FILE_VERSION}.cdf"
+        )
     )
     l1b_val_data = load_cdf(l1b_val_data)
     processed_data = process_codice_l1b(processed_l1a_file)
@@ -49,6 +56,12 @@ def test_l1b_lo_sw_species(mock_get_file_paths, codice_lut_path):
             err_msg=f"Mismatch in variable '{variable}'",
         )
     for variable in l1b_val_data.coords:
+        if variable.endswith("_label"):
+            assert np.array_equal(
+                processed_data[variable].values,
+                l1b_val_data[variable].values,
+            ), f"Mismatch in coordinate '{variable}'"
+            continue
         np.testing.assert_allclose(
             processed_data[variable].values,
             l1b_val_data[variable].values,
@@ -59,7 +72,10 @@ def test_l1b_lo_sw_species(mock_get_file_paths, codice_lut_path):
     # Write to CDF
     processed_data.attrs["Data_version"] = "002"
     cdf_file = write_cdf(processed_data, terminate_on_warning=True)
-    assert cdf_file.name == "imap_codice_l1b_lo-sw-species_20250814_v002.cdf"
+    assert (
+        cdf_file.name
+        == f"imap_codice_l1b_lo-sw-species_{VALIDATION_FILE_DATE}_v002.cdf"
+    )
 
 
 @patch("imap_data_access.processing_input.ProcessingInputCollection.get_file_paths")
@@ -79,7 +95,10 @@ def test_l1b_lo_nsw_species(mock_get_file_paths, codice_lut_path):
         / "codice"
         / "data"
         / "l1b_validation"
-        / "imap_codice_l1b_lo-nsw-species_20250814_v007.cdf"
+        / (
+            f"imap_codice_l1b_lo-nsw-species_{VALIDATION_FILE_DATE}"
+            f"_{VALIDATION_FILE_VERSION}.cdf"
+        )
     )
     l1b_val_data = load_cdf(l1b_val_data)
     processed_data = process_codice_l1b(processed_l1a_file)
@@ -93,6 +112,12 @@ def test_l1b_lo_nsw_species(mock_get_file_paths, codice_lut_path):
         )
 
     for variable in l1b_val_data.coords:
+        if variable.endswith("_label"):
+            assert np.array_equal(
+                processed_data[variable].values,
+                l1b_val_data[variable].values,
+            ), f"Mismatch in coordinate '{variable}'"
+            continue
         np.testing.assert_allclose(
             processed_data[variable].values,
             l1b_val_data[variable].values,
@@ -102,7 +127,10 @@ def test_l1b_lo_nsw_species(mock_get_file_paths, codice_lut_path):
     # Write to CDF
     processed_data.attrs["Data_version"] = "002"
     cdf_file = write_cdf(processed_data, terminate_on_warning=True)
-    assert cdf_file.name == "imap_codice_l1b_lo-nsw-species_20250814_v002.cdf"
+    assert (
+        cdf_file.name
+        == f"imap_codice_l1b_lo-nsw-species_{VALIDATION_FILE_DATE}_v002.cdf"
+    )
 
 
 @patch("imap_data_access.processing_input.ProcessingInputCollection.get_file_paths")
@@ -122,7 +150,10 @@ def test_l1b_lo_sw_angular(mock_get_file_paths, codice_lut_path):
         / "codice"
         / "data"
         / "l1b_validation"
-        / "imap_codice_l1b_lo-sw-angular_20250814_v007.cdf"
+        / (
+            f"imap_codice_l1b_lo-sw-angular_{VALIDATION_FILE_DATE}"
+            f"_{VALIDATION_FILE_VERSION}.cdf"
+        )
     )
     l1b_val_data = load_cdf(l1b_val_data)
     processed_data = process_codice_l1b(processed_l1a_file)
@@ -137,6 +168,12 @@ def test_l1b_lo_sw_angular(mock_get_file_paths, codice_lut_path):
         )
 
     for variable in l1b_val_data.coords:
+        if variable.endswith("_label"):
+            assert np.array_equal(
+                processed_data[variable].values,
+                l1b_val_data[variable].values,
+            ), f"Mismatch in coordinate '{variable}'"
+            continue
         np.testing.assert_allclose(
             processed_data[variable].values,
             l1b_val_data[variable].values,
@@ -146,7 +183,10 @@ def test_l1b_lo_sw_angular(mock_get_file_paths, codice_lut_path):
     # Write to CDF
     processed_data.attrs["Data_version"] = "002"
     cdf_file = write_cdf(processed_data, terminate_on_warning=True)
-    assert cdf_file.name == "imap_codice_l1b_lo-sw-angular_20250814_v002.cdf"
+    assert (
+        cdf_file.name
+        == f"imap_codice_l1b_lo-sw-angular_{VALIDATION_FILE_DATE}_v002.cdf"
+    )
 
 
 @patch("imap_data_access.processing_input.ProcessingInputCollection.get_file_paths")
@@ -166,7 +206,10 @@ def test_l1b_lo_nsw_angular(mock_get_file_paths, codice_lut_path):
         / "codice"
         / "data"
         / "l1b_validation"
-        / "imap_codice_l1b_lo-nsw-angular_20250814_v007.cdf"
+        / (
+            f"imap_codice_l1b_lo-nsw-angular_{VALIDATION_FILE_DATE}"
+            f"_{VALIDATION_FILE_VERSION}.cdf"
+        )
     )
     l1b_val_data = load_cdf(l1b_val_data)
     processed_data = process_codice_l1b(processed_l1a_file)
@@ -180,6 +223,12 @@ def test_l1b_lo_nsw_angular(mock_get_file_paths, codice_lut_path):
         )
 
     for variable in l1b_val_data.coords:
+        if variable.endswith("_label"):
+            assert np.array_equal(
+                processed_data[variable].values,
+                l1b_val_data[variable].values,
+            ), f"Mismatch in coordinate '{variable}'"
+            continue
         np.testing.assert_allclose(
             processed_data[variable].values,
             l1b_val_data[variable].values,
@@ -189,7 +238,10 @@ def test_l1b_lo_nsw_angular(mock_get_file_paths, codice_lut_path):
     # Write to CDF
     processed_data.attrs["Data_version"] = "002"
     cdf_file = write_cdf(processed_data, terminate_on_warning=True)
-    assert cdf_file.name == "imap_codice_l1b_lo-nsw-angular_20250814_v002.cdf"
+    assert (
+        cdf_file.name
+        == f"imap_codice_l1b_lo-nsw-angular_{VALIDATION_FILE_DATE}_v002.cdf"
+    )
 
 
 @pytest.mark.skip(reason="Revisit this in l1a refactor work")
@@ -221,7 +273,7 @@ def test_l1b_hi_omni():
         )
 
     cdf_file = write_cdf(processed_data)
-    assert cdf_file.name == "imap_codice_l1b_hi-omni_20250814_v999.cdf"
+    assert cdf_file.name == f"imap_codice_l1b_hi-omni_{VALIDATION_FILE_DATE}_v999.cdf"
 
 
 @pytest.mark.skip(reason="Revisit this in l1a refactor work")
@@ -254,4 +306,6 @@ def test_l1b_hi_sectored():
         )
 
     cdf_file = write_cdf(processed_data)
-    assert cdf_file.name == "imap_codice_l1b_hi-sectored_20250814_v999.cdf"
+    assert (
+        cdf_file.name == f"imap_codice_l1b_hi-sectored_{VALIDATION_FILE_DATE}_v999.cdf"
+    )
