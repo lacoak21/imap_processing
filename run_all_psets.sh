@@ -58,7 +58,7 @@ for pointing in {0..184}; do
             {"type": "ancillary","files": ["imap_ultra_l1c-90sensor-sc-pointing-phi_20250101_v000.csv"]},
             {"type": "ancillary","files": ["imap_ultra_l1c-90sensor-sc-pointing-index_20250101_v000.csv"]},
             {"type": "ancillary","files": ["imap_ultra_l1b-90sensor-scattering-calibration-data_20250101_v000.csv"]},
-            {"type": "ancillary","files": ["imap_ultra_l1b-scattering-thresholds-per-energy_20250101_v000.csv"]},
+            {"type": "ancillary","files": ["imap_ultra_l1b-scattering-thresholds-per-energy_20250101_v001.csv"]},
             {"type": "ancillary","files": ["imap_ultra_l1b-45sensor-logistic-interpolation_20250101_v000.csv"]},
             {"type": "ancillary","files": ["imap_ultra_l1b-90sensor-imgparams-lookup_20250101_v001.csv"]},
             {"type": "ancillary","files": ["imap_ultra_l1b-sensor-gf-blades_20250101_v000.csv"]},
