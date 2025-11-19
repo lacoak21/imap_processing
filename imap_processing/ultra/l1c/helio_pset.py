@@ -70,6 +70,9 @@ def calculate_helio_pset(
     dataset : xarray.Dataset
         Dataset containing the data.
     """
+    # Do not cull events based on scattering thresholds
+    reject_scattering = False
+
     sensor_id = int(parse_filename_like(name)["sensor"][0:2])
     pset_dict: dict[str, np.ndarray] = {}
     # Select only the species we are interested in.
@@ -83,6 +86,7 @@ def calculate_helio_pset(
     rejected = get_de_rejection_mask(
         species_dataset["quality_scattering"].values,
         species_dataset["quality_outliers"].values,
+        reject_scattering,
     )
     species_dataset = species_dataset.isel(epoch=~rejected)
 

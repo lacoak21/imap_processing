@@ -555,7 +555,9 @@ def flag_scattering(
 
 
 def get_de_rejection_mask(
-    quality_scattering: NDArray, quality_outliers: NDArray
+    quality_scattering: NDArray,
+    quality_outliers: NDArray,
+    reject_scattering: bool = True,
 ) -> NDArray:
     """
     Create boolean mask where event is rejected due to relevant flags.
@@ -566,6 +568,8 @@ def get_de_rejection_mask(
         Quality scattering flags.
     quality_outliers : NDArray
         Quality outliers flags.
+    reject_scattering : bool
+        Whether to reject based on scattering flags.
 
     Returns
     -------
@@ -579,11 +583,13 @@ def get_de_rejection_mask(
     outliers_mask = sum(
         flag.value for flag in DE_QUALITY_FLAG_FILTERS["quality_outliers"]
     )
-
-    # Boolean mask where event is rejected due to relevant flags
-    rejected = ((quality_scattering & scattering_mask) != 0) | (
-        (quality_outliers & outliers_mask) != 0
-    )
+    if reject_scattering:
+        # Boolean mask where event is rejected due to relevant flags
+        rejected = ((quality_scattering & scattering_mask) != 0) | (
+            (quality_outliers & outliers_mask) != 0
+        )
+    else:
+        rejected = (quality_outliers & outliers_mask) != 0
 
     return rejected
 
