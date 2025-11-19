@@ -1,16 +1,18 @@
 #!/bin/bash
 
 
-helio=false
+helio=true
 
 # ...do something interesting...
 if [ "$helio" = true ]
   then
   descriptor="90sensor-heliopset"
   spice_files='{"type": "spice","files": ["imap_pred_20250401_20250501_v01.bsp","imap_pred_od005_20251014_20251125_v01.bsp","de440.bsp", "imap_dps_2026_268_2026_268_01.ah.bc", "imap_dps_2026_269_2026_269_01.ah.bc", "imap_science_105.tf", "imap_science_100.tf", "naif016.tls", "imap_sclk_005.tsc", "imap_2026_269_2026_269_01.ah.bc", "imap_2026_268_2026_268_01.ah.bc", "imap_dps_2025_105_2026_105_009.ah.bc", "imap_2025_105_2026_105_01.ah.bc"]}'
+  de_version="v001"
   else
   descriptor="90sensor-spacecraftpset"
   spice_files='{"type": "spice","files": ["imap_pred_od005_20251014_20251125_v01.bsp","imap_recon_20250414_20260415_v01.bsp","imap_pred_od005_20251014_20251125_v01.bsp","de440.bsp","imap_recon_20250415_20260415_v01.bsp", "imap_dps_2026_268_2026_268_01.ah.bc", "imap_dps_2026_269_2026_269_01.ah.bc", "imap_science_105.tf", "imap_science_100.tf", "naif016.tls", "imap_sclk_005.tsc", "imap_2026_269_2026_269_01.ah.bc", "imap_2026_268_2026_268_01.ah.bc", "imap_dps_2025_105_2026_105_009.ah.bc", "imap_2025_105_2026_105_01.ah.bc"]}'
+  de_version="v000"
 fi
 
 export IMAP_DATA_ACCESS_URL=https://api.dev.imap-mission.com
@@ -37,7 +39,7 @@ for pointing in {0..184}; do
     pointing_padded=$(printf "%05d" "$pointing")
 
     # Set the de and rates filenames with repointing
-    de_file="imap_ultra_l1b_90sensor-de_20000101-repoint${pointing_padded}_v000.cdf"
+    de_file="imap_ultra_l1b_90sensor-de_20000101-repoint${pointing_padded}_${de_version}.cdf"
     rates_file="imap_ultra_l1a_90sensor-rates_20000101-repoint${pointing_padded}_v000.cdf"
 
     echo "Processing pointing ${pointing}"

@@ -121,31 +121,38 @@ def calculate_helio_pset(
     ) = get_spacecraft_pointing_lookup_tables(ancillary_files, instrument_id)
 
     logger.info("calculating spun FWHM scattering values.")
-    # pixels_below_scattering, scattering_theta, scattering_phi, scattering_thresholds = (
-    #     calculate_fwhm_spun_scattering(
-    #         for_indices_by_spin_phase,
-    #         theta_vals,
-    #         phi_vals,
-    #         ancillary_files,
-    #         instrument_id,
-    #     )
-    # )
-    # # Save all four arrays
-    # with open(f"scattering_results_{sensor_id}_helio.pkl", "wb") as f:
-    #     pickle.dump({
-    #         'pixels_below_scattering': pixels_below_scattering,
-    #         'scattering_theta': scattering_theta,
-    #         'scattering_phi': scattering_phi,
-    #         'scattering_thresholds': scattering_thresholds
-    #     }, f)
-
-    # # Load all four arrays
-    with open(f"scattering_results_{sensor_id}_helio.pkl", "rb") as f:
-        data = pickle.load(f)
+    scattering_file = f"scattering_results_{sensor_id}_helio.pkl"
+    try:
+        with open(scattering_file, "rb") as f:
+            data = pickle.load(f)
         pixels_below_scattering = data["pixels_below_scattering"]
         scattering_theta = data["scattering_theta"]
         scattering_phi = data["scattering_phi"]
         scattering_thresholds = data["scattering_thresholds"]
+        logger.info(f"Loaded scattering results from {scattering_file}")
+    except (FileNotFoundError, EOFError, pickle.UnpicklingError):
+        logger.info("calculating spun FWHM scattering values.")
+        pixels_below_scattering, scattering_theta, scattering_phi, scattering_thresholds = (
+            calculate_fwhm_spun_scattering(
+                for_indices_by_spin_phase,
+                theta_vals,
+                phi_vals,
+                ancillary_files,
+                instrument_id,
+            )
+        )
+        # Save all four arrays
+        with open(scattering_file, "wb") as f:
+            pickle.dump(
+                {
+                    "pixels_below_scattering": pixels_below_scattering,
+                    "scattering_theta": scattering_theta,
+                    "scattering_phi": scattering_phi,
+                    "scattering_thresholds": scattering_thresholds,
+                },
+                f,
+            )
+        logger.info(f"Saved scattering results to {scattering_file}")
 
     nside = hp.npix2nside(for_indices_by_spin_phase.shape[0])
     counts, latitude, longitude, n_pix = get_spacecraft_histogram(
@@ -180,28 +187,36 @@ def calculate_helio_pset(
     )
     logger.info("Calculating spun efficiencies and geometric function.")
     # calculate efficiency and geometric function as a function of energy
-    # geometric_function, efficiencies = get_efficiencies_and_geometric_function(
-    #     pixels_below_scattering,
-    #     boundary_scale_factors,
-    #     theta_vals,
-    #     phi_vals,
-    #     n_pix,
-    #     ancillary_files,
-    #     apply_boundary_scale_factors,
-    # )
-    # Save all four arrays
-    # with open(f"eff_gf_exp{sensor_id}_helio.pkl", "wb") as f:
-    #     pickle.dump({
-    #         'deadtime_ratios': deadtime_ratios,
-    #         'geometric_function': geometric_function,
-    #         'efficiencies': efficiencies
-    #     }, f)
-    # Load all four arrays
-    with open(f"eff_gf_exp{sensor_id}_helio.pkl", "rb") as f:
-        data = pickle.load(f)
-        deadtime_ratios = data["deadtime_ratios"]
-        geometric_function = data["geometric_function"]
-        efficiencies = data["efficiencies"]
+
+    eff_file = f"eff_gf_exp{sensor_id}_helio.pkl"
+    try:
+        with open(eff_file, "rb") as f:
+            data = pickle.load(f)
+            deadtime_ratios = data["deadtime_ratios"]
+            geometric_function = data["geometric_function"]
+            efficiencies = data["efficiencies"]
+        logger.info(f"Loaded efficiencies and geometric function from {eff_file}")
+    except (FileNotFoundError, EOFError, pickle.UnpicklingError, KeyError):
+        logger.info("calculating spun efficiencies and geometric function.")
+        geometric_function, efficiencies = get_efficiencies_and_geometric_function(
+            pixels_below_scattering,
+            boundary_scale_factors,
+            theta_vals,
+            phi_vals,
+            n_pix,
+            ancillary_files,
+            apply_boundary_scale_factors,
+        )
+        with open(eff_file, "wb") as f:
+            pickle.dump(
+                {
+                    "deadtime_ratios": deadtime_ratios,
+                    "geometric_function": geometric_function,
+                    "efficiencies": efficiencies,
+                },
+                f,
+            )
+        logger.info(f"Saved efficiencies and geometric function to {eff_file}")
     logger.info("Calculating background rates.")
     # TODO calculate helio background rates
     # Calculate background rates
