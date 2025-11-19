@@ -503,9 +503,6 @@ def test_hi_omni(mock_get_file_paths, codice_lut_path):
     val_data = load_cdf(val_path)
 
     for variable in val_data.data_vars:
-        # TODO: check with Joey and Michael
-        if variable.startswith("epoch_delta"):
-            continue
         np.testing.assert_allclose(
             processed_data[variable].values,
             val_data[variable].values,
@@ -551,7 +548,6 @@ def test_hi_sectored(mock_get_file_paths, codice_lut_path):
             rtol=1e-5,
             err_msg=f"Mismatch in variable '{variable}'",
         )
-
     for variable in val_data.coords:
         # If _label, do string comparison
         if variable.endswith("_label"):

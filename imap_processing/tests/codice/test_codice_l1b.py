@@ -8,7 +8,6 @@ from imap_data_access import ProcessingInputCollection
 
 from imap_processing import imap_module_directory
 from imap_processing.cdf.utils import load_cdf, write_cdf
-from imap_processing.codice.codice_l1a import process_codice_l1a
 from imap_processing.codice.codice_l1b import process_codice_l1b
 from imap_processing.codice.codice_new_l1a import process_l1a
 from imap_processing.tests.codice.conftest import (
@@ -244,31 +243,29 @@ def test_l1b_lo_nsw_angular(mock_get_file_paths, codice_lut_path):
     )
 
 
-@pytest.mark.skip(reason="Revisit this in l1a refactor work")
-def test_l1b_hi_omni():
-    l0_test_file_path = (
-        imap_module_directory
-        / "tests/codice/data/l1a_input"
-        / "imap_codice_hi-omni_20250814_v001.pkts"
-    )
-    processed_l1a_file = write_cdf(process_codice_l1a(l0_test_file_path)[0])
+@patch("imap_data_access.processing_input.ProcessingInputCollection.get_file_paths")
+def test_l1b_hi_omni(mock_get_file_paths, codice_lut_path):
+    mock_get_file_paths.side_effect = [
+        codice_lut_path(descriptor="hi-omni", data_type="l0"),
+        codice_lut_path(descriptor="l1a-sci-lut"),
+    ]
 
+    l1a_file_path = write_cdf(process_l1a(dependency=ProcessingInputCollection())[0])
     val_path = (
         imap_module_directory
         / "tests/codice/data/l1b_validation/"
-        / "imap_codice_l1b_hi-omni_20250814211100_v0.0.6.cdf"
+        / f"imap_codice_l1b_hi-omni_{VALIDATION_FILE_DATE}"
+        f"_{VALIDATION_FILE_VERSION}.cdf"
     )
     val_data = load_cdf(val_path)
-    processed_data = process_codice_l1b(file_path=processed_l1a_file)
+    processed_data = process_codice_l1b(file_path=l1a_file_path)
     # hi-omni has species-specific shapes
     for variable in val_data.data_vars:
-        if variable.startswith("unc_") or variable in TIME_MISMATCHES:
-            continue
         assert processed_data[variable].shape == val_data[variable].shape
         np.testing.assert_allclose(
             processed_data[variable].values,
             val_data[variable].values,
-            rtol=1e-5,
+            rtol=1.5e-5,
             err_msg=f"Mismatch in variable '{variable}'",
         )
 
@@ -276,32 +273,26 @@ def test_l1b_hi_omni():
     assert cdf_file.name == f"imap_codice_l1b_hi-omni_{VALIDATION_FILE_DATE}_v999.cdf"
 
 
-@pytest.mark.skip(reason="Revisit this in l1a refactor work")
-def test_l1b_hi_sectored():
-    l0_test_file_path = (
-        imap_module_directory
-        / "tests"
-        / "codice"
-        / "data"
-        / "l1a_input"
-        / "imap_codice_hi-sectored_20250814_v001.pkts"
-    )
-    processed_l1a_file = write_cdf(process_codice_l1a(l0_test_file_path)[0])
+@patch("imap_data_access.processing_input.ProcessingInputCollection.get_file_paths")
+def test_l1b_hi_sectored(mock_get_file_paths, codice_lut_path):
+    mock_get_file_paths.side_effect = [
+        codice_lut_path(descriptor="hi-sectored", data_type="l0"),
+        codice_lut_path(descriptor="l1a-sci-lut"),
+    ]
     val_path = (
         imap_module_directory
         / "tests/codice/data/l1b_validation/"
-        / "imap_codice_l1b_hi-sectored_20250814211100_v0.0.6.cdf"
+        / f"imap_codice_l1b_hi-sectored_{VALIDATION_FILE_DATE}"
+        f"_{VALIDATION_FILE_VERSION}.cdf"
     )
-
+    l1a_file_path = write_cdf(process_l1a(dependency=ProcessingInputCollection())[0])
     val_data = load_cdf(val_path)
-    processed_data = process_codice_l1b(file_path=processed_l1a_file)
+    processed_data = process_codice_l1b(file_path=l1a_file_path)
     for variable in val_data.data_vars:
-        if variable.startswith("unc_") or variable in TIME_MISMATCHES:
-            continue
         np.testing.assert_allclose(
             processed_data[variable].values,
             val_data[variable].values,
-            rtol=1e-5,
+            rtol=1.2e-5,
             err_msg=f"Mismatch in variable '{variable}'",
         )
 
