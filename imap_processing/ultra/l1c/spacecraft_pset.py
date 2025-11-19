@@ -69,6 +69,9 @@ def calculate_spacecraft_pset(
     dataset : xarray.Dataset
         Dataset containing the data.
     """
+    # Do not cull events based on scattering thresholds
+    reject_scattering = False
+
     pset_dict: dict[str, np.ndarray] = {}
 
     sensor_id = int(parse_filename_like(name)["sensor"][0:2])
@@ -84,6 +87,7 @@ def calculate_spacecraft_pset(
     rejected = get_de_rejection_mask(
         species_dataset["quality_scattering"].values,
         species_dataset["quality_outliers"].values,
+        reject_scattering,
     )
     species_dataset = species_dataset.isel(epoch=~rejected)
 
