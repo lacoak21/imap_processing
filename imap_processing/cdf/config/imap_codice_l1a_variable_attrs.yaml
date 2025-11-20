@@ -395,126 +395,109 @@ sw_bias_gain_mode:
 
 # The following are data product-specific
 # hi-counters-aggregated
-hi-counters-aggregated-dcr:
-    <<: *events
+counters_aggregate: &counters_aggre_default
+    DEPEND_0: epoch
+    DISPLAY_TYPE: time_series
+    FILLVAL: *uint32_fillval
+    FORMAT: I7
+    SCALETYP: linear
+    UNITS: counts
+    VALIDMIN: 0
+    VALIDMAX: *max_uint32
+    VAR_TYPE: data
+    LABLAXIS: "events"
+
+dcr:
+    <<: *counters_aggre_default
     CATDESC: Event B - Double Coincidence Rate (DCR)
     FIELDNAM: DCRs
-    LABLAXIS: "events"
 
-hi-counters-aggregated-sto:
-    <<: *events
+starts_only:
+    <<: *counters_aggre_default
     CATDESC: Event C - Start Only (STO)
     FIELDNAM: Start Only
-    LABLAXIS: "events"
 
-hi-counters-aggregated-spo:
-    <<: *events
+stops_only:
+    <<: *counters_aggre_default
     CATDESC: Event D - Stop Only (SPO)
     FIELDNAM: Stop Only
-    LABLAXIS: "events"
 
-hi-counters-aggregated-reserved1:
-    <<: *events
-    CATDESC: Reserved 1
-    FIELDNAM: Reserved 1
-    LABLAXIS: "events"
+reserved:
+    <<: *counters_aggre_default
+    CATDESC: Reserved {index}
+    FIELDNAM: Reserved {index}
 
-hi-counters-aggregated-mst:
-    <<: *events
+mst:
+    <<: *counters_aggre_default
     CATDESC: Event H - Multi Start (MST)
     FIELDNAM: Multi Start
-    LABLAXIS: "events"
 
-hi-counters-aggregated-ssdo:
-    <<: *events
+singles_starts:
+    <<: *counters_aggre_default
     CATDESC: Singles - Start
     FIELDNAM: Singles - Start
-    LABLAXIS: "events"
 
-hi-counters-aggregated-stssd:
-    <<: *events
+singles_stops:
+    <<: *counters_aggre_default
     CATDESC: Singles - Stop
     FIELDNAM: Singles - Stop
-    LABLAXIS: "events"
 
-hi-counters-aggregated-reserved4:
-    <<: *events
-    CATDESC: Reserved 4
-    FIELDNAM: Reserved 4
-    LABLAXIS: "events"
-
-hi-counters-aggregated-reserved5:
-    <<: *events
-    CATDESC: Reserved 5
-    FIELDNAM: Reserved 5
-    LABLAXIS: "events"
-
-hi-counters-aggregated-low_tof_cutoff:
-    <<: *events
+low_tof_cutoff:
+    <<: *counters_aggre_default
     CATDESC: Low TOF Cutoff
     FIELDNAM: Low TOF Cutoff
-    LABLAXIS: "events"
 
-hi-counters-aggregated-reserved6:
-    <<: *events
-    CATDESC: Reserved 6
-    FIELDNAM: Reserved 6
-    LABLAXIS: "events"
-
-hi-counters-aggregated-reserved7:
-    <<: *events
-    CATDESC: Reserved 7
-    FIELDNAM: Reserved 7
-    LABLAXIS: "events"
-
-hi-counters-aggregated-asic1_flag_invalid:
-    <<: *events
+asic1_flag_invalid:
+    <<: *counters_aggre_default
     CATDESC: ASIC 1 Flag Invalid Count
     FIELDNAM: ASIC 1 Flag Invalid
-    LABLAXIS: "events"
 
-hi-counters-aggregated-asic2_flag_invalid:
-    <<: *events
+asic2_flag_invalid:
+    <<: *counters_aggre_default
     CATDESC: ASIC 2 Flag Invalid Count
     FIELDNAM: ASIC 2 Flag Invalid
-    LABLAXIS: "events"
 
-hi-counters-aggregated-asic1_channel_invalid:
-    <<: *events
+asic1_channel_invalid:
+    <<: *counters_aggre_default
     CATDESC: ASIC 1 Channel Invalid Count
     FIELDNAM: ASIC 1 Channel Invalid
-    LABLAXIS: "events"
-
-hi-counters-aggregated-asic2_channel_invalid:
-    <<: *events
+asic2_channel_invalid:
+    <<: *counters_aggre_default
     CATDESC: ASIC 2 Channel Invalid Count
     FIELDNAM: ASIC 2 Channel Invalid
-    LABLAXIS: "events"
 
 # hi-counters-singles
-hi-counters-singles-tcr:
-    <<: *counters
-    CATDESC: Rates - Event A (TCR)
-    FIELDNAM: Rates
-    DEPEND_1: ssd_index
-    LABL_PTR_1: ssd_index_label
-    UNITS: events
+counters_singles: &counters_singles_default
+    DEPEND_0: epoch
+    DISPLAY_TYPE: time_series
+    FILLVAL: *uint32_fillval
+    FORMAT: I7
+    SCALETYP: linear
+    UNITS: counts
+    VALIDMIN: 0
+    VALIDMAX: *max_uint32
+    VAR_TYPE: data
 
-hi-counters-singles-ssdo:
-    <<: *counters
+tcr:
+    <<: *counters_singles_default
+    CATDESC: Event A - Triple Coincidence Rate (TCR)
+    FIELDNAM: Rates
+    DEPEND_1: inst_az
+    LABL_PTR_1: inst_az_label
+
+ssdo:
+    <<: *counters_singles_default
     CATDESC: Rates - Event E (SSDO)
     FIELDNAM: Rates
-    DEPEND_1: ssd_index
-    LABL_PTR_1: ssd_index_label
-    UNITS: events
+    DEPEND_1: inst_az
+    LABL_PTR_1: inst_az_label
 
-hi-counters-singles-stssd:
-    <<: *counters
+stssd:
+    <<: *counters_singles_default
     CATDESC: Rates - Event G (STSSD)
     FIELDNAM: Rates
-    DEPEND_1: ssd_index
-    LABL_PTR_1: ssd_index_label
-    UNITS: events
+    DEPEND_1: inst_az
+    LABL_PTR_1: inst_az_label
 
 # Hi omni and sectored Attributes
 hi-species-attrs:
@@ -589,32 +572,32 @@ hi_priorities_attrs: &hi_priorities_default
     VALIDMIN: 0
     VAR_TYPE: data
 
-Priority0:
+priority0:
     <<: *hi_priorities_default
     CATDESC: Priority 0
     FIELDNAM: Priority 0
 
-Priority1:
+priority1:
     <<: *hi_priorities_default
     CATDESC: Priority 1
     FIELDNAM: Priority 1
 
-Priority2:
+priority2:
     <<: *hi_priorities_default
     CATDESC: Priority 2
     FIELDNAM: Priority 2
 
-Priority3:
+priority3:
     <<: *hi_priorities_default
     CATDESC: Priority 3
     FIELDNAM: Priority 3
 
-Priority4:
+priority4:
     <<: *hi_priorities_default
     CATDESC: Priority 4
     FIELDNAM: Priority 4
 
-Priority5:
+priority5:
     <<: *hi_priorities_default
     CATDESC: Priority 5
     FIELDNAM: Priority 5
