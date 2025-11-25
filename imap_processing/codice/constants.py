@@ -758,6 +758,13 @@ HI_ACQUISITION_TIME = 0.59916
 # TODO: in the future, read from sci-lut
 LO_SW_ANGULAR_VARIABLE_NAMES = ["hplus", "heplusplus", "oplus6", "fe_loq"]
 LO_NSW_ANGULAR_VARIABLE_NAMES = ["heplusplus"]
+LO_SW_PRIORITY_VARIABLE_NAMES = [
+    "p0_tcrs",
+    "p1_hplus",
+    "p2_heplusplus",
+    "p3_heavies",
+    "p4_dcrs",
+]
 LO_NSW_PRIORITY_VARIABLE_NAMES = ["p5_heavies", "p6_hplus_heplusplus"]
 LO_SW_SPECIES_VARIABLE_NAMES = [
     "hplus",
@@ -868,6 +875,14 @@ LO_NSW_SPECIES_VARIABLE_NAMES = [
 ]
 HI_OMNI_VARIABLE_NAMES = ["h", "he3", "he4", "c", "o", "ne_mg_si", "fe", "uh", "junk"]
 HI_SECTORED_VARIABLE_NAMES = ["h", "he3he4", "cno", "fe"]
+HI_PRIORITY_VARIABLE_NAMES = [
+    "priority0",
+    "priority1",
+    "priority2",
+    "priority3",
+    "priority4",
+    "priority5",
+]
 # Lookup table for CoDICE-Lo despinning pixel orientations
 # See section 9.3.4 of the algorithm document for further information
 PIXEL_ORIENTATIONS = {
