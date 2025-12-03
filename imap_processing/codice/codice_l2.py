@@ -9,6 +9,7 @@ from imap_processing.codice.codice_l2 import process_codice_l2
 dataset = process_codice_l2(l1_filename)
 """
 
+import json
 import logging
 from pathlib import Path
 
@@ -866,6 +867,94 @@ def process_hi_sectored(dependencies: ProcessingInputCollection) -> xr.Dataset:
     return l2_dataset
 
 
+def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Dataset:
+    """
+    Process the lo-direct-events L1A dataset to convert variables to physical units.
+
+    See section 11.2.1 of the CoDICE algorithm document for details.
+
+    Parameters
+    ----------
+    dependencies : ProcessingInputCollection
+        The collection of processing input files.
+
+    Returns
+    -------
+    xarray.Dataset
+        The updated L2 dataset with variables converted to physical units.
+    """
+    file_path = dependencies.get_file_paths(descriptor="lo-direct-events")[0]
+    l1a_dataset = load_cdf(file_path)
+
+    # Update global CDF attributes
+    cdf_attrs = ImapCdfAttributes()
+    cdf_attrs.add_instrument_global_attrs("codice")
+    cdf_attrs.add_instrument_variable_attrs("codice", "l2-lo-direct-events")
+
+    # Convert from position to elevation angle in degrees relative to the spacecraft
+    # axis
+    l2_dataset = l1a_dataset.copy(deep=True)
+    # Create a new coordinate for elevation_angle based on inst_az
+    pos_to_els = (
+        LO_POSITION_TO_ELEVATION_ANGLE["sw"] | LO_POSITION_TO_ELEVATION_ANGLE["nsw"]
+    )
+    elevation_angle_shape = l2_dataset["position"].shape
+    elevation_angle = np.array(
+        [pos_to_els.get(pos, np.nan) for pos in l2_dataset["position"].values.flat]
+    ).reshape(elevation_angle_shape)
+    l2_dataset["elevation_angle"] = (
+        l2_dataset["position"].dims,
+        elevation_angle,
+    )
+    # Convert spin_sector to spin_angle in degrees
+    # Use equation from section 11.2.2 of algorithm document
+    # Shift all spin sectors for all positions 13 - 24 adding 12 and mod 24
+    l2_dataset["spin_sector"] = xr.where(
+        (l2_dataset["position"] >= 13) & (l2_dataset["position"] <= 24),
+        (l2_dataset["spin_sector"] + 12) % 24,
+        l2_dataset["spin_sector"],
+    )
+    l2_dataset = l2_dataset.assign_coords(
+        spin_angle=(
+            l2_dataset["spin_sector"].dims,
+            l2_dataset["spin_sector"].data * 15.0 + 7.5,
+        )
+    )
+    l2_dataset["spin_angle"] = xr.where(
+        (l2_dataset["spin_sector"] > 23), np.nan, l2_dataset["spin_angle"]
+    )
+    # convert apd energy to physical units
+    # Set the gain labels based on gain values
+    gains = l2_dataset["gain"].values.flat
+    apd_ids = l2_dataset["apd_id"].values.flat
+    apd_energy = l2_dataset["apd_energy"].values.flat
+    apd_energy_shape = l2_dataset["apd_energy"].shape
+    # This will change
+    # Basically Conversion table
+    # for the hi onboard
+    file_path = Path(
+        "/Users/luco3133/projects/imap_processing/imap_processing/tests/codice/data/l2_lut/imap_codice_l2-lo-onboard.json"
+    )
+    onboard_lut = json.loads(file_path.read_text()).get("20250519")
+    energy_table = onboard_lut.get("energy_table", {})
+    energy_bins = onboard_lut.get("energy_bins", {})
+    energy_kevs = []
+
+    for apd_id, gain, energy_pos in zip(apd_ids, gains, apd_energy, strict=False):
+        if (energy_pos != 65535) & (apd_id < 30) & (apd_id != 0):
+            gain_str = "LG" if gain == 0 else "HG"
+            # TODO dont subtract 1. Joey needs to fix his code.
+            key = "APD-" + str(apd_id - 1) + "-" + gain_str
+            energy_bin = energy_table[key][energy_pos]
+            energy_kevs.append(energy_bins[str(energy_bin)])
+        else:
+            energy_kevs.append(np.nan)
+
+    l2_dataset["apd_energy"].data = np.array(energy_kevs).reshape(apd_energy_shape)
+
+    return l2_dataset
+
+
 def process_codice_l2(
     descriptor: str, dependencies: ProcessingInputCollection
 ) -> xr.Dataset:
@@ -1022,7 +1111,7 @@ def process_codice_l2(
         # These converted variables are *in addition* to the existing L1 variables
         # The other data variables require no changes
         # See section 11.1.2 of algorithm document
-        pass
+        l2_dataset = process_lo_direct_events(dependencies)
 
     # logger.info(f"\nFinal data product:\n{l2_dataset}\n")
 

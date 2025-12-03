@@ -695,7 +695,10 @@ def test_lo_direct_events(mock_get_file_paths, codice_lut_path):
             rtol=1e-5,
             err_msg=f"Mismatch in coordinate '{variable}'",
         )
-
+    print("SDC position", processed_data["position"].data[0, 2, 2])
+    print("SDC spin_sector", processed_data["spin_sector"].data[0, 2, 2])
+    print("position", val_data["position"].data[0, 2, 2])
+    print("spin_sector", val_data["spin_sector"].data[0, 2, 2])
     processed_data.attrs["Data_version"] = "002"
     cdf_file = write_cdf(processed_data, terminate_on_warning=True)
     assert (

@@ -476,3 +476,68 @@ def test_codice_l2_sw_angular_intensity(mock_get_file_paths, codice_lut_path):
     processed_2_ds.attrs["Data_version"] = "001"
     assert processed_2_ds.attrs["Logical_source"] == "imap_codice_l2_lo-sw-angular"
     write_cdf(processed_2_ds)
+
+
+@patch("imap_data_access.processing_input.ProcessingInputCollection.get_file_paths")
+def test_codice_l2_lo_de(mock_get_file_paths, codice_lut_path):
+    mock_get_file_paths.side_effect = [
+        codice_lut_path(descriptor="lo-direct-events", data_type="l0"),
+    ]
+    l1a_cdf = process_l1a(ProcessingInputCollection())[0]
+    print(l1a_cdf["spin_sector"].data[0, 2, 2])
+    processed_l1a_file = write_cdf(l1a_cdf)
+    file_path = processed_l1a_file.as_posix()
+    # Mock get_files for l2
+    mock_get_file_paths.side_effect = [
+        [file_path],
+        [file_path],
+        # codice_lut_path(descriptor="l2-lo-gfactor"),
+        # codice_lut_path(descriptor="l2-lo-efficiency"),
+    ]
+
+    processed_l2_ds = process_codice_l2("lo-direct-events", ProcessingInputCollection())
+    l2_val_data = (
+        imap_module_directory
+        / "tests"
+        / "codice"
+        / "data"
+        / "l2_validation"
+        / (
+            f"imap_codice_l2_lo-direct-events_{VALIDATION_FILE_DATE}"
+            f"_{VALIDATION_FILE_VERSION}.cdf"
+        )
+    )
+    l2_val_data = load_cdf(l2_val_data)
+    np.testing.assert_allclose(
+        l2_val_data["elevation_angle"].values, processed_l2_ds["elevation_angle"]
+    )
+    print("SDC gain", processed_l2_ds["gain"].data[2, 6, 523])
+    print("SDC apd_energy", processed_l2_ds["apd_energy"].data[2, 6, 523])
+    print("SDC apd_id", processed_l2_ds["apd_id"].values[2, 6, 523])
+    print("gain", l2_val_data["gain"].data[2, 6, 523])
+    print("apd_energy", l2_val_data["apd_energy"].data[2, 6, 523])
+    print("apd_id", l2_val_data["apd_id"].values[2, 6, 523])
+    np.testing.assert_allclose(
+        processed_l2_ds["apd_energy"].values, l2_val_data["apd_energy"].values
+    )
+    print("INDEX: ", (2, 6, 523))
+    print("SDC: position", processed_l2_ds["position"].data[2, 6, 523])
+    print("SDC: spin_sector", processed_l2_ds["spin_sector"].data[2, 6, 523])
+    print("SDC: spin_angle", processed_l2_ds["spin_angle"].values[2, 6, 523])
+    print("CoDICE: position", l2_val_data["position"].data[2, 6, 523])
+    print("CoDICE: spin_sector", l2_val_data["spin_sector"].data[2, 6, 523])
+    print("CoDICE: spin_angle", l2_val_data["spin_angle"].values[2, 6, 523])
+    # np.testing.assert_allclose(processed_l2_ds["spin_angle"].values,
+    # l2_val_data["spin_angle"].values)
+    # for variable in l2_val_data.data_vars:
+    #     np.testing.assert_allclose(
+    #         processed_l2_ds[variable].values,
+    #         l2_val_data[variable].values,
+    #         rtol=1e-5,
+    #         err_msg=f"Mismatch in variable '{variable}'",
+    #     )
+    #
+    # processed_l2_ds.attrs["Data_version"] = "001"
+    # assert processed_l2_ds.attrs["Logical_source"] ==
+    # "imap_codice_l2_lo-direct-events"
+    # write_cdf(processed_l2_ds)
