@@ -72,6 +72,7 @@ def calculate_fwhm_spun_scattering(
     phi_vals: np.ndarray,
     ancillary_files: dict,
     instrument_id: int,
+    reject_scattering: bool = False,
 ) -> tuple[list, NDArray, NDArray, NDArray]:
     """
     Calculate FWHM scattering values for each pixel, energy bin, and spin phase step.
@@ -92,6 +93,8 @@ def calculate_fwhm_spun_scattering(
         Dictionary containing ancillary files.
     instrument_id : int,
         Instrument ID, either 45 or 90.
+    reject_scattering : bool, optional
+        If True, use scattering thresholds to cull pixels. Default is False.
 
     Returns
     -------
@@ -165,8 +168,15 @@ def calculate_fwhm_spun_scattering(
         pixels_below_scattering_for_energy = []
 
         for energy_idx in range(len(energy_bin_geometric_means)):
-            valid_pixels = scattering_mask[:, energy_idx]
-            pixels_below_scattering_for_energy.append(for_pixel_indices[valid_pixels])
+            if reject_scattering:
+                # If reject_scattering is True, only keep pixels below the scattering
+                # threshold
+                scattering_valid_pixels = scattering_mask[:, energy_idx]
+                valid_pixels = for_pixel_indices[scattering_valid_pixels]
+            else:
+                valid_pixels = for_pixel_indices
+
+            pixels_below_scattering_for_energy.append(valid_pixels)
 
         pixels_below_scattering.append(pixels_below_scattering_for_energy)
         # Accumulate FWHM values for averaging
