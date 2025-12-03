@@ -169,14 +169,12 @@ def calculate_fwhm_spun_scattering(
 
         for energy_idx in range(len(energy_bin_geometric_means)):
             if reject_scattering:
-                # If reject_scattering is True, only keep pixels below the scattering
-                # threshold
-                scattering_valid_pixels = scattering_mask[:, energy_idx]
-                valid_pixels = for_pixel_indices[scattering_valid_pixels]
+                valid_pixels = scattering_mask[:, energy_idx]
+                pixels_below_scattering_for_energy.append(
+                    for_pixel_indices[valid_pixels]
+                )
             else:
-                valid_pixels = for_pixel_indices
-
-            pixels_below_scattering_for_energy.append(valid_pixels)
+                pixels_below_scattering_for_energy.append(for_pixel_indices)
 
         pixels_below_scattering.append(pixels_below_scattering_for_energy)
         # Accumulate FWHM values for averaging
