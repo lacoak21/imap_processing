@@ -1,6 +1,6 @@
 #!/bin/bash
 
-helio=true
+helio=false
 
 # ...do something interesting...
 if [ "$helio" = true ]
@@ -48,10 +48,10 @@ for pointing in {0..184}; do
             {"type": "science","files": ["'"$de_file"'"]},
             {"type": "science","files": ["'"$rates_file"'"]},
             {"type": "science","files": ["imap_ultra_l1a_45sensor-params_20260926-repoint02003_v001.cdf"]},
-            {"type": "ancillary","files": ["imap_ultra_l1c-45sensor-sc-pointing-bsf_20250101_v000.csv"]},
-            {"type": "ancillary","files": ["imap_ultra_l1c-45sensor-sc-pointing-theta_20250101_v000.csv"]},
-            {"type": "ancillary","files": ["imap_ultra_l1c-45sensor-sc-pointing-phi_20250101_v000.csv"]},
-            {"type": "ancillary","files": ["imap_ultra_l1c-45sensor-sc-pointing-index_20250101_v000.csv"]},
+            {"type": "ancillary","files": ["imap_ultra_l1c-45sensor-sc-pointing-bsf_20250101_v001.csv"]},
+            {"type": "ancillary","files": ["imap_ultra_l1c-45sensor-sc-pointing-theta_20250101_v001.csv"]},
+            {"type": "ancillary","files": ["imap_ultra_l1c-45sensor-sc-pointing-phi_20250101_v001.csv"]},
+            {"type": "ancillary","files": ["imap_ultra_l1c-45sensor-sc-pointing-index_20250101_v001.csv"]},
             {"type": "ancillary","files": ["imap_ultra_l1b-90sensor-scattering-calibration-data_20250101_v000.csv"]},
             {"type": "ancillary","files": ["imap_ultra_l1b-scattering-thresholds-per-energy_20250101_v001.csv"]},
             {"type": "ancillary","files": ["imap_ultra_l1b-45sensor-logistic-interpolation_20250101_v000.csv"]},
