@@ -404,26 +404,10 @@ def calculate_exposure_time(
                     * boundary_scale_factors[pixels_at_energy_and_spin, i]
                 )
             else:
-                # Track bin 0
-                contribution = deadtime_ratios[i]
-                if energy_bin_idx == 0 and i < 10:  # First 10 spin phases
-                    bin0_accumulation += contribution.sum()
-                    logger.info(
-                        f"  Spin {i}, Bin 0: pixels={pixels_at_energy_and_spin.size}, "
-                        f"deadtime={deadtime_ratios[i]:.6f}, "
-                        f"{boundary_scale_factors[pixels_at_energy_and_spin, i].max():.6f}, "
-                        f"contribution sum={contribution.sum():.6f}")
                 counts[energy_bin_idx, pixels_at_energy_and_spin] += deadtime_ratios[i]
-
+    print(counts[0, 1000:2000])
     # Multiply by the nominal spin step to get the exposure time in ms
     exposure_pointing = counts * nominal_ms_step
-    # DEBUG: Check output
-    logger.info("Exposure time (before n_spins scaling):")
-    for i in range(min(5, len(exposure_pointing))):  # Check first 5 bins
-        non_zero = np.sum(exposure_pointing[i, :] > 0)
-        logger.info(f"  Bin {i}: non-zero pixels={non_zero}, "
-                    f"sum={exposure_pointing[i, :].sum():.2e}, "
-                    f"mean={exposure_pointing[i, :].mean():.2e}")
     return exposure_pointing
 
 
