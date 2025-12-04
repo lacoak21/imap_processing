@@ -208,7 +208,7 @@ def test_calculate_spacecraft_pset_with_cdf(
 
 
 @pytest.mark.external_test_data
-# @pytest.mark.skip(reason="Long running test for validation purposes.")
+@pytest.mark.skip(reason="Long running test for validation purposes.")
 def test_validate_exposure_time_and_sensitivities(ancillary_files, deadtime_datasets):
     """Validates exposure time and sensitivities for ebin 0."""
     l1b_de = TEST_PATH / "imap_ultra_l1b_45sensor-de_20000101-repoint00000_v000.cdf"
