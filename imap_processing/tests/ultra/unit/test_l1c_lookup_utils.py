@@ -3,6 +3,8 @@ import numpy as np
 import pytest
 
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
+    build_energy_bins,
+    calculate_fwhm_spun_scattering,
     get_scattering_thresholds_for_energy,
     get_spacecraft_pointing_lookup_tables,
     get_static_deadtime_ratios,
@@ -111,3 +113,37 @@ def test_get_static_deadtime_ratios(ancillary_files):
     np.testing.assert_array_equal(dt_ratio.shape, (721,))
     # Test the values
     assert np.all((dt_ratio >= 0.0) & (dt_ratio <= 1.0))
+
+
+@pytest.mark.external_test_data
+def test_calculate_fwhm_spun_scattering(ancillary_files):
+    """Test calculate_fwhm_spun_scattering function."""
+    instrument_id = 90
+    (
+        for_indices_by_spin_phase,
+        theta_vals,
+        phi_vals,
+        ra_and_dec,
+        boundary_scale_factors,
+    ) = get_spacecraft_pointing_lookup_tables(ancillary_files, instrument_id)
+
+    (
+        pixels_below_scattering,
+        scattering_theta,
+        scattering_phi,
+        scattering_thresholds,
+    ) = calculate_fwhm_spun_scattering(
+        for_indices_by_spin_phase,
+        theta_vals,
+        phi_vals,
+        ancillary_files,
+        instrument_id,
+        reject_scattering=True,
+    )
+    # Test shapes
+    npix, spin_phase_steps = for_indices_by_spin_phase.shape
+    energy_shape = len(build_energy_bins()[2])
+    assert len(pixels_below_scattering) == spin_phase_steps
+    np.testing.assert_array_equal(scattering_theta.shape, (energy_shape, npix))
+    np.testing.assert_array_equal(scattering_phi.shape, (energy_shape, npix))
+    np.testing.assert_array_equal(scattering_thresholds.shape, (energy_shape,))

@@ -165,16 +165,20 @@ def calculate_fwhm_spun_scattering(
         )
         # Extract pixel indices for each energy
         for_pixel_indices = np.where(for_inds)[0]
-        pixels_below_scattering_for_energy = []
 
-        for energy_idx in range(len(energy_bin_geometric_means)):
-            if reject_scattering:
+        if reject_scattering:
+            # Only include pixels below the scattering threshold
+            pixels_below_scattering_for_energy = []
+            for energy_idx in range(len(energy_bin_geometric_means)):
                 valid_pixels = scattering_mask[:, energy_idx]
                 pixels_below_scattering_for_energy.append(
                     for_pixel_indices[valid_pixels]
                 )
-            else:
-                pixels_below_scattering_for_energy.append(for_pixel_indices)
+        else:
+            # All energies get the same pixel list if not rejecting based on scattering
+            pixels_below_scattering_for_energy = [for_pixel_indices] * len(
+                energy_bin_geometric_means
+            )
 
         pixels_below_scattering.append(pixels_below_scattering_for_energy)
         # Accumulate FWHM values for averaging

@@ -115,6 +115,7 @@ def calculate_helio_pset(
             phi_vals,
             ancillary_files,
             instrument_id,
+            reject_scattering,
         )
     )
 
