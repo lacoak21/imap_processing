@@ -71,7 +71,8 @@ def calculate_spacecraft_pset(
     """
     # Do not cull events based on scattering thresholds
     reject_scattering = False
-
+    # Do not apply boundary scale factor corrections
+    apply_bsf = False
     pset_dict: dict[str, np.ndarray] = {}
 
     sensor_id = int(parse_filename_like(name)["sensor"][0:2])
@@ -146,6 +147,7 @@ def calculate_spacecraft_pset(
         n_energy_bins=len(energy_bin_geometric_means),
         sensor_id=sensor_id,
         ancillary_files=ancillary_files,
+        apply_bsf=apply_bsf,
     )
     logger.info("Calculating spun efficiencies and geometric function.")
     # calculate efficiency and geometric function as a function of energy
@@ -156,10 +158,10 @@ def calculate_spacecraft_pset(
         phi_vals,
         n_pix,
         ancillary_files,
+        apply_bsf,
     )
     sensitivity = efficiencies * geometric_function
 
-    logger.info("Calculating background rates.")
     # Calculate background rates
     background_rates = get_spacecraft_background_rates(
         rates_dataset,

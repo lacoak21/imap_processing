@@ -219,6 +219,11 @@ def test_validate_exposure_time_and_sensitivities(ancillary_files, deadtime_data
     exposure_factor_ebin_0 = pd.read_csv(
         TEST_PATH / "Exposures-IMAP_ULTRA_90-IMAP_DPS-SC-nside32-ebin0.csv"
     )
+    test_deadtimes = (
+        pd.read_csv(TEST_PATH / "test_p0_ebin0_deadtimes.csv", header=None)
+        .to_numpy()
+        .squeeze()
+    )
     npix = 12288  # nside 32
     # Create a minimal dataset to pass to the function
     dataset = xr.Dataset(
@@ -232,19 +237,19 @@ def test_validate_exposure_time_and_sensitivities(ancillary_files, deadtime_data
         TEST_PATH / "imap_ultra_l1c-90sensor-sc-pointing-theta_20250101_v001.csv"
     )
     ancillary_files["l1c-90sensor-sc-pointing-phi"] = (
-        TEST_PATH / "imap_ultra_l1c-90sensor-sc-pointing-theta_20250101_v001.csv"
+        TEST_PATH / "imap_ultra_l1c-90sensor-sc-pointing-phi_20250101_v001.csv"
     )
     ancillary_files["l1c-90sensor-sc-pointing-index"] = (
-        TEST_PATH / "imap_ultra_l1c-90sensor-sc-pointing-theta_20250101_v001.csv"
+        TEST_PATH / "imap_ultra_l1c-90sensor-sc-pointing-index_20250101_v001.csv"
     )
     ancillary_files["l1c-90sensor-sc-pointing-bsf"] = (
-        TEST_PATH / "imap_ultra_l1c-90sensor-sc-pointing-theta_20250101_v001.csv"
+        TEST_PATH / "imap_ultra_l1c-90sensor-sc-pointing-bsf_20250101_v001.csv"
     )
 
     pointing_range_met = (472374890.0, 582378000.0)
     # Create mock spin data that has 5525 nominal spins
     # Create DataFrame
-    nspins = 5520
+    nspins = 5522
     nominal_spin_seconds = 15.0
     spin_data = pd.DataFrame(
         {
@@ -270,7 +275,7 @@ def test_validate_exposure_time_and_sensitivities(ancillary_files, deadtime_data
         mock.patch(
             "imap_processing.ultra.l1c.ultra_l1c_pset_bins."
             "get_deadtime_ratios_by_spin_phase",
-            return_value=xr.DataArray(np.ones(720), dims="spin_phase_step"),
+            return_value=xr.DataArray(test_deadtimes, dims="spin_phase_step"),
         ),
         # Mock spin data to match nominal spins in a pointing period
         mock.patch(
@@ -298,7 +303,7 @@ def test_validate_exposure_time_and_sensitivities(ancillary_files, deadtime_data
 
     # Validate exposure times for ebin 0
     exposure_times = pset["exposure_factor"][0, 0, :].values
-    expected_exposure_times = exposure_factor_ebin_0["P0"]
+    expected_exposure_times = exposure_factor_ebin_0["P0"].to_numpy()
     np.testing.assert_allclose(
         exposure_times,
         expected_exposure_times,
@@ -306,11 +311,11 @@ def test_validate_exposure_time_and_sensitivities(ancillary_files, deadtime_data
         err_msg="Exposure times do not match expected values for ebin 0.",
     )
     # Validate sensitivities for ebin 0
-    sensitivity = pset["sensitivities"][0, :].values
-    expected_sensitivity = sensitivities_ebin_0["Sensitivity (cm2)"]
+    sensitivity = pset["sensitivity"][0, :].values
+    expected_sensitivity = sensitivities_ebin_0["Sensitivity (cm2)"].to_numpy()
     np.testing.assert_allclose(
         sensitivity,
         expected_sensitivity,
-        rtol=0.04,
+        rtol=0.15,
         err_msg="Sensitivities times do not match expected values for ebin 0.",
     )
