@@ -110,7 +110,7 @@ def calculate_spacecraft_pset(
     ) = get_spacecraft_pointing_lookup_tables(ancillary_files, instrument_id)
 
     logger.info("calculating spun FWHM scattering values.")
-    pixels_below_scattering, scattering_theta, scattering_phi, scattering_thresholds = (
+    valid_spun_pixels, scattering_theta, scattering_phi, scattering_thresholds = (
         calculate_fwhm_spun_scattering(
             for_indices_by_spin_phase,
             theta_vals,
@@ -140,17 +140,17 @@ def calculate_spacecraft_pset(
     exposure_pointing, deadtime_ratios = get_spacecraft_exposure_times(
         rates_dataset,
         params_dataset,
-        pixels_below_scattering,
+        valid_spun_pixels,
         boundary_scale_factors,
         pointing_range_met,
-        n_pix=n_pix,
+        n_energy_bins=len(energy_bin_geometric_means),
         sensor_id=sensor_id,
         ancillary_files=ancillary_files,
     )
     logger.info("Calculating spun efficiencies and geometric function.")
     # calculate efficiency and geometric function as a function of energy
     geometric_function, efficiencies = get_efficiencies_and_geometric_function(
-        pixels_below_scattering,
+        valid_spun_pixels,
         boundary_scale_factors,
         theta_vals,
         phi_vals,
