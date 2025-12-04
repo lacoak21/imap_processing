@@ -465,7 +465,9 @@ def get_spacecraft_exposure_times(
     # sectored_rates = get_sectored_rates(rates_dataset, params_dataset)
     # Get the number of steps used in the spun pointing lookup tables
     spin_steps = len(pixels_below_scattering)
-    logger.info("Calculating nominal deadtime ratios at %d spin phase steps.", spin_steps)
+    logger.info(
+        "Calculating nominal deadtime ratios at %d spin phase steps.", spin_steps
+    )
     nominal_deadtime_ratios = get_deadtime_ratios_by_spin_phase(
         rates_dataset,
         spin_steps,
