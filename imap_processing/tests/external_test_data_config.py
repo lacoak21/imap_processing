@@ -183,18 +183,11 @@ EXTERNAL_TEST_DATA = [
     ("imap_ultra_l1c-90sensor-sc-pointing-phi-test_20250101_v000.csv", "ultra/data/l1/"),
     ("imap_ultra_l1c-90sensor-sc-pointing-index-test_20250101_v000.csv", "ultra/data/l1/"),
     ("imap_ultra_l1c-90sensor-sc-pointing-bsf-test_20250101_v000.csv", "ultra/data/l1/"),
-    ("imap_ultra_l1c-90sensor-sc-pointing-theta_20250101_v001.csv", "ultra/data/l1/"),
-    ("imap_ultra_l1c-90sensor-sc-pointing-phi_20250101_v001.csv", "ultra/data/l1/"),
-    ("imap_ultra_l1c-90sensor-sc-pointing-index_20250101_v001.csv", "ultra/data/l1/"),
-    ("imap_ultra_l1c-90sensor-sc-pointing-bsf_20250101_v001.csv", "ultra/data/l1/"),
     ("imap_ultra_l1b-scattering-thresholds-per-energy_20250101_v000.csv", "ultra/data/l1/"),
     ("imap_ultra_l1b_45sensor-de_20240207-repoint99999_v999.cdf","ultra/data/l1/"),
     ("imap_ultra_l1c-45sensor-nominal-for-lookup_20250101_v000.csv", "ultra/data/l1/"),
     ("imap_ultra_l1c-45sensor-static-dead-times_20250101_v000.csv", "ultra/data/l1/"),
     ("imap_ultra_l1c-90sensor-static-dead-times_20250101_v000.csv", "ultra/data/l1/"),
-    ("Exposures-IMAP_ULTRA_90-IMAP_DPS-SC-nside32-ebin0.csv", "ultra/data/l1/"),
-    ("SENS-IMAP_ULTRA_90-IMAP_DPS-SC-nside32-ebin0.csv", "ultra/data/l1/"),
-    ("imap_ultra_l1b_45sensor-de_20000101-repoint00000_v000.cdf", "ultra/data/l1/"),
 
     # l2
     ("imap_ultra_l2-energy-bin-group-sizes_20250101_v000.csv", "ultra/data/l2/"),
