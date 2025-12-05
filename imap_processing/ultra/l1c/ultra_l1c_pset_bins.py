@@ -370,7 +370,7 @@ def calculate_exposure_time(
     valid_spun_pixels: xr.DataArray,
     boundary_scale_factors: xr.DataArray,
     apply_bsf: bool = True,
-) -> np.ndarray:
+) -> xr.Dataset:
     """
     Adjust the exposure time at each pixel to account for dead time.
 
@@ -392,7 +392,7 @@ def calculate_exposure_time(
 
     Returns
     -------
-    exposure_pointing_adjusted : np.ndarray
+    exposure_pointing_adjusted : xarray.Dataset
         Adjusted exposure times accounting for dead time.
     """
     # nominal spin phase step.
@@ -401,14 +401,13 @@ def calculate_exposure_time(
     # and below the scattering threshold (if scattering rejection is on).
     # Sum over the first dim of valid_spun_pixels is the spin phase step.
     # This is like spinning the spacecraft by nominal 1 ms steps in the despun frame.
+    all_counts = valid_spun_pixels * deadtime_ratios
     if apply_bsf:
-        counts = (valid_spun_pixels * deadtime_ratios * boundary_scale_factors).sum(
-            dim="spin_phase_step"
-        )
-    else:
-        counts = (valid_spun_pixels * deadtime_ratios).sum(dim="spin_phase_step")
+        all_counts *= boundary_scale_factors
+
+    counts = all_counts.sum(dim="spin_phase_step")
     # Multiply by the nominal spin step to get the exposure time in ms
-    exposure_pointing = counts.values * nominal_ms_step
+    exposure_pointing = counts * nominal_ms_step
     return exposure_pointing
 
 
@@ -504,7 +503,7 @@ def get_spacecraft_exposure_times(
     # Ensure exposure factor is broadcast correctly
     if exposure_pointing_adjusted.shape[0] != n_energy_bins:
         exposure_pointing_adjusted = np.repeat(
-            exposure_pointing_adjusted,
+            exposure_pointing_adjusted.values,
             n_energy_bins,
             axis=0,
         )
@@ -613,6 +612,7 @@ def get_efficiencies_and_geometric_function(
             # Determine pixel indices based on energy dependence
             if valid_at_spin.sizes["energy"] == 1:
                 # No scattering rejection. Same pixels for all energies
+                # TODO this may cause performance issues. Revisit later.
                 pixel_inds = np.where(valid_at_spin.isel(energy=0))[0]
             else:
                 # Scattering rejection - different pixels per energy

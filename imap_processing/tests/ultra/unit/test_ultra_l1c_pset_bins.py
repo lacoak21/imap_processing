@@ -293,7 +293,7 @@ def test_apply_deadtime_correction(imap_ena_sim_metakernel, ancillary_files):
         deadtime_ratios,
         valid_spun_pixels,
         boundary_sf,
-        apply_boundary_scale_factor=True,
+        apply_bsf=True,
     )
     # The adjusted exposure should be of shape (1,npix)
     np.testing.assert_array_equal(exposure_pointing_adjusted.shape, (1, pix))
@@ -309,8 +309,10 @@ def test_apply_deadtime_correction_energy_dep(imap_ena_sim_metakernel, ancillary
     nside = 8
     pix = hp.nside2npix(nside)
     steps = 500  # Reduced for testing
-    mock_theta = np.random.uniform(-60, 60, (pix, steps))
-    mock_phi = np.random.uniform(-60, 60, (pix, steps))
+    theta_vals = np.linspace(-60, 60, pix)
+    phi_vals = np.linspace(-60, 60, steps)
+    mock_theta = np.broadcast_to(theta_vals[:, None], (pix, steps))
+    mock_phi = np.broadcast_to(phi_vals[None, :], (pix, steps))
     spin_phase_steps = np.zeros((pix, steps)).astype(bool)  # Spin phase steps 1-15000,
     # Simulate first 100 pixels are in the FOR for all spin phases
     inside_inds = 100
@@ -332,7 +334,7 @@ def test_apply_deadtime_correction_energy_dep(imap_ena_sim_metakernel, ancillary
         deadtime_ratios,
         valid_spun_pixels,
         boundary_sf,
-        apply_boundary_scale_factor=True,
+        apply_bsf=True,
     )
     # The adjusted exposure should be of shape (1,npix)
     np.testing.assert_array_equal(exposure_pointing_adjusted.shape, (46, pix))
@@ -374,7 +376,7 @@ def test_get_spacecraft_exposure_times(
             spin_phase_steps, mock_theta, mock_phi, ancillary_files, 45
         )
     )
-    boundary_sf = np.ones((pix, steps))
+    boundary_sf = xr.DataArray(np.ones((pix, steps)), dims=("pixel", "spin_phase_step"))
     exposure_pointing, deadtimes = get_spacecraft_exposure_times(
         rates,
         params,
