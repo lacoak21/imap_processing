@@ -405,7 +405,6 @@ def calculate_exposure_time(
                 )
             else:
                 counts[energy_bin_idx, pixels_at_energy_and_spin] += deadtime_ratios[i]
-    print(counts[0, 1000:2000])
     # Multiply by the nominal spin step to get the exposure time in ms
     exposure_pointing = counts * nominal_ms_step
     return exposure_pointing
@@ -695,6 +694,28 @@ def get_helio_adjusted_data(
     -----
     These calculations are performed once per pointing.
     """
+    # Verify your input data structure
+    print(f"\n{'=' * 60}")
+    print("INPUT DATA STRUCTURE CHECK")
+    print(f"{'=' * 60}")
+    print(f"ra shape: {ra.shape}")
+    print(f"dec shape: {dec.shape}")
+    print(f"exposure_time shape: {exposure_time.shape}")
+    print(f"\nFirst 10 RA values: {ra[:10]}")
+    print(f"Are RA values sorted/regular? {np.all(np.diff(ra[:100]) >= 0)}")
+    print(f"\nFirst 10 Dec values: {dec[:10]}")
+
+    # Check if ra, dec actually form a proper HEALPix grid
+    test_pix = hp.ang2pix(nside, ra, dec, nest=False, lonlat=True)
+    expected_pix = np.arange(len(ra))
+    print(
+        f"\nDo ra,dec form sequential HEALPix RING grid? {np.array_equal(test_pix, expected_pix)}"
+    )
+
+    test_pix_nested = hp.ang2pix(nside, ra, dec, nest=True, lonlat=True)
+    print(
+        f"Do ra,dec form sequential HEALPix NESTED grid? {np.array_equal(test_pix_nested, expected_pix)}"
+    )
     # Get energy midpoints.
     _, _, energy_bin_geometric_means = build_energy_bins()
 
@@ -747,10 +768,21 @@ def get_helio_adjusted_data(
         # Result: azimuth (longitude) and elevation (latitude) in degrees.
         helio_spherical = cartesian_to_spherical(helio_normalized)
         az, el = helio_spherical[:, 1], helio_spherical[:, 2]
-
         # Convert azimuth/elevation directions to HEALPix pixel indices.
-        hpix_idx = hp.ang2pix(nside, az, el, nest=nested, lonlat=True)
-
+        hpix_idx = hp.ang2pix(nside, az, el, nest=True, lonlat=True)
+        if i == 0:
+            # Find pixels near the 0/360 boundary
+            near_boundary = (az < 10) | (az > 350)
+            print(f"\nPixels near lon=0/360 boundary: {np.sum(near_boundary)}")
+            print(
+                f"  Their az range: [{az[near_boundary].min():.2f}, {az[near_boundary].max():.2f}]"
+            )
+            print(
+                f"  Their el range: [{el[near_boundary].min():.2f}, {el[near_boundary].max():.2f}]"
+            )
+            print(
+                f"  Their hpix_idx range: [{hpix_idx[near_boundary].min()}, {hpix_idx[near_boundary].max()}]"
+            )
         # Accumulate exposure, eff, and gf values into HEALPix pixels for this energy
         # bin.
         helio_exposure[i, :] = np.bincount(
@@ -762,6 +794,38 @@ def get_helio_adjusted_data(
         helio_geometric_factors[i, :] = np.bincount(
             hpix_idx, weights=geometric_factor[i, :], minlength=npix
         )
+        # CHECK: What does cartesian_to_spherical actually return?
+        print(f"\n{'=' * 60}")
+        print("COORDINATE TRANSFORMATION DEBUG")
+        print(f"{'=' * 60}")
+
+        # Test with known vectors
+        test_vector = np.array([[1, 0, 0]])  # Points along +X axis
+        test_result = cartesian_to_spherical(test_vector)
+        print(f"Test: [1,0,0] -> {test_result}")
+        print(f"  Should be: r=1, lon=0°, lat=0° (or similar)")
+
+        test_vector = np.array([[0, 1, 0]])  # Points along +Y axis
+        test_result = cartesian_to_spherical(test_vector)
+        print(f"Test: [0,1,0] -> {test_result}")
+
+        test_vector = np.array([[0, 0, 1]])  # Points along +Z axis (north pole)
+        test_result = cartesian_to_spherical(test_vector)
+        print(f"Test: [0,0,1] -> {test_result}")
+        print(f"  Should be: r=1, lon=any, lat=90°")
+
+        # Now check actual transformation
+        helio_spherical = cartesian_to_spherical(helio_normalized)
+        print(f"\nActual transformation:")
+        print(f"  helio_spherical[:5]: {helio_spherical[:5]}")
+
+        az, el = helio_spherical[:, 1], helio_spherical[:, 2]
+
+        # Verify these are actually lon/lat
+        print(f"\nExtracted az (should be lon 0-360°):")
+        print(f"  min={az.min():.2f}, max={az.max():.2f}, mean={az.mean():.2f}")
+        print(f"Extracted el (should be lat -90 to 90°):")
+        print(f"  min={el.min():.2f}, max={el.max():.2f}, mean={el.mean():.2f}")
 
     return helio_exposure, helio_efficiency, helio_geometric_factors
 
