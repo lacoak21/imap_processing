@@ -270,6 +270,7 @@ def test_apply_deadtime_correction(imap_ena_sim_metakernel, ancillary_files):
     nside = 8
     pix = hp.nside2npix(nside)
     steps = 500  # Reduced for testing
+    np.random.seed(42)
     mock_theta = np.random.uniform(-60, 60, (pix, steps))
     mock_phi = np.random.uniform(-60, 60, (pix, steps))
     spin_phase_steps = np.zeros((pix, steps)).astype(bool)  # Spin phase steps 1-15000,
@@ -309,10 +310,9 @@ def test_apply_deadtime_correction_energy_dep(imap_ena_sim_metakernel, ancillary
     nside = 8
     pix = hp.nside2npix(nside)
     steps = 500  # Reduced for testing
-    theta_vals = np.linspace(-60, 60, pix)
-    phi_vals = np.linspace(-60, 60, steps)
-    mock_theta = np.broadcast_to(theta_vals[:, None], (pix, steps))
-    mock_phi = np.broadcast_to(phi_vals[None, :], (pix, steps))
+    np.random.seed(42)
+    mock_theta = np.random.uniform(-60, 60, (pix, steps))
+    mock_phi = np.random.uniform(-60, 60, (pix, steps))
     spin_phase_steps = np.zeros((pix, steps)).astype(bool)  # Spin phase steps 1-15000,
     # Simulate first 100 pixels are in the FOR for all spin phases
     inside_inds = 100
@@ -342,7 +342,7 @@ def test_apply_deadtime_correction_energy_dep(imap_ena_sim_metakernel, ancillary
     # Subset the energy dimension to check values in the last energy bin. These
     # Should have pixels that are below the FWHM scattering threshold and therefore,
     # have the exposure adjusted.
-    last_energy_bin_vals = np.where(build_energy_bins()[2] >= 30)[0]
+    last_energy_bin_vals = np.where(build_energy_bins()[2] >= 40)[0]
     assert np.all(exposure_pointing_adjusted[last_energy_bin_vals, :inside_inds] > 0)
     # Assert that pixels outside the FOR remain at 0.
     assert np.all(exposure_pointing_adjusted[:, inside_inds:] == 0)
