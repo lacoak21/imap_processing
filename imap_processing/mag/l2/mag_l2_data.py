@@ -62,6 +62,9 @@ class MagL2L1dBase:
     epoch_et: np.ndarray
         The epoch timestamps converted to ET format. Used for frame transformations.
         Calculated on first use and then saved. Should not be passed in.
+    data_level: str
+        The data level of the product, to be used in the output attributes.
+        This should always be overridden by base classes.
     """
 
     vectors: np.ndarray
@@ -74,6 +77,7 @@ class MagL2L1dBase:
     magnitude: np.ndarray = field(init=False)
     frame: ValidFrames = ValidFrames.MAGO
     epoch_et: np.ndarray | None = field(init=False, default=None)
+    data_level: str = field(init=False)
 
     def generate_dataset(
         self,
@@ -101,8 +105,20 @@ class MagL2L1dBase:
         self.truncate_to_24h(day)
 
         logical_source_id = (
-            f"imap_mag_l2_{self.data_mode.value.lower()}-{self.frame.name.lower()}"
+            f"imap_mag_{self.data_level}_{self.data_mode.value.lower()}-"
+            f"{self.frame.name.lower()}"
         )
+
+        # Select the appropriate vector attributes based on the frame
+        frame_to_vector_attrs = {
+            ValidFrames.SRF: "vector_attrs_srf",
+            ValidFrames.DSRF: "vector_attrs_dsrf",
+            ValidFrames.GSE: "vector_attrs_gse",
+            ValidFrames.RTN: "vector_attrs_rtn",
+            ValidFrames.GSM: "vector_attrs_gsm",  # L2 Only
+        }
+        vector_attrs_name = frame_to_vector_attrs.get(self.frame, "vector_attrs")
+
         direction = xr.DataArray(
             np.arange(3),
             name="direction",
@@ -134,7 +150,7 @@ class MagL2L1dBase:
             self.vectors,
             name="vectors",
             dims=["epoch", "direction"],
-            attrs=attribute_manager.get_variable_attributes("vector_attrs"),
+            attrs=attribute_manager.get_variable_attributes(vector_attrs_name),
         )
 
         quality_flags = xr.DataArray(
@@ -155,15 +171,14 @@ class MagL2L1dBase:
             self.range,
             name="range",
             dims=["epoch"],
-            # TODO temp attrs
-            attrs=attribute_manager.get_variable_attributes("fill"),
+            attrs=attribute_manager.get_variable_attributes("range"),
         )
 
         magnitude = xr.DataArray(
             self.magnitude,
             name="magnitude",
             dims=["epoch"],
-            attrs=attribute_manager.get_variable_attributes("fill"),
+            attrs=attribute_manager.get_variable_attributes("magnitude"),
         )
 
         global_attributes = (
@@ -326,16 +341,11 @@ class MagL2L1dBase:
 
 @dataclass(kw_only=True)
 class MagL2(MagL2L1dBase):
-    """
-    Dataclass for MAG L2 data.
-
-    Since L2 and L1D should have the same structure, this can be used for either level.
-
-    Some of the methods are also static, so they can be used in i-ALiRT processing.
-    """
+    """Dataclass for MAG L2 data."""
 
     offsets: InitVar[np.ndarray] = None
     timedelta: InitVar[np.ndarray] = None
+    data_level: str = field(default="l2", init=False)
 
     def __post_init__(self, offsets: np.ndarray, timedelta: np.ndarray) -> None:
         """
