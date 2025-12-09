@@ -256,6 +256,8 @@ def codice_lut_path():
             return [
                 TEST_DATA_PATH / "l2_lut/imap_codice_l2-lo-gfactor_20251008_v001.csv"
             ]
+        elif descriptor == "lo-mpq-cal":
+            return [TEST_DATA_PATH / "l2_lut/imap_codice_lo-mpq-cal_20250101_v001.csv"]
         else:
             raise ValueError(f"Unknown descriptor: {descriptor}")
 

@@ -18,6 +18,8 @@ from imap_processing.codice.codice_l2 import (
     compute_geometric_factors,
     get_efficiency_lut,
     get_geometric_factor_lut,
+    get_mpq_calc_energy_conversion_vals,
+    get_mpq_calc_tof_conversion_vals,
     process_codice_l2,
     process_lo_angular_intensity,
     process_lo_species_intensity,
@@ -45,7 +47,10 @@ EXPECTED_LOGICAL_SOURCES = [
 def processing_dependencies(codice_lut_path):
     eff_file = "imap_codice_l2-lo-efficiency_20251008_v001.csv"
     gf_file = "imap_codice_l2-lo-gfactor_20251008_v001.csv"
-    return ProcessingInputCollection(AncillaryInput(gf_file), AncillaryInput(eff_file))
+    mpq_file = "imap_codice_lo-mpq-cal_20250101_v001.csv"
+    return ProcessingInputCollection(
+        AncillaryInput(gf_file), AncillaryInput(eff_file), AncillaryInput(mpq_file)
+    )
 
 
 @pytest.fixture
@@ -170,6 +175,30 @@ def test_get_efficiency_lut(processing_dependencies, mock_get_file_paths):
 
     for col in expected_colnames:
         assert col in efficiency_lut.columns, f"Missing column {col} in efficiency LUT"
+
+
+def test_get_tof_ns_from_mpq_lut(processing_dependencies, mock_get_file_paths):
+    tof_ns = get_mpq_calc_tof_conversion_vals(processing_dependencies)
+    assert tof_ns.shape == (1024,)
+    mpq_calc_lut_file = processing_dependencies.get_file_paths(descriptor="lo-mpq-cal")[
+        0
+    ]
+    mpq_df = pd.read_csv(mpq_calc_lut_file, header=None)
+    expected_tof_ns = mpq_df.loc[6:, 1].to_numpy().astype(np.float64)
+    # Calculated values should be more precise than LUT but should be close
+    np.testing.assert_allclose(tof_ns, expected_tof_ns, atol=1e-5)
+
+
+def test_get_energy_kev_from_mpq_lut(processing_dependencies, mock_get_file_paths):
+    energy_kev = get_mpq_calc_energy_conversion_vals(processing_dependencies)
+    assert energy_kev.shape == (128,)
+    mpq_calc_lut_file = processing_dependencies.get_file_paths(descriptor="lo-mpq-cal")[
+        0
+    ]
+    mpq_df = pd.read_csv(mpq_calc_lut_file, header=None)
+    expected_tof_ns = mpq_df.loc[5, 4:].to_numpy().astype(np.float64)
+    # Calculated values should be more precise than LUT but should be close
+    np.testing.assert_allclose(energy_kev, expected_tof_ns, rtol=0.01)
 
 
 def test_process_lo_species_intensity(mock_get_file_paths, codice_lut_path):
@@ -481,18 +510,18 @@ def test_codice_l2_sw_angular_intensity(mock_get_file_paths, codice_lut_path):
 @patch("imap_data_access.processing_input.ProcessingInputCollection.get_file_paths")
 def test_codice_l2_lo_de(mock_get_file_paths, codice_lut_path):
     mock_get_file_paths.side_effect = [
-        codice_lut_path(descriptor="lo-direct-events", data_type="l0"),
+        codice_lut_path(descriptor="lo-direct-events", data_type="l0")
     ]
     l1a_cdf = process_l1a(ProcessingInputCollection())[0]
-    print(l1a_cdf["spin_sector"].data[0, 2, 2])
+
     processed_l1a_file = write_cdf(l1a_cdf)
     file_path = processed_l1a_file.as_posix()
     # Mock get_files for l2
     mock_get_file_paths.side_effect = [
         [file_path],
         [file_path],
-        # codice_lut_path(descriptor="l2-lo-gfactor"),
-        # codice_lut_path(descriptor="l2-lo-efficiency"),
+        codice_lut_path(descriptor="lo-mpq-cal"),
+        codice_lut_path(descriptor="lo-mpq-cal"),
     ]
 
     processed_l2_ds = process_codice_l2("lo-direct-events", ProcessingInputCollection())
@@ -508,36 +537,24 @@ def test_codice_l2_lo_de(mock_get_file_paths, codice_lut_path):
         )
     )
     l2_val_data = load_cdf(l2_val_data)
-    np.testing.assert_allclose(
-        l2_val_data["elevation_angle"].values, processed_l2_ds["elevation_angle"]
-    )
-    print("SDC gain", processed_l2_ds["gain"].data[2, 6, 523])
-    print("SDC apd_energy", processed_l2_ds["apd_energy"].data[2, 6, 523])
-    print("SDC apd_id", processed_l2_ds["apd_id"].values[2, 6, 523])
-    print("gain", l2_val_data["gain"].data[2, 6, 523])
-    print("apd_energy", l2_val_data["apd_energy"].data[2, 6, 523])
-    print("apd_id", l2_val_data["apd_id"].values[2, 6, 523])
-    np.testing.assert_allclose(
-        processed_l2_ds["apd_energy"].values, l2_val_data["apd_energy"].values
-    )
-    print("INDEX: ", (2, 6, 523))
-    print("SDC: position", processed_l2_ds["position"].data[2, 6, 523])
-    print("SDC: spin_sector", processed_l2_ds["spin_sector"].data[2, 6, 523])
-    print("SDC: spin_angle", processed_l2_ds["spin_angle"].values[2, 6, 523])
-    print("CoDICE: position", l2_val_data["position"].data[2, 6, 523])
-    print("CoDICE: spin_sector", l2_val_data["spin_sector"].data[2, 6, 523])
-    print("CoDICE: spin_angle", l2_val_data["spin_angle"].values[2, 6, 523])
-    # np.testing.assert_allclose(processed_l2_ds["spin_angle"].values,
-    # l2_val_data["spin_angle"].values)
-    # for variable in l2_val_data.data_vars:
-    #     np.testing.assert_allclose(
-    #         processed_l2_ds[variable].values,
-    #         l2_val_data[variable].values,
-    #         rtol=1e-5,
-    #         err_msg=f"Mismatch in variable '{variable}'",
-    #     )
-    #
-    # processed_l2_ds.attrs["Data_version"] = "001"
-    # assert processed_l2_ds.attrs["Logical_source"] ==
-    # "imap_codice_l2_lo-direct-events"
-    # write_cdf(processed_l2_ds)
+    for variable in l2_val_data.data_vars:
+        if variable in ["spin_angle"]:
+            # TODO remove this block when joey fixes spin_angle calculation
+            continue  # skip spin_angle
+        if "label" in variable:
+            np.testing.assert_array_equal(
+                processed_l2_ds[variable].values,
+                l2_val_data[variable].values,
+                err_msg=f"Mismatch in variable '{variable}'",
+            )
+        else:
+            np.testing.assert_allclose(
+                processed_l2_ds[variable].values,
+                l2_val_data[variable].values,
+                rtol=5e-5,
+                err_msg=f"Mismatch in variable '{variable}'",
+            )
+
+    processed_l2_ds.attrs["Data_version"] = "001"
+    assert processed_l2_ds.attrs["Logical_source"] == "imap_codice_l2_lo-direct-events"
+    write_cdf(processed_l2_ds)

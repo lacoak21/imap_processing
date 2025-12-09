@@ -45,6 +45,60 @@ from imap_processing.codice.utils import apply_replacements_to_attrs
 logger = logging.getLogger(__name__)
 
 
+def get_mpq_calc_energy_conversion_vals(
+    dependencies: ProcessingInputCollection,
+) -> np.ndarray:
+    """
+    Get the MPQ calculation esa step to energy kev conversion lookup table values.
+
+    Parameters
+    ----------
+    dependencies : ProcessingInputCollection
+        The collection of processing input files.
+
+    Returns
+    -------
+    esa_kev : np.ndarray
+        An array of energy in keV for each esa step.
+    """
+    mpq_calc_lut_file = dependencies.get_file_paths(descriptor="lo-mpq-cal")[0]
+    mpq_df = pd.read_csv(mpq_calc_lut_file, header=None)
+    k_factor = float(mpq_df.loc[0, 10])
+    esa_v = mpq_df.loc[4, 4:].to_numpy().astype(np.float64)
+    # Calculate the energy in keV for each esa step
+    esa_kev = esa_v * k_factor / 1000
+    return esa_kev
+
+
+def get_mpq_calc_tof_conversion_vals(
+    dependencies: ProcessingInputCollection,
+) -> np.ndarray:
+    """
+    Get the MPQ calculation tof to ns conversion lookup table values.
+
+    Parameters
+    ----------
+    dependencies : ProcessingInputCollection
+        The collection of processing input files.
+
+    Returns
+    -------
+    tof_ns : np.ndarray
+        Tof in ns for each TOF bit.
+    """
+    mpq_calc_lut_file = dependencies.get_file_paths(descriptor="lo-mpq-cal")[0]
+    mpq_df = pd.read_csv(mpq_calc_lut_file, header=None)
+    ns_channel_sq = float(mpq_df.loc[2, 1])
+    ns_channel = float(mpq_df.loc[3, 1])
+    tof_offset = float(mpq_df.loc[4, 1])
+    # Get the TOF bit to ns lookup
+    tof_bits = mpq_df.loc[6:, 0].to_numpy().astype(np.int64)
+    # Calculate the TOF in ns for each TOF bit
+    tof_ns = tof_bits**2 * ns_channel_sq + tof_bits * ns_channel + tof_offset
+
+    return tof_ns
+
+
 def get_geometric_factor_lut(
     dependencies: ProcessingInputCollection | None,
     path: Path | None = None,
@@ -929,11 +983,10 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
     apd_ids = l2_dataset["apd_id"].values.flat
     apd_energy = l2_dataset["apd_energy"].values.flat
     apd_energy_shape = l2_dataset["apd_energy"].shape
-    # This will change
-    # Basically Conversion table
-    # for the hi onboard
+
     file_path = Path(
-        "/Users/luco3133/projects/imap_processing/imap_processing/tests/codice/data/l2_lut/imap_codice_l2-lo-onboard.json"
+        "/Users/luco3133/projects/imap_processing/imap_processing/tests"
+        "/codice/data/l2_lut/imap_codice_l2-lo-onboard.json"
     )
     onboard_lut = json.loads(file_path.read_text()).get("20250519")
     energy_table = onboard_lut.get("energy_table", {})
@@ -943,7 +996,7 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
     for apd_id, gain, energy_pos in zip(apd_ids, gains, apd_energy, strict=False):
         if (energy_pos != 65535) & (apd_id < 30) & (apd_id != 0):
             gain_str = "LG" if gain == 0 else "HG"
-            # TODO dont subtract 1. Joey needs to fix his code.
+            # TODO remove the -1 when Joey fixes the LUT to have correct apd_id
             key = "APD-" + str(apd_id - 1) + "-" + gain_str
             energy_bin = energy_table[key][energy_pos]
             energy_kevs.append(energy_bins[str(energy_bin)])
@@ -951,6 +1004,31 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
             energy_kevs.append(np.nan)
 
     l2_dataset["apd_energy"].data = np.array(energy_kevs).reshape(apd_energy_shape)
+
+    # Calculate TOF in nanoseconds
+    tof_bit_to_ns = get_mpq_calc_tof_conversion_vals(dependencies)
+    tof_bits = l2_dataset["tof"].values.flatten()
+    # Create output array
+    tof_ns = np.full(tof_bits.shape, np.nan, dtype=np.float64)
+    # Get only valid TOF bits between 0 and 1023
+    valid_mask = (tof_bits >= 0) & (tof_bits < 1024)
+    tof_ns[valid_mask] = tof_bit_to_ns[tof_bits[valid_mask]]
+    # Reshape back to original shape
+    l2_dataset["tof"].data = tof_ns.reshape(l2_dataset["tof"].shape)
+
+    # Convert energy step to energy in keV
+    esa_kev = get_mpq_calc_energy_conversion_vals(dependencies)
+    energy_steps = l2_dataset["energy_step"].values.flatten()
+    # Create output array
+    kev = np.full(energy_steps.shape, np.nan, dtype=np.float64)
+    # Get only valid energy_steps between 0 and 128
+    valid_mask = (energy_steps >= 0) & (energy_steps < 128)
+    kev[valid_mask] = esa_kev[energy_steps[valid_mask]]
+    # Reshape back to original shape
+    l2_dataset["energy_per_charge"] = (
+        l2_dataset["energy_step"].dims,
+        kev.reshape(l2_dataset["energy_step"].shape),
+    )
 
     return l2_dataset
 
