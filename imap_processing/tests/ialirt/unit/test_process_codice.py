@@ -31,7 +31,9 @@ from imap_processing.ialirt.l0.process_codice import (
     COD_LO_COUNTER,
     FILLVAL_UINT8,
     concatenate_bytes,
+    convert_to_intensities,
     create_xarray_dataset,
+    process_codice,
     process_ialirt_data_streams,
 )
 from imap_processing.ialirt.utils.grouping import find_groups
@@ -299,6 +301,27 @@ def cod_lo_l2_test_data():
     return cdf_file
 
 
+@pytest.fixture(scope="session")
+def cod_hi_l2_test_data():
+    """Returns the test data directory."""
+    data_path = (
+        imap_module_directory
+        / "tests"
+        / "codice"
+        / "data"
+        / "l2_validation"
+        / (
+            f"imap_codice_l2_hi-ialirt_{VALIDATION_FILE_DATE}"
+            f"_{VALIDATION_FILE_VERSION}.cdf"
+        )
+    )
+    # TODO: fix error in cdf file and change to:
+    # data = load_cdf(data_path)
+    cdf_file = cdflib.CDF(data_path)
+
+    return cdf_file
+
+
 @patch("xarray.Dataset.drop_vars", new=lambda self, *args, **kwargs: self)
 @pytest.mark.external_test_data
 def test_l1b_ialirt_cod_hi(cod_hi_l1a_test_data, cod_hi_l1b_test_data):
@@ -328,6 +351,21 @@ def l1a_lut_path():
         / "data"
         / "l1a_lut"
         / "imap_codice_l1a-sci-lut_20251007_v004.json"
+    )
+
+    return lut_path
+
+
+@pytest.fixture
+def l2_lut_path():
+    """Returns the calibration data."""
+    lut_path = (
+        imap_module_directory
+        / "tests"
+        / "codice"
+        / "data"
+        / "l2_lut"
+        / "imap_codice_l2-hi-ialirt-efficiency_20251008_v001.csv"
     )
 
     return lut_path
@@ -550,6 +588,23 @@ def test_group_and_decompress_ialirt_cod_hi(
 
 
 @pytest.mark.external_test_data
+def test_l2_ialirt_cod_hi(cod_hi_l1b_test_data, l2_lut_path, cod_hi_l2_test_data):
+    "Test that I-ALiRT CoDICE-Hi L2 data."
+
+    # Read efficiency lookup table
+    intensity = convert_to_intensities(cod_hi_l1b_test_data, l2_lut_path, "h")
+
+    # test data
+    test_data = cod_hi_l2_test_data["h"]
+
+    np.testing.assert_allclose(
+        intensity,
+        test_data,
+        atol=1e-6,
+    )
+
+
+@pytest.mark.external_test_data
 def test_process_codice_lo(
     cod_lo_l1b_test_data, l1a_lut_path, cod_lo_l2_test_data, l2_processing_dependencies
 ):
@@ -675,3 +730,36 @@ def test_process_codice_lo(
     np.testing.assert_array_equal(
         fe_low_over_fe_high_ratio, cod_lo_l2_test_data["fe_low_over_fe_high_ratio"]
     )
+
+
+@pytest.mark.external_test_data
+def test_process_codice_hi(
+    cod_hi_test_dataset, l1a_lut_path, l2_lut_path, cod_hi_l2_test_data
+):
+    """Test process_codice for hi."""
+    test_data = cod_hi_l2_test_data["h"]
+
+    n = cod_hi_test_dataset.dims["epoch"]
+    cod_hi_test_dataset = cod_hi_test_dataset.assign(
+        sc_sclk_sec=("epoch", np.zeros(n, dtype=np.int64)),
+        sc_sclk_sub_sec=("epoch", np.zeros(n, dtype=np.int64)),
+    )
+
+    _, cod_hi_data = process_codice(
+        cod_hi_test_dataset, l1a_lut_path, l2_lut_path, "codice_hi"
+    )
+    samples_per_group = test_data.shape[0] // len(cod_hi_data)
+    grouped_test_data = test_data.reshape(
+        len(cod_hi_data),
+        samples_per_group,
+        *test_data.shape[1:],
+    )
+
+    for i, group in enumerate(cod_hi_data):
+        arr = np.array(group["codice_hi_l2_hi"], dtype=float)
+
+        np.testing.assert_allclose(
+            arr,
+            grouped_test_data[i],
+            atol=1e-2,
+        )
