@@ -24,6 +24,8 @@ import imap_data_access
 import numpy as np
 import spiceypy
 import xarray as xr
+from cdflib.xarray import xarray_to_cdf
+from cdflib.xarray.xarray_to_cdf import ISTPError
 from imap_data_access.io import IMAPDataAccessError, download
 from imap_data_access.processing_input import (
     ProcessingInputCollection,
@@ -49,7 +51,7 @@ from imap_processing.cdf.utils import load_cdf, write_cdf
 #   from imap_processing import cdf
 # In code:
 #   call cdf.utils.write_cdf
-from imap_processing.codice import codice_l1b, codice_l2, codice_new_l1a
+from imap_processing.codice import codice_l1a, codice_l1b, codice_l2
 from imap_processing.glows.l1a.glows_l1a import glows_l1a
 from imap_processing.glows.l1b.glows_l1b import glows_l1b, glows_l1b_de
 from imap_processing.glows.l2.glows_l2 import glows_l2
@@ -197,15 +199,7 @@ def _parse_args() -> argparse.Namespace:
         action="store_const",
         dest="loglevel",
         const=logging.DEBUG,
-        default=logging.WARNING,
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        help="Add verbose output",
-        action="store_const",
-        dest="loglevel",
-        const=logging.INFO,
+        default=logging.INFO,
     )
     parser.add_argument("--instrument", type=str, required=True, help=instrument_help)
     parser.add_argument("--data-level", type=str, required=True, help=level_help)
@@ -258,6 +252,14 @@ def _parse_args() -> argparse.Namespace:
         help="Upload completed output files to the IMAP SDC.",
     )
     args = parser.parse_args()
+
+    # Set the basic logging configuration for all users
+    # of the CLI tool.
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s:%(name)s:%(message)s",
+        level=args.loglevel,
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
     # If the dependency argument was passed in as a json file, read it into a string
     if args.dependency.endswith(".json"):
@@ -613,7 +615,7 @@ class Codice(ProcessInstrument):
 
         if self.data_level == "l1a":
             # process data
-            datasets = codice_new_l1a.process_l1a(dependencies)
+            datasets = codice_l1a.process_l1a(dependencies)
 
         if self.data_level == "l1b":
             science_files = dependencies.get_file_paths(source="codice")
@@ -1206,6 +1208,77 @@ class Mag(ProcessInstrument):
                 )
         return datasets
 
+    def post_processing(
+        self,
+        processed_data: list[xr.Dataset | Path],
+        dependencies: ProcessingInputCollection,
+    ) -> list[Path]:
+        """
+        Override the post-processing method to handle ancillary file upload.
+
+        This will retrieve any datasets with Logical_source matching
+        ancillary_identifiers, and write them out to filenames, which will then be
+        passed to super().post_processing(). This means write_cdf will be skipped for
+        ancillary files ONLY.
+
+        Parameters
+        ----------
+        processed_data : list[xarray.Dataset | Path]
+            A list of datasets (products) and paths produced by the do_processing
+            method.
+        dependencies : ProcessingInputCollection
+            Object containing dependencies to process.
+
+        Returns
+        -------
+        list[Path]
+            List of paths to CDF files produced.
+        """
+        ancillary_identifiers = [
+            "imap_mag_l1d_gradiometry-offsets-burst",
+            "imap_mag_l1d_gradiometry-offsets-norm",
+            "imap_mag_l1d_spin-offsets",
+        ]
+
+        for index, dataset in enumerate(processed_data):
+            if isinstance(dataset, xr.Dataset):
+                logical_source = dataset.attrs["Logical_source"]
+                if logical_source in ancillary_identifiers:
+                    # Skip write_cdf
+                    instrument, _data_level, descriptor = dataset.attrs[
+                        "Logical_source"
+                    ].split("_")[1:]
+                    start_date = self.start_date
+                    version = self.version
+
+                    output_filepath = (
+                        imap_data_access.AncillaryFilePath.generate_from_inputs(
+                            instrument=instrument,
+                            descriptor=descriptor,
+                            version=version,
+                            extension="cdf",
+                            start_time=start_date,
+                            end_time=start_date,
+                        ).filename
+                    )
+
+                    try:
+                        # write file to CDF
+                        xarray_to_cdf(
+                            dataset,
+                            output_filepath,
+                            terminate_on_warning=False,
+                            istp=False,
+                        )
+                        # update the dataset in processed_data to point to a path
+                        processed_data[index] = output_filepath
+                    except (ValueError, TypeError, ISTPError) as e:
+                        # Don't fail for any reason for ancillary files
+                        logger.warning(f"Hit error {e} when creating {output_filepath}")
+                        continue
+
+        return super().post_processing(processed_data, dependencies)
+
 
 class Spacecraft(ProcessInstrument):
     """Process Spacecraft data."""
@@ -1471,6 +1544,12 @@ class Ultra(ProcessInstrument):
             all_pset_filepaths = dependencies.get_file_paths(
                 source="ultra", descriptor="pset"
             )
+            energy_ancilary_files = dependencies.get_file_paths(
+                data_type="ancillary", descriptor="l2-energy-bin-group-sizes"
+            )
+            energy_bin_edges_file = (
+                None if energy_ancilary_files == [] else energy_ancilary_files[0]
+            )
             # There can be many PSET files, so avoid reading them all in.
             # The filename stem (logical_file_id) contains
             # all the information needed in the key.
@@ -1481,6 +1560,7 @@ class Ultra(ProcessInstrument):
             datasets = ultra_l2.ultra_l2(
                 data_dict,
                 descriptor=self.descriptor,
+                energy_bin_edges_file=energy_bin_edges_file,
             )
 
         return datasets

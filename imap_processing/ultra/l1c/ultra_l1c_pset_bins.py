@@ -11,9 +11,7 @@ from numpy.typing import NDArray
 from scipy import interpolate
 
 from imap_processing.spice.geometry import (
-    SpiceFrame,
     cartesian_to_spherical,
-    imap_state,
 )
 from imap_processing.ultra.constants import UltraConstants
 from imap_processing.ultra.l1b.lookup_utils import (
@@ -35,9 +33,16 @@ FILLVAL_FLOAT32 = -1.0e31
 logger = logging.getLogger(__name__)
 
 
-def get_energy_delta_minus_plus() -> tuple[NDArray, NDArray]:
+def get_energy_delta_minus_plus(
+    energy_bin_edges: np.ndarray | None = None,
+) -> tuple[NDArray, NDArray]:
     """
     Calculate the energy_delta_minus and energy_delta_plus for use in the CDF.
+
+    Parameters
+    ----------
+    energy_bin_edges : numpy.ndarray, optional
+        Array of energy bin edges. If None, default Ultra energy bins are used.
 
     Returns
     -------
@@ -54,7 +59,7 @@ def get_energy_delta_minus_plus() -> tuple[NDArray, NDArray]:
     where bin_upper and bin_lower are the upper and lower bounds of the energy bins
     and bin_geom_mean is the geometric mean of the energy bin.
     """
-    bins, _, bin_geom_means = build_energy_bins()
+    bins, _, bin_geom_means = build_energy_bins(energy_bin_edges)
     bins_energy_delta_plus, bins_energy_delta_minus = [], []
     for bin_edges, bin_geom_mean in zip(bins, bin_geom_means, strict=False):
         bins_energy_delta_plus.append(bin_edges[1] - bin_geom_mean)
@@ -263,7 +268,7 @@ def get_deadtime_ratios_by_spin_phase(
     spin_steps: int,
     sensor_id: int | None = None,
     ancillary_files: dict | None = None,
-) -> np.ndarray:
+) -> xr.DataArray:
     """
     Calculate nominal deadtime ratios at every spin phase step (1ms res).
 
@@ -280,7 +285,7 @@ def get_deadtime_ratios_by_spin_phase(
 
     Returns
     -------
-    numpy.ndarray
+    xarray.DataArray
         Nominal deadtime ratios at every spin phase step.
     """
     # if sectored_rates is None or sectored_rates.epoch.size == 0:
@@ -344,67 +349,53 @@ def get_deadtime_ratios_by_spin_phase(
     # Calculate the nominal spin phases at the supplied resolution and query the pchip
     # interpolator to get the deadtime ratios.
     nominal_spin_phases = np.arange(0, 360, 360 / spin_steps)
-    return interpolator(nominal_spin_phases)
+    deadtime_ratios = xr.DataArray(
+        interpolator(nominal_spin_phases), dims="spin_phase_step"
+    )
+    return deadtime_ratios
 
 
 def calculate_exposure_time(
-    deadtime_ratios: np.ndarray,
-    pixels_below_scattering: list,
-    boundary_scale_factors: NDArray,
-    n_pix: int,
-    apply_boundary_scale_factors: bool = False,
-) -> np.ndarray:
+    deadtime_ratios: xr.DataArray,
+    valid_spun_pixels: xr.DataArray,
+    boundary_scale_factors: xr.DataArray,
+    apply_bsf: bool = True,
+) -> xr.DataArray:
     """
     Adjust the exposure time at each pixel to account for dead time.
 
     Parameters
     ----------
-    deadtime_ratios : PchipInterpolator
-        Interpolating function for dead time ratios.
-    pixels_below_scattering : list
-        A Nested list of arrays indicating pixels within the scattering threshold.
-        The outer list indicates spin phase steps, the middle list indicates energy
-        bins, and the inner arrays contain indices indicating pixels that are below
-        the FWHM scattering threshold.
-    boundary_scale_factors : np.ndarray
+    deadtime_ratios : xarray.DataArray
+        Deadtime ratios at each spin phase step.
+    valid_spun_pixels : xarray.DataArray
+        3D Array of pixels valid at each spin phase step. If rejection based on
+        scattering was set, then these are the pixels below the FWHM scattering
+        threshold and in the field of regard at each spin phase step, and energy
+        shape = (spin_phase_steps, energy_bins, n_pix). IF no rejection,
+        then these are simply the pixels in the field of regard at each spin phase step
+        shape = (spin_phase_steps, 1, n_pix).
+    boundary_scale_factors : xr.DataArray
         Boundary scale factors for each pixel at each spin phase.
-    n_pix : int
-        Number of HEALPix pixels.
+    apply_bsf : bool, optional
+        Whether to apply boundary scale factors. Default is True.
 
     Returns
     -------
-    exposure_pointing_adjusted : np.ndarray
+    exposure_pointing: xarray.DataArray
         Adjusted exposure times accounting for dead time.
     """
-    # Track accumulation for bin 0
-    bin0_accumulation = 0
-
-    # Get energy bin geometric means
-    energy_bin_geometric_means = build_energy_bins()[2]
-    # Exposure time should now be of shape (energy, npix)
-    counts = np.zeros((len(energy_bin_geometric_means), n_pix))
     # nominal spin phase step.
-    nominal_ms_step = 15 / len(pixels_below_scattering)  # time step
+    nominal_ms_step = 15 / valid_spun_pixels.shape[0]  # time step
     # Query the dead-time ratio and apply the nominal exposure time to pixels in the FOR
-    # and below the scattering threshold
-    # Loop through the spin phase steps. This is spinning the spacecraft by nominal
-    # 1 ms steps in the despun frame.
-    for i, pixels_at_spin in enumerate(pixels_below_scattering):
-        # Loop through energy bins
-        # DEBUG: Check pixel counts per energy bin
-        for energy_bin_idx in range(len(energy_bin_geometric_means)):
-            pixels_at_energy_and_spin = pixels_at_spin[energy_bin_idx]
-            if pixels_at_energy_and_spin.size == 0:
-                continue
-            # Apply the nominal exposure time (1 ms) scaled by the deadtime ratio to
-            # every pixel in the FOR, that is below the FWHM scattering threshold,
-            if apply_boundary_scale_factors:
-                counts[energy_bin_idx, pixels_at_energy_and_spin] += (
-                    deadtime_ratios[i]
-                    * boundary_scale_factors[pixels_at_energy_and_spin, i]
-                )
-            else:
-                counts[energy_bin_idx, pixels_at_energy_and_spin] += deadtime_ratios[i]
+    # and below the scattering threshold (if scattering rejection is on).
+    # Sum over the first dim of valid_spun_pixels is the spin phase step.
+    # This is like spinning the spacecraft by nominal 1 ms steps in the despun frame.
+    all_counts = valid_spun_pixels * deadtime_ratios
+    if apply_bsf:
+        all_counts *= boundary_scale_factors
+
+    counts = all_counts.sum(dim="spin_phase_step")
     # Multiply by the nominal spin step to get the exposure time in ms
     exposure_pointing = counts * nominal_ms_step
     return exposure_pointing
@@ -413,13 +404,13 @@ def calculate_exposure_time(
 def get_spacecraft_exposure_times(
     rates_dataset: xr.Dataset,
     params_dataset: xr.Dataset,
-    pixels_below_scattering: list[list],
-    boundary_scale_factors: NDArray,
+    valid_spun_pixels: xr.DataArray,
+    boundary_scale_factors: xr.DataArray,
     pointing_range_met: tuple[float, float],
-    n_pix: int,
-    apply_boundary_scale_factors: bool = False,
+    n_energy_bins: int,
     sensor_id: int | None = None,
     ancillary_files: dict | None = None,
+    apply_bsf: bool = True,
 ) -> tuple[NDArray, NDArray]:
     """
     Compute exposure times for HEALPix pixels.
@@ -430,21 +421,25 @@ def get_spacecraft_exposure_times(
         Dataset containing image rates data.
     params_dataset : xarray.Dataset
         Dataset containing image parameters data.
-    pixels_below_scattering : list
-        List of lists indicating pixels within the scattering threshold.
-        The outer list indicates spin phase steps, the middle list indicates energy
-        bins, and the inner list contains pixel indices indicating pixels that are
-        below the FWHM scattering threshold.
-    boundary_scale_factors : np.ndarray
+    valid_spun_pixels : xarray.DataArray
+        3D Array of pixels valid at each spin phase step. If rejection based on
+        scattering was set, then these are the pixels below the FWHM scattering
+        threshold and in the field of regard at each spin phase step, and energy
+        shape = (spin_phase_steps, energy_bins, n_pix). IF no rejection,
+        then these are simply the pixels in the field of regard at each spin phase step
+        shape = (spin_phase_steps, 1, n_pix).
+    boundary_scale_factors : xarray.DataArray
         Boundary scale factors for each pixel at each spin phase.
     pointing_range_met : tuple
         Start and stop time of the pointing period in mission elapsed time.
-    n_pix : int
-        Number of HEALPix pixels.
+    n_energy_bins : int
+        Number of energy bins.
     sensor_id : int, optional
         Sensor ID, either 45 or 90.
     ancillary_files : dict, optional
         Dictionary containing ancillary files.
+    apply_bsf : bool, optional
+        Whether to apply boundary scale factors. Default is True.
 
     Returns
     -------
@@ -463,26 +458,16 @@ def get_spacecraft_exposure_times(
     # rates_dataset.isel(epoch=pointing_mask)
     # sectored_rates = get_sectored_rates(rates_dataset, params_dataset)
     # Get the number of steps used in the spun pointing lookup tables
-    spin_steps = len(pixels_below_scattering)
-    logger.info(
-        "Calculating nominal deadtime ratios at %d spin phase steps.", spin_steps
-    )
+    spin_steps = valid_spun_pixels.shape[0]
     nominal_deadtime_ratios = get_deadtime_ratios_by_spin_phase(
-        rates_dataset,
-        spin_steps,
-        sensor_id,
-        ancillary_files,
+        rates_dataset, spin_steps, sensor_id, ancillary_files
     )
     # The exposure time will be approximately the same per spin, so to save
     # computation time, calculate the exposure time for a single spin and then scale it
     # by the number of spins in the pointing. For more information, see section 3.4.3
     # of the Ultra Algorithm Document.
     exposure_time = calculate_exposure_time(
-        nominal_deadtime_ratios,
-        pixels_below_scattering,
-        boundary_scale_factors,
-        n_pix,
-        apply_boundary_scale_factors,
+        nominal_deadtime_ratios, valid_spun_pixels, boundary_scale_factors, apply_bsf
     )
     # Use the universal spin table to determine the actual number of spins
     nominal_spin_seconds = 15.0
@@ -520,17 +505,23 @@ def get_spacecraft_exposure_times(
     # Adjust exposure time by the actual number of valid spins in the pointing
     exposure_pointing_adjusted = n_spins_in_pointing * exposure_time
 
-    return exposure_pointing_adjusted, nominal_deadtime_ratios
+    if exposure_pointing_adjusted.shape[0] != n_energy_bins:
+        exposure_pointing_adjusted = np.repeat(
+            exposure_pointing_adjusted,
+            n_energy_bins,
+            axis=0,
+        )
+    return exposure_pointing_adjusted.values, nominal_deadtime_ratios.values
 
 
 def get_efficiencies_and_geometric_function(
-    pixels_below_scattering: list[list],
-    boundary_scale_factors: np.ndarray,
-    theta_vals: np.ndarray,
-    phi_vals: np.ndarray,
+    valid_spun_pixels: xr.DataArray,
+    boundary_scale_factors: xr.DataArray,
+    theta_vals: np.ndarray | xr.DataArray,
+    phi_vals: np.ndarray | xr.DataArray,
     npix: int,
     ancillary_files: dict,
-    apply_boundary_scale_factors: bool = True,
+    apply_bsf: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute the geometric factor and efficiency for each pixel and energy bin.
@@ -539,21 +530,28 @@ def get_efficiencies_and_geometric_function(
 
     Parameters
     ----------
-    pixels_below_scattering : list
-        List of lists indicating pixels within the scattering threshold.
-        The outer list indicates spin phase steps, the middle list indicates energy
-        bins, and the inner list contains pixel indices indicating pixels that are
-        below the FWHM scattering threshold.
-    boundary_scale_factors : np.ndarray
+    valid_spun_pixels : xarray.DataArray
+        3D Array of pixels valid at each spin phase step. If rejection based on
+        scattering was set, then these are the pixels below the FWHM scattering
+        threshold and in the field of regard at each spin phase step, and energy
+        shape = (spin_phase_steps, energy_bins, n_pix). IF no rejection,
+        then these are simply the pixels in the field of regard at each spin phase step
+        shape = (spin_phase_steps, 1, n_pix).
+    boundary_scale_factors : xarray.DataArray
         Boundary scale factors for each pixel at each spin phase.
-    theta_vals : np.ndarray
-        A 2D array of theta values for each HEALPix pixel at each spin phase step.
-    phi_vals : np.ndarray
-         A 2D array of phi values for each HEALPix pixel at each spin phase step.
+    theta_vals : np.ndarray or xarray.DataArray
+        2D or 3D array of theta values. Shape is either (spin_phase_step, npix)
+        or (spin_phase_step, energy_bins, npix) when energy-dependent scattering
+        rejection is used.
+    phi_vals : np.ndarray or xarray.DataArray
+        Array of phi values with the same shape as `theta_vals`, giving the
+        corresponding phi for each pixel (and energy, if present).
     npix : int
         Number of HEALPix pixels.
     ancillary_files : dict
         Dictionary containing ancillary files.
+    apply_bsf : bool, optional
+        Whether to apply boundary scale factors. Default is True.
 
     Returns
     -------
@@ -598,45 +596,62 @@ def get_efficiencies_and_geometric_function(
     eff_summation = np.zeros((energy_bins, npix))
     sample_count = np.zeros((energy_bins, npix))
     # Loop through spin phases
-    for i, pixels_at_spin in enumerate(pixels_below_scattering):
+    spin_steps = valid_spun_pixels.sizes["spin_phase_step"]
+    for i in range(spin_steps):
         # Loop through energy bins
-        # Compute gf and eff for these theta/phi pairs
-        theta_at_spin = theta_vals[:, i]
-        phi_at_spin = phi_vals[:, i]
-        theta_at_spin_clipped = theta_vals_clipped[:, i]
-        phi_at_spin_clipped = phi_vals_clipped[:, i]
-        gf_values = get_geometric_factor(
-            phi=phi_at_spin,
-            theta=theta_at_spin,
-            quality_flag=np.zeros(len(phi_at_spin)).astype(np.uint16),
-            geometric_factor_tables=geometric_lookup_table,
-        )
+        # Get valid pixels at this spin phase
+        valid_at_spin = valid_spun_pixels.isel(
+            spin_phase_step=i
+        )  # shape: (energy, pixel)
+
         for energy_bin_idx in range(energy_bins):
-            pixel_inds = pixels_at_spin[energy_bin_idx]
+            # Determine pixel indices based on energy dependence
+            if theta_vals.ndim < 3:
+                # Energy independent calculations
+                # TODO this may cause performance issues. Revisit later.
+                pixel_inds = np.where(valid_at_spin.isel(energy=0))[0]
+                # Compute gf and eff for these theta/phi pairs
+                theta_at_spin = theta_vals[i, :]
+                phi_at_spin = phi_vals[i, :]
+                theta_at_spin_clipped = theta_vals_clipped[i, :]
+                phi_at_spin_clipped = phi_vals_clipped[i, :]
+            else:
+                # Energy dependent calculations
+                pixel_inds = np.where(valid_at_spin.isel(energy=energy_bin_idx))[0]
+                # Compute gf and eff for these theta/phi pairs
+                theta_at_spin = theta_vals[i, energy_bin_idx, :]
+                phi_at_spin = phi_vals[i, energy_bin_idx, :]
+                theta_at_spin_clipped = theta_vals_clipped[i, energy_bin_idx, :]
+                phi_at_spin_clipped = phi_vals_clipped[i, energy_bin_idx, :]
+
             if pixel_inds.size == 0:
                 continue
+
+            gf_values = get_geometric_factor(
+                phi=phi_at_spin[pixel_inds].values,
+                theta=theta_at_spin[pixel_inds].values,
+                quality_flag=np.zeros(len(phi_at_spin[pixel_inds])).astype(np.uint16),
+                geometric_factor_tables=geometric_lookup_table,
+            )
             energy = energy_bin_geometric_means[energy_bin_idx]
             # Clip energy to calibrated range
             energy_clipped = np.clip(energy, 3.0, 80.0)
             eff_values = get_efficiency(
-                np.full(phi_at_spin[pixel_inds].shape, energy_clipped),
+                np.full(pixel_inds.size, energy_clipped),
                 phi_at_spin_clipped[pixel_inds],
                 theta_at_spin_clipped[pixel_inds],
                 ancillary_files,
                 interpolator=eff_interpolator,
             )
-            # Accumulate gf and eff values
-            if apply_boundary_scale_factors:
-                gf_summation[energy_bin_idx, pixel_inds] += (
-                    gf_values[pixel_inds] * boundary_scale_factors[pixel_inds, i]
-                )
-                eff_summation[energy_bin_idx, pixel_inds] += (
-                    eff_values * boundary_scale_factors[pixel_inds, i]
-                )
-            else:
-                gf_summation[energy_bin_idx, pixel_inds] += gf_values[pixel_inds]
-                eff_summation[energy_bin_idx, pixel_inds] += eff_values
 
+            # Accumulate and sum eff and gf values
+            bsfs = (
+                boundary_scale_factors[pixel_inds, i]
+                if apply_bsf
+                else np.ones(len(pixel_inds))
+            )
+            gf_summation[energy_bin_idx, pixel_inds] += gf_values * bsfs
+            eff_summation[energy_bin_idx, pixel_inds] += eff_values * bsfs
             sample_count[energy_bin_idx, pixel_inds] += 1
     # return averaged geometric factors and efficiencies across all spin phases
     # These are now energy dependent.
@@ -645,189 +660,6 @@ def get_efficiencies_and_geometric_function(
     np.divide(gf_summation, sample_count, out=gf_averaged, where=sample_count != 0)
     np.divide(eff_summation, sample_count, out=eff_averaged, where=sample_count != 0)
     return gf_averaged, eff_averaged
-
-
-def get_helio_adjusted_data(
-    time: float,
-    exposure_time: np.ndarray,
-    geometric_factor: np.ndarray,
-    efficiency: np.ndarray,
-    ra: np.ndarray,
-    dec: np.ndarray,
-    nside: int = 128,
-    nested: bool = False,
-) -> tuple[NDArray, NDArray, NDArray]:
-    """
-    Compute 2D (Healpix index, energy) arrays for in the helio frame.
-
-    Build CG corrected exposure, efficiency, and geometric factor arrays.
-
-    Parameters
-    ----------
-    time : float
-        Median time of pointing in et.
-    exposure_time : np.ndarray
-        Spacecraft exposure. Shape = (energy, npix).
-    geometric_factor : np.ndarray
-        Geometric factor values. Shape = (energy, npix).
-    efficiency : np.ndarray
-        Efficiency values. Shape = (energy, npix).
-    ra : np.ndarray
-        Right ascension in the spacecraft frame (degrees).
-    dec : np.ndarray
-        Declination in the spacecraft frame (degrees).
-    nside : int, optional
-        The nside parameter of the Healpix tessellation (default is 128).
-    nested : bool, optional
-        Whether the Healpix tessellation is nested (default is False).
-
-    Returns
-    -------
-    helio_exposure : np.ndarray
-        A 2D array of shape (n_energy_bins, npix).
-    helio_efficiency : np.ndarray
-        A 2D array of shape (n_energy_bins, npix).
-    helio_geometric_factors : np.ndarray
-        A 2D array of shape (n_energy_bins, npix).
-
-    Notes
-    -----
-    These calculations are performed once per pointing.
-    """
-    # Verify your input data structure
-    print(f"\n{'=' * 60}")
-    print("INPUT DATA STRUCTURE CHECK")
-    print(f"{'=' * 60}")
-    print(f"ra shape: {ra.shape}")
-    print(f"dec shape: {dec.shape}")
-    print(f"exposure_time shape: {exposure_time.shape}")
-    print(f"\nFirst 10 RA values: {ra[:10]}")
-    print(f"Are RA values sorted/regular? {np.all(np.diff(ra[:100]) >= 0)}")
-    print(f"\nFirst 10 Dec values: {dec[:10]}")
-
-    # Check if ra, dec actually form a proper HEALPix grid
-    test_pix = hp.ang2pix(nside, ra, dec, nest=False, lonlat=True)
-    expected_pix = np.arange(len(ra))
-    print(
-        f"\nDo ra,dec form sequential HEALPix RING grid? {np.array_equal(test_pix, expected_pix)}"
-    )
-
-    test_pix_nested = hp.ang2pix(nside, ra, dec, nest=True, lonlat=True)
-    print(
-        f"Do ra,dec form sequential HEALPix NESTED grid? {np.array_equal(test_pix_nested, expected_pix)}"
-    )
-    # Get energy midpoints.
-    _, _, energy_bin_geometric_means = build_energy_bins()
-
-    # The Cartesian state vector representing the position and velocity of the
-    # IMAP spacecraft.
-    state = imap_state(time, ref_frame=SpiceFrame.IMAP_DPS)
-
-    # Extract the velocity part of the state vector
-    spacecraft_velocity = state[3:6]
-    # Convert (RA, Dec) angles into 3D unit vectors.
-    # Each unit vector represents a direction in the sky where the spacecraft observed
-    # and accumulated exposure time.
-    npix = hp.nside2npix(nside)
-    unit_dirs = hp.ang2vec(ra, dec, lonlat=True).T  # Shape (N, 3)
-    shape = (len(energy_bin_geometric_means), int(npix))
-    if np.any(
-        [arr.shape != shape for arr in [exposure_time, geometric_factor, efficiency]]
-    ):
-        raise ValueError(
-            f"Input arrays must have the same shape {shape}, but got "
-            f"{exposure_time.shape}, {geometric_factor.shape}, {efficiency.shape}."
-        )
-    # Initialize output array.
-    # Each row corresponds to a HEALPix pixel, and each column to an energy bin.
-    helio_exposure = np.zeros(shape)
-    helio_efficiency = np.zeros(shape)
-    helio_geometric_factors = np.zeros(shape)
-
-    # Loop through energy bins and compute transformed exposure.
-    for i, energy_mean in enumerate(energy_bin_geometric_means):
-        # Convert the midpoint energy to a velocity (km/s).
-        # Based on kinetic energy equation: E = 1/2 * m * v^2.
-        energy_velocity = (
-            np.sqrt(2 * energy_mean * UltraConstants.KEV_J / UltraConstants.MASS_H)
-            / 1e3
-        )
-
-        # Use Galilean Transform to transform the velocity wrt spacecraft
-        # to the velocity wrt heliosphere.
-        # energy_velocity * cartesian -> apply the magnitude of the velocity
-        # to every position on the grid in the despun grid.
-        helio_velocity = spacecraft_velocity.reshape(1, 3) + energy_velocity * unit_dirs
-
-        # Normalized vectors representing the direction of the heliocentric velocity.
-        helio_normalized = helio_velocity / np.linalg.norm(
-            helio_velocity, axis=1, keepdims=True
-        )
-
-        # Convert Cartesian heliocentric vectors into spherical coordinates.
-        # Result: azimuth (longitude) and elevation (latitude) in degrees.
-        helio_spherical = cartesian_to_spherical(helio_normalized)
-        az, el = helio_spherical[:, 1], helio_spherical[:, 2]
-        # Convert azimuth/elevation directions to HEALPix pixel indices.
-        hpix_idx = hp.ang2pix(nside, az, el, nest=True, lonlat=True)
-        if i == 0:
-            # Find pixels near the 0/360 boundary
-            near_boundary = (az < 10) | (az > 350)
-            print(f"\nPixels near lon=0/360 boundary: {np.sum(near_boundary)}")
-            print(
-                f"  Their az range: [{az[near_boundary].min():.2f}, {az[near_boundary].max():.2f}]"
-            )
-            print(
-                f"  Their el range: [{el[near_boundary].min():.2f}, {el[near_boundary].max():.2f}]"
-            )
-            print(
-                f"  Their hpix_idx range: [{hpix_idx[near_boundary].min()}, {hpix_idx[near_boundary].max()}]"
-            )
-        # Accumulate exposure, eff, and gf values into HEALPix pixels for this energy
-        # bin.
-        helio_exposure[i, :] = np.bincount(
-            hpix_idx, weights=exposure_time[i, :], minlength=npix
-        )
-        helio_efficiency[i, :] = np.bincount(
-            hpix_idx, weights=efficiency[i, :], minlength=npix
-        )
-        helio_geometric_factors[i, :] = np.bincount(
-            hpix_idx, weights=geometric_factor[i, :], minlength=npix
-        )
-        # CHECK: What does cartesian_to_spherical actually return?
-        print(f"\n{'=' * 60}")
-        print("COORDINATE TRANSFORMATION DEBUG")
-        print(f"{'=' * 60}")
-
-        # Test with known vectors
-        test_vector = np.array([[1, 0, 0]])  # Points along +X axis
-        test_result = cartesian_to_spherical(test_vector)
-        print(f"Test: [1,0,0] -> {test_result}")
-        print(f"  Should be: r=1, lon=0°, lat=0° (or similar)")
-
-        test_vector = np.array([[0, 1, 0]])  # Points along +Y axis
-        test_result = cartesian_to_spherical(test_vector)
-        print(f"Test: [0,1,0] -> {test_result}")
-
-        test_vector = np.array([[0, 0, 1]])  # Points along +Z axis (north pole)
-        test_result = cartesian_to_spherical(test_vector)
-        print(f"Test: [0,0,1] -> {test_result}")
-        print(f"  Should be: r=1, lon=any, lat=90°")
-
-        # Now check actual transformation
-        helio_spherical = cartesian_to_spherical(helio_normalized)
-        print(f"\nActual transformation:")
-        print(f"  helio_spherical[:5]: {helio_spherical[:5]}")
-
-        az, el = helio_spherical[:, 1], helio_spherical[:, 2]
-
-        # Verify these are actually lon/lat
-        print(f"\nExtracted az (should be lon 0-360°):")
-        print(f"  min={az.min():.2f}, max={az.max():.2f}, mean={az.mean():.2f}")
-        print(f"Extracted el (should be lat -90 to 90°):")
-        print(f"  min={el.min():.2f}, max={el.max():.2f}, mean={el.mean():.2f}")
-
-    return helio_exposure, helio_efficiency, helio_geometric_factors
 
 
 def get_spacecraft_background_rates(

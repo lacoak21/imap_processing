@@ -11,6 +11,7 @@ from pathlib import Path
 import imap_data_access
 import numpy as np
 import xarray as xr
+from cdflib.logging import logger as cdflib_logger
 from cdflib.xarray import cdf_to_xarray, xarray_to_cdf
 from cdflib.xarray.cdf_to_xarray import ISTP_TO_XARRAY_ATTRS
 
@@ -49,6 +50,9 @@ def load_cdf(
     # round-trip of writing and then loading a cdf keeps the dataset the same.
     if "to_datetime" not in kwargs:
         kwargs["to_datetime"] = False  # type: ignore
+    # By default, load fillvalues as nan
+    if "fillval_to_nan" not in kwargs:
+        kwargs["fillval_to_nan"] = True  # type: ignore
     dataset = cdf_to_xarray(file_path, **kwargs)
 
     # cdf_to_xarray converts single-value attributes to lists
@@ -166,7 +170,17 @@ def write_cdf(
     if "compression" not in extra_cdf_kwargs:
         extra_cdf_kwargs["compression"] = 6  # type: ignore
 
-    xarray_to_cdf(dataset, str(file_path), **extra_cdf_kwargs)
+    prev_cdflib_level = cdflib_logger.level
+    try:
+        if not extra_cdf_kwargs.get("istp", False):
+            # Suppress cdflib logging messages for data levels that don't need
+            # strict ISTP compliance
+            logger.info("Disabling cdflib ISTP logging for level 1 data products")
+            cdflib_logger.setLevel(logging.ERROR)
+        xarray_to_cdf(dataset, str(file_path), **extra_cdf_kwargs)
+    finally:
+        # Set back to the previous logging level
+        cdflib_logger.setLevel(prev_cdflib_level)
     return file_path
 
 

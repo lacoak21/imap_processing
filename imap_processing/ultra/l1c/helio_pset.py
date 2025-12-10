@@ -3,29 +3,32 @@
 import logging
 import pickle
 
-import astropy_healpix.healpy as hp
 import numpy as np
 import pandas as pd
 import xarray as xr
 
 from imap_processing.cdf.utils import parse_filename_like
 from imap_processing.quality_flags import ImapPSETUltraFlags
+from imap_processing.spice.geometry import SpiceFrame
+from imap_processing.spice.repoint import get_pointing_times_from_id
 from imap_processing.spice.time import (
     et_to_met,
     met_to_ttj2000ns,
     ttj2000ns_to_et,
 )
+from imap_processing.ultra.constants import SIM_KERNELS_FOR_HELIO_INDEX_MAPS
 from imap_processing.ultra.l1b.ultra_l1b_culling import get_de_rejection_mask
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
     build_energy_bins,
     calculate_fwhm_spun_scattering,
-    get_spacecraft_pointing_lookup_tables,
+)
+from imap_processing.ultra.l1c.make_helio_index_maps import (
+    make_helio_index_maps_with_nominal_kernels,
 )
 from imap_processing.ultra.l1c.ultra_l1c_culling import compute_culling_mask
 from imap_processing.ultra.l1c.ultra_l1c_pset_bins import (
     get_efficiencies_and_geometric_function,
     get_energy_delta_minus_plus,
-    get_helio_adjusted_data,
     get_spacecraft_background_rates,
     get_spacecraft_exposure_times,
     get_spacecraft_histogram,
@@ -72,10 +75,15 @@ def calculate_helio_pset(
     dataset : xarray.Dataset
         Dataset containing the data.
     """
+    # Do not cull events based on scattering thresholds
+    reject_scattering = False
+    # Do not apply boundary scale factor corrections
+    apply_bsf = False
+    nside = 32
+    num_spin_steps = 720
     repoint = de_dataset.attrs.get("Repointing", "")
     repoint_id = int(repoint.replace("repoint", ""))
 
-    apply_boundary_scale_factors = False
     sensor_id = int(parse_filename_like(name)["sensor"][0:2])
     pset_dict: dict[str, np.ndarray] = {}
     # Select only the species we are interested in.
@@ -100,6 +108,7 @@ def calculate_helio_pset(
     rejected = get_de_rejection_mask(
         species_dataset["quality_scattering"].values,
         species_dataset["quality_outliers"].values,
+        reject_scattering,
     )
     species_dataset = species_dataset.isel(epoch=~rejected)
 
@@ -110,15 +119,31 @@ def calculate_helio_pset(
         species_dataset["velocity_dps_helio"].values
         / v_mag_helio_spacecraft[:, np.newaxis]
     )
+    # Get the start and stop times of the pointing period
+    repoint_id = species_dataset.attrs.get("Repointing", None)
+    if repoint_id is None:
+        raise ValueError("Repointing ID attribute is missing from the dataset.")
+    instrument_frame = (
+        SpiceFrame.IMAP_ULTRA_90 if sensor_id == 90 else SpiceFrame.IMAP_ULTRA_45
+    )
+    pointing_range_met = get_pointing_times_from_id(repoint_id)
+
+    logger.info("Generating helio pointing lookup tables.")
+
+    helio_pointing_ds = make_helio_index_maps_with_nominal_kernels(
+        kernel_paths=SIM_KERNELS_FOR_HELIO_INDEX_MAPS,
+        nside=nside,
+        spin_duration=15.0,
+        num_steps=num_spin_steps,
+        instrument_frame=instrument_frame,
+        compute_bsf=apply_bsf,
+    )
+    boundary_scale_factors = helio_pointing_ds.bsf
+    theta_vals = helio_pointing_ds.theta
+    phi_vals = helio_pointing_ds.phi
+    fov_index = helio_pointing_ds.index
+
     intervals, _, energy_bin_geometric_means = build_energy_bins()
-    # Get lookup table for FOR indices by spin phase step
-    (
-        for_indices_by_spin_phase,
-        theta_vals,
-        phi_vals,
-        ra_and_dec,
-        boundary_scale_factors,
-    ) = get_spacecraft_pointing_lookup_tables(ancillary_files, instrument_id)
 
     logger.info("calculating spun FWHM scattering values.")
     scattering_file = f"scattering_results_{sensor_id}_helio.pkl"
@@ -134,7 +159,7 @@ def calculate_helio_pset(
         logger.info("calculating spun FWHM scattering values.")
         pixels_below_scattering, scattering_theta, scattering_phi, scattering_thresholds = (
             calculate_fwhm_spun_scattering(
-                for_indices_by_spin_phase,
+                fov_index,
                 theta_vals,
                 phi_vals,
                 ancillary_files,
@@ -154,7 +179,6 @@ def calculate_helio_pset(
             )
         logger.info(f"Saved scattering results to {scattering_file}")
 
-    nside = hp.npix2nside(for_indices_by_spin_phase.shape[0])
     counts, latitude, longitude, n_pix = get_spacecraft_histogram(
         vhat_dps_helio,
         species_dataset["energy_heliosphere"].values,
@@ -166,13 +190,6 @@ def calculate_helio_pset(
     )
     healpix = np.arange(n_pix)
 
-    # Get the start and stop times of the pointing period
-    repoint_id = species_dataset.attrs.get("Repointing", None)
-    if repoint_id is None:
-        raise ValueError("Repointing ID attribute is missing from the dataset.")
-
-    # pointing_range_met = get_pointing_times_from_id(repoint_id)
-    pointing_range_met = (pointing_start, pointing_stop)
     logger.info("Calculating spacecraft exposure times with deadtime correction.")
     exposure_time, deadtime_ratios = get_spacecraft_exposure_times(
         rates_dataset,
@@ -180,13 +197,11 @@ def calculate_helio_pset(
         pixels_below_scattering,
         boundary_scale_factors,
         pointing_range_met,
-        n_pix=n_pix,
-        apply_boundary_scale_factors=apply_boundary_scale_factors,
+        n_energy_bins=len(energy_bin_geometric_means),
         sensor_id=sensor_id,
         ancillary_files=ancillary_files,
+        apply_bsf=apply_bsf,
     )
-    logger.info("Calculating spun efficiencies and geometric function.")
-    # calculate efficiency and geometric function as a function of energy
 
     eff_file = f"eff_gf_exp{sensor_id}_helio.pkl"
     try:
@@ -205,7 +220,7 @@ def calculate_helio_pset(
             phi_vals,
             n_pix,
             ancillary_files,
-            apply_boundary_scale_factors,
+            apply_bsf,
         )
         with open(eff_file, "wb") as f:
             pickle.dump(
@@ -229,19 +244,6 @@ def calculate_helio_pset(
         nside=nside,
     )
 
-    # mid_time = ttj2000ns_to_et(met_to_ttj2000ns((np.sum(pointing_range_met)) / 2))
-    mid_time = ttj2000ns_to_et(met_to_ttj2000ns(pointing_mid_time))
-
-    logger.info("Adjusting data for helio frame.")
-    exposure_time, efficiencies, geometric_function = get_helio_adjusted_data(
-        mid_time,
-        exposure_time,
-        geometric_function,
-        efficiencies,
-        ra_and_dec[:, 0],
-        ra_and_dec[:, 1],
-        nside=nside,
-    )
     sensitivity = efficiencies * geometric_function
 
     start: float = np.min(species_dataset["event_times"].values)

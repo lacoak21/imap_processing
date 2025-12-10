@@ -69,8 +69,12 @@ def calculate_spacecraft_pset(
     dataset : xarray.Dataset
         Dataset containing the data.
     """
+    # Do not cull events based on scattering thresholds
+    reject_scattering = False
+    # Do not apply boundary scale factor corrections
+    apply_bsf = False
     pset_dict: dict[str, np.ndarray] = {}
-    apply_boundary_scale_factors = False
+
     sensor_id = int(parse_filename_like(name)["sensor"][0:2])
     indices = np.where(np.isin(de_dataset["ebin"].values, species_id))[0]
     species_dataset = de_dataset.isel(epoch=indices)
@@ -84,6 +88,7 @@ def calculate_spacecraft_pset(
     rejected = get_de_rejection_mask(
         species_dataset["quality_scattering"].values,
         species_dataset["quality_outliers"].values,
+        reject_scattering,
     )
     species_dataset = species_dataset.isel(epoch=~rejected)
 
@@ -106,32 +111,33 @@ def calculate_spacecraft_pset(
     ) = get_spacecraft_pointing_lookup_tables(ancillary_files, instrument_id)
 
     logger.info("calculating spun FWHM scattering values.")
-    pixels_below_scattering = scattering_theta = scattering_phi = scattering_thresholds = None
+    valid_spun_pixels = scattering_theta = scattering_phi = scattering_thresholds = None
     scattering_file = f"scattering_results_{sensor_id}.pkl"
     try:
         with open(scattering_file, "rb") as f:
             data = pickle.load(f)
-        pixels_below_scattering = data["pixels_below_scattering"]
+        valid_spun_pixels = data["valid_spun_pixels"]
         scattering_theta = data["scattering_theta"]
         scattering_phi = data["scattering_phi"]
         scattering_thresholds = data["scattering_thresholds"]
         logger.info(f"Loaded scattering results from {scattering_file}")
     except (FileNotFoundError, EOFError, pickle.UnpicklingError):
         logger.info("calculating spun FWHM scattering values.")
-        pixels_below_scattering, scattering_theta, scattering_phi, scattering_thresholds = (
+        valid_spun_pixels, scattering_theta, scattering_phi, scattering_thresholds = (
             calculate_fwhm_spun_scattering(
                 for_indices_by_spin_phase,
                 theta_vals,
                 phi_vals,
                 ancillary_files,
                 instrument_id,
+                reject_scattering
             )
         )
         # Save all four arrays
         with open(scattering_file, "wb") as f:
             pickle.dump(
                 {
-                    "pixels_below_scattering": pixels_below_scattering,
+                    "valid_spun_pixels": valid_spun_pixels,
                     "scattering_theta": scattering_theta,
                     "scattering_phi": scattering_phi,
                     "scattering_thresholds": scattering_thresholds,
@@ -140,7 +146,7 @@ def calculate_spacecraft_pset(
             )
         logger.info(f"Saved scattering results to {scattering_file}")
     # Determine nside from the lookup table
-    nside = hp.npix2nside(len(for_indices_by_spin_phase))
+    nside = hp.npix2nside(for_indices_by_spin_phase.sizes["pixel"])
     counts, latitude, longitude, n_pix = get_spacecraft_histogram(
         vhat_dps_spacecraft,
         species_dataset["energy_spacecraft"].values,
@@ -171,13 +177,13 @@ def calculate_spacecraft_pset(
     exposure_pointing, deadtime_ratios = get_spacecraft_exposure_times(
         rates_dataset,
         params_dataset,
-        pixels_below_scattering,
+        valid_spun_pixels,
         boundary_scale_factors,
         pointing_range_met,
-        n_pix=n_pix,
-        apply_boundary_scale_factors=apply_boundary_scale_factors,
+        n_energy_bins=len(energy_bin_geometric_means),
         sensor_id=sensor_id,
         ancillary_files=ancillary_files,
+        apply_bsf=apply_bsf,
     )
     # ADD THIS IMMEDIATELY AFTER:
     logger.info("IMMEDIATELY after get_spacecraft_exposure_times:")
@@ -200,13 +206,13 @@ def calculate_spacecraft_pset(
     except (FileNotFoundError, EOFError, pickle.UnpicklingError, KeyError):
         logger.info("calculating spun efficiencies and geometric function.")
         geometric_function, efficiencies = get_efficiencies_and_geometric_function(
-            pixels_below_scattering,
+            valid_spun_pixels,
             boundary_scale_factors,
             theta_vals,
             phi_vals,
             n_pix,
             ancillary_files,
-            apply_boundary_scale_factors,
+            apply_bsf,
         )
         with open(eff_file, "wb") as f:
             pickle.dump(
@@ -219,7 +225,7 @@ def calculate_spacecraft_pset(
             )
         logger.info(f"Saved efficiencies and geometric function to {eff_file}")
     sensitivity = efficiencies * geometric_function
-    logger.info("Calculating background rates.")
+
     # Calculate background rates
     background_rates = get_spacecraft_background_rates(
         rates_dataset,
