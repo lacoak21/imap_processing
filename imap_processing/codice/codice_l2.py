@@ -968,11 +968,9 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
         (l2_dataset["spin_sector"] + 12) % 24,
         l2_dataset["spin_sector"],
     )
-    l2_dataset = l2_dataset.assign_coords(
-        spin_angle=(
-            l2_dataset["spin_sector"].dims,
-            l2_dataset["spin_sector"].data * 15.0 + 7.5,
-        )
+    l2_dataset["spin_angle"] = xr.DataArray(
+        data=l2_dataset["spin_sector"].data * 15.0 + 7.5,
+        dims=l2_dataset["spin_sector"].dims,
     )
     l2_dataset["spin_angle"] = xr.where(
         (l2_dataset["spin_sector"] > 23), np.nan, l2_dataset["spin_angle"]
@@ -1014,8 +1012,7 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
     valid_mask = (tof_bits >= 0) & (tof_bits < 1024)
     tof_ns[valid_mask] = tof_bit_to_ns[tof_bits[valid_mask]]
     # Reshape back to original shape
-    l2_dataset["tof"].data = tof_ns.reshape(l2_dataset["tof"].shape)
-
+    l2_dataset["tof"].data = tof_ns.astype(np.float32).reshape(l2_dataset["tof"].shape)
     # Convert energy step to energy in keV
     esa_kev = get_mpq_calc_energy_conversion_vals(dependencies)
     energy_steps = l2_dataset["energy_step"].values.flatten()
@@ -1029,7 +1026,52 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
         l2_dataset["energy_step"].dims,
         kev.reshape(l2_dataset["energy_step"].shape),
     )
-
+    # Drop unused variables
+    vars_to_drop = ["spare", "sw_bias_gain_mode", "st_bias_gain_mode", "k_factor"]
+    l2_dataset = l2_dataset.drop_vars(vars_to_drop)
+    # Update variable attributes
+    l2_dataset.attrs.update(
+        cdf_attrs.get_global_attributes("imap_codice_l2_lo-direct-events")
+    )
+    for var in l2_dataset.data_vars:
+        l2_dataset[var].attrs.update(cdf_attrs.get_variable_attributes(var))
+    # Update coord attributes
+    l2_dataset["priority"].attrs.update(
+        cdf_attrs.get_variable_attributes("priority", check_schema=False)
+    )
+    l2_dataset["event_num"].attrs.update(
+        cdf_attrs.get_variable_attributes("event_num", check_schema=False)
+    )
+    l2_dataset["epoch"].attrs.update(
+        cdf_attrs.get_variable_attributes("epoch", check_schema=False)
+    )
+    l2_dataset = l2_dataset.assign_coords(
+        epoch_delta_minus=xr.DataArray(
+            l2_dataset["epoch_delta_minus"].data.astype(np.int64),
+            dims=l2_dataset["epoch_delta_minus"].dims,
+            attrs=cdf_attrs.get_variable_attributes(
+                "epoch_delta_minus", check_schema=False
+            ),
+        ),
+        epoch_delta_plus=xr.DataArray(
+            l2_dataset["epoch_delta_plus"].data.astype(np.int64),
+            dims=l2_dataset["epoch_delta_plus"].dims,
+            attrs=cdf_attrs.get_variable_attributes(
+                "epoch_delta_plus", check_schema=False
+            ),
+        ),
+    )
+    # Add labels
+    l2_dataset["event_num_label"] = xr.DataArray(
+        l2_dataset["event_num"].values.astype(str),
+        dims=("event_num",),
+        attrs=cdf_attrs.get_variable_attributes("event_num_label", check_schema=False),
+    )
+    l2_dataset["priority_label"] = xr.DataArray(
+        l2_dataset["priority_label"].values,
+        dims=("priority",),
+        attrs=cdf_attrs.get_variable_attributes("priority_label", check_schema=False),
+    )
     return l2_dataset
 
 

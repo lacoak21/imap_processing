@@ -21,6 +21,7 @@ energy_attrs: &energy_default
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Characteristic
 
 # ------------------------------- Coordinates -------------------------------
+
 epoch_delta_minus:
   CATDESC: Time from acquisition start to acquisition center
   FIELDNAM: epoch delta minus
@@ -46,7 +47,6 @@ epoch_delta_plus:
   VALIDMAX: *max_int
   VAR_TYPE: support_data
   DICT_KEY: SPASE>Support>SupportQuantity:Temporal,Qualifier:Uncertainty
-
 energy_cno:
   <<: *energy_default
   DELTA_MINUS_VAR: energy_cno_minus

@@ -1,89 +1,321 @@
 # ----------------------------- Useful variables -----------------------------
+uint8_fillval: &uint8_fillval 255
+uint16_fillval: &uint16_fillval 65535
 real_fillval: &real_fillval -1.0e+31
-max_float: &max_float 3.4028235e+38
-
+min_int: &min_int -9223372036854775808
+max_int: &max_int 9223372036854775807
 # ------------------------------- Coordinates -------------------------------
-elevation_angle:
-  CATDESC: Elevation Angle
-  FIELDNAM: Elevation Angle
-  FORMAT: I8
-  LABLAXIS: Elevation Angle
+priority:
+  CATDESC: Priority Level
+  FIELDNAM: Priority Level
+  FILLVAL: *uint8_fillval
+  FORMAT: I1
+  LABLAXIS: Priority
   SCALETYP: linear
-  UNITS: degrees
-  VALIDMAX: 180.0
-  VALIDMIN: 0.0
+  UNITS: " "
+  VALIDMIN: 0
+  VALIDMAX: 7
   VAR_TYPE: support_data
+
+event_num:
+  CATDESC: Event Number
+  FIELDNAM: Event Number
+  FILLVAL: *uint16_fillval
+  FORMAT: I5
+  LABLAXIS: Event Number
+  SCALETYP: linear
+  UNITS: " "
+  VALIDMIN: 0
+  VALIDMAX: 10000
+  VAR_TYPE: support_data
+
+epoch_delta_minus:
+  CATDESC: Time from acquisition start to acquisition center
+  FIELDNAM: epoch delta minus
+  FILLVAL: -9223372036854775808
+  FORMAT: I18
+  LABLAXIS: Epoch Delta Minus
+  SCALETYP: linear
+  UNITS: ns
+  VALIDMIN: *min_int
+  VALIDMAX: *max_int
+  VAR_TYPE: support_data
+  DICT_KEY: SPASE>Support>SupportQuantity:Temporal,Qualifier:Uncertainty
+
+epoch_delta_plus:
+  CATDESC: Time from acquisition center to acquisition end
+  FIELDNAM: epoch delta plus
+  FILLVAL: -9223372036854775808
+  FORMAT: I18
+  LABLAXIS: Epoch Delta Plus
+  SCALETYP: linear
+  UNITS: ns
+  VALIDMIN: *min_int
+  VALIDMAX: *max_int
+  VAR_TYPE: support_data
+  DICT_KEY: SPASE>Support>SupportQuantity:Temporal,Qualifier:Uncertainty
+
+# ------------------------------- Data Variables -------------------------------
+num_events:
+  CATDESC: Number of Events per Priority
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  FIELDNAM: Number of Events
+  FILLVAL: *uint16_fillval
+  FORMAT: I5
+  LABLAXIS: Number of Events
+  LABL_PTR_1: priority_label
+  SCALETYP: linear
+  UNITS: " "
+  VALIDMAX: 10000
+  VALIDMIN: 0
+  VAR_TYPE: data
+
+data_quality:
+  CATDESC: Data Quality Flag per Priority
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  FIELDNAM: Data Quality
+  FILLVAL: *uint8_fillval
+  FORMAT: I3
+  LABLAXIS: Data Quality
+  LABL_PTR_1: priority_label
+  SCALETYP: linear
+  UNITS: " "
+  VALIDMAX: 255
+  VALIDMIN: 0
+  VAR_TYPE: data
+
+energy_step:
+  CATDESC: Energy Step Index
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  DEPEND_2: event_num
+  FIELDNAM: Energy Step
+  FILLVAL: *uint8_fillval
+  FORMAT: I3
+  LABLAXIS: Energy Step
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
+  SCALETYP: linear
+  UNITS: " "
+  VALIDMAX: 127
+  VALIDMIN: 0
+  VAR_TYPE: data
+
+energy_per_charge:
+  CATDESC: Energy per Charge
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  DEPEND_2: event_num
+  FIELDNAM: Energy per Charge
+  FILLVAL: *real_fillval
+  FORMAT: F12.4
+  LABLAXIS: Energy per Charge
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
+  SCALETYP: linear
+  UNITS: keV/q
+  VALIDMAX: 200.0
+  VALIDMIN: 0.0
+  VAR_TYPE: data
+
+apd_energy:
+  CATDESC: APD Energy
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  DEPEND_2: event_num
+  FIELDNAM: APD Energy
+  FILLVAL: *real_fillval
+  FORMAT: F12.4
+  LABLAXIS: APD Energy
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
+  SCALETYP: linear
+  UNITS: keV
+  VALIDMAX: 512.0
+  VALIDMIN: 0.0
+  VAR_TYPE: data
+
+gain:
+  CATDESC: Gain Setting
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  DEPEND_2: event_num
+  FIELDNAM: Gain
+  FILLVAL: *uint8_fillval
+  FORMAT: I1
+  LABLAXIS: Gain
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
+  SCALETYP: linear
+  UNITS: " "
+  VALIDMAX: 1
+  VALIDMIN: 0
+  VAR_TYPE: data
+
+apd_id:
+  CATDESC: APD Identifier
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  DEPEND_2: event_num
+  FIELDNAM: APD ID
+  FILLVAL: *uint8_fillval
+  FORMAT: I2
+  LABLAXIS: APD ID
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
+  SCALETYP: linear
+  UNITS: " "
+  VALIDMAX: 31
+  VALIDMIN: 0
+  VAR_TYPE: data
+
+position:
+  CATDESC: Position Index
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  DEPEND_2: event_num
+  FIELDNAM: Position
+  FILLVAL: *uint8_fillval
+  FORMAT: I2
+  LABLAXIS: Position
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
+  SCALETYP: linear
+  UNITS: " "
+  VALIDMAX: 31
+  VALIDMIN: 0
+  VAR_TYPE: data
+
+multi_flag:
+  CATDESC: Multiple Event Flag
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  DEPEND_2: event_num
+  FIELDNAM: Multi Flag
+  FILLVAL: *uint8_fillval
+  FORMAT: I1
+  LABLAXIS: Multi Flag
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
+  SCALETYP: linear
+  UNITS: " "
+  VALIDMAX: 1
+  VALIDMIN: 0
+  VAR_TYPE: data
+
+type:
+  CATDESC: Event Type
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  DEPEND_2: event_num
+  FIELDNAM: Type
+  FILLVAL: *uint8_fillval
+  FORMAT: I1
+  LABLAXIS: Type
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
+  SCALETYP: linear
+  UNITS: " "
+  VALIDMAX: 4
+  VALIDMIN: 0
+  VAR_TYPE: data
+
+tof:
+  CATDESC: Time of Flight
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  DEPEND_2: event_num
+  FIELDNAM: Time of Flight
+  FILLVAL: *real_fillval
+  FORMAT: F12.4
+  LABLAXIS: TOF
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
+  SCALETYP: linear
+  UNITS: ns
+  VALIDMAX: 1024.0
+  VALIDMIN: 0.0
+  VAR_TYPE: data
 
 spin_sector:
   CATDESC: Spin Sector Index
   FIELDNAM: Spin Sector Index
-  FILLVAL: -1
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  DEPEND_2: event_num
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
+  FILLVAL: *uint8_fillval
   FORMAT: I2
-  LABLAXIS: " "
+  LABLAXIS: Spin Sector
   SCALETYP: linear
   UNITS: " "
   VALIDMIN: 0
-  VALIDMAX: 24
+  VALIDMAX: 23
   VAR_TYPE: support_data
 
-# spin angle:
 spin_angle:
-  VAR_TYPE: support_data
+  VAR_TYPE: data
   CATDESC: Spin Angle
   FIELDNAM: Spin Angle
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  DEPEND_2: event_num
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
   SCALETYP: linear
   UNITS: degrees
   FILLVAL: *real_fillval
   VALIDMAX: 360.0
   VALIDMIN: 0.0
-  FORMAT: '%f'
+  FORMAT: F8.2
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:ArrivalDirection,Qualifier:DirectionAngle.AzimuthAngle
-  DEPEND_1: spin_sector
-  LABL_PTR_1: spin_sector_label
 
-# ------------------------------- labels -------------------------------
-elevation_angle_label:
+elevation_angle:
   CATDESC: Elevation Angle
   FIELDNAM: Elevation Angle
-  FORMAT: A6
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  DEPEND_2: event_num
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
+  FORMAT: F8.2
+  FILLVAL: *real_fillval
+  LABLAXIS: Elevation Angle
+  SCALETYP: linear
+  UNITS: degrees
+  VALIDMAX: 180.0
+  VALIDMIN: 0.0
+  VAR_TYPE: data
+
+esa_step:
+  CATDESC: Energy per charge (E/q) sweeping step
+  FIELDNAM: Energy Index
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  DEPEND_2: event_num
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
+  FILLVAL: *uint8_fillval
+  FORMAT: I3
+  LABLAXIS: Energy Index
+  SCALETYP: linear
+  UNITS: " "
+  VALIDMIN: 0
+  VALIDMAX: 127
+  VAR_TYPE: data
+# ------------------------------- labels -------------------------------
+
+event_num_label:
+  CATDESC: Event Number Label
+  FIELDNAM: Event Number
+  FORMAT: A5
   VAR_TYPE: metadata
 
-# ------------------------------- species -------------------------------
-# lo-angular attribute templates (combined versions of the previous entries)
-lo-angular-attrs:
-    CATDESC: "{species} {direction} species"
-    DEPEND_0: epoch
-    DEPEND_1: esa_step
-    DEPEND_2: spin_sector
-    DEPEND_3: elevation_angle
-    DISPLAY_TYPE: time_series
-    FIELDNAM: "{direction} - {species}"
-    FILLVAL: *real_fillval
-    FORMAT: F13.4
-    LABL_PTR_1: esa_step_label
-    LABL_PTR_2: spin_sector_label
-    LABL_PTR_3: elevation_angle_label
-    UNITS: "#/(cm^2-s-sr-keV/q)"
-    VALIDMIN: 0.0
-    VALIDMAX: 16777216.0
-    VAR_TYPE: data
-    DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
-
-lo-angular-unc-attrs:
-    CATDESC: "{species} {direction} species uncertainty"
-    DEPEND_0: epoch
-    DEPEND_1: esa_step
-    DEPEND_2: spin_sector
-    DEPEND_3: elevation_angle
-    DISPLAY_TYPE: time_series
-    FIELDNAM: "{direction} - {species}"
-    FILLVAL: *real_fillval
-    FORMAT: F13.4
-    LABL_PTR_1: esa_step_label
-    LABL_PTR_2: spin_sector_label
-    LABL_PTR_3: elevation_angle_label
-    UNITS: "#/(cm^2-s-sr-keV/q)"
-    VALIDMIN: 0.0
-    VALIDMAX: 16777216.0
-    VAR_TYPE: data
-    DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Uncertainty
+priority_label:
+  CATDESC: Priority Level Label
+  FIELDNAM: Priority Level
+  FORMAT: A1
+  VAR_TYPE: metadata

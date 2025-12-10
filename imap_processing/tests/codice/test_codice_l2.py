@@ -557,4 +557,6 @@ def test_codice_l2_lo_de(mock_get_file_paths, codice_lut_path):
 
     processed_l2_ds.attrs["Data_version"] = "001"
     assert processed_l2_ds.attrs["Logical_source"] == "imap_codice_l2_lo-direct-events"
-    write_cdf(processed_l2_ds)
+    print(processed_l2_ds)
+    file = write_cdf(processed_l2_ds)
+    load_cdf(file)
