@@ -958,7 +958,7 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
     ).reshape(elevation_angle_shape)
     l2_dataset["elevation_angle"] = (
         l2_dataset["position"].dims,
-        elevation_angle,
+        elevation_angle.astype(np.float32),
     )
     # Convert spin_sector to spin_angle in degrees
     # Use equation from section 11.2.2 of algorithm document
@@ -971,7 +971,7 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
     l2_dataset["spin_angle"] = xr.DataArray(
         data=l2_dataset["spin_sector"].data * 15.0 + 7.5,
         dims=l2_dataset["spin_sector"].dims,
-    )
+    ).astype(np.float32)
     l2_dataset["spin_angle"] = xr.where(
         (l2_dataset["spin_sector"] > 23), np.nan, l2_dataset["spin_angle"]
     )
@@ -1001,7 +1001,9 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
         else:
             energy_kevs.append(np.nan)
 
-    l2_dataset["apd_energy"].data = np.array(energy_kevs).reshape(apd_energy_shape)
+    l2_dataset["apd_energy"].data = (
+        np.array(energy_kevs).astype(np.float32).reshape(apd_energy_shape)
+    )
 
     # Calculate TOF in nanoseconds
     tof_bit_to_ns = get_mpq_calc_tof_conversion_vals(dependencies)
@@ -1013,6 +1015,7 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
     tof_ns[valid_mask] = tof_bit_to_ns[tof_bits[valid_mask]]
     # Reshape back to original shape
     l2_dataset["tof"].data = tof_ns.astype(np.float32).reshape(l2_dataset["tof"].shape)
+
     # Convert energy step to energy in keV
     esa_kev = get_mpq_calc_energy_conversion_vals(dependencies)
     energy_steps = l2_dataset["energy_step"].values.flatten()
@@ -1024,7 +1027,7 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
     # Reshape back to original shape
     l2_dataset["energy_per_charge"] = (
         l2_dataset["energy_step"].dims,
-        kev.reshape(l2_dataset["energy_step"].shape),
+        kev.astype(np.float32).reshape(l2_dataset["energy_step"].shape),
     )
     # Drop unused variables
     vars_to_drop = ["spare", "sw_bias_gain_mode", "st_bias_gain_mode", "k_factor"]
@@ -1042,36 +1045,52 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
     l2_dataset["event_num"].attrs.update(
         cdf_attrs.get_variable_attributes("event_num", check_schema=False)
     )
-    l2_dataset["epoch"].attrs.update(
-        cdf_attrs.get_variable_attributes("epoch", check_schema=False)
+    l2_dataset["epoch"] = xr.DataArray(
+        l2_dataset["epoch"].data,
+        dims="epoch",
+        attrs=cdf_attrs.get_variable_attributes("epoch", check_schema=False),
     )
-    l2_dataset = l2_dataset.assign_coords(
-        epoch_delta_minus=xr.DataArray(
-            l2_dataset["epoch_delta_minus"].data.astype(np.int64),
-            dims=l2_dataset["epoch_delta_minus"].dims,
-            attrs=cdf_attrs.get_variable_attributes(
-                "epoch_delta_minus", check_schema=False
-            ),
+    l2_dataset["epoch_delta_minus"] = xr.DataArray(
+        data=l2_dataset["epoch_delta_minus"].data.astype(np.int64),
+        dims="epoch",
+        attrs=cdf_attrs.get_variable_attributes(
+            "epoch_delta_minus", check_schema=False
         ),
-        epoch_delta_plus=xr.DataArray(
-            l2_dataset["epoch_delta_plus"].data.astype(np.int64),
-            dims=l2_dataset["epoch_delta_plus"].dims,
-            attrs=cdf_attrs.get_variable_attributes(
-                "epoch_delta_plus", check_schema=False
-            ),
-        ),
+    )
+    l2_dataset["epoch_delta_plus"] = xr.DataArray(
+        l2_dataset["epoch_delta_plus"].data.astype(np.int64),
+        dims="epoch",
+        attrs=cdf_attrs.get_variable_attributes("epoch_delta_plus", check_schema=False),
     )
     # Add labels
     l2_dataset["event_num_label"] = xr.DataArray(
-        l2_dataset["event_num"].values.astype(str),
+        l2_dataset["event_num"].values.astype(str).astype("<U5"),
         dims=("event_num",),
         attrs=cdf_attrs.get_variable_attributes("event_num_label", check_schema=False),
     )
     l2_dataset["priority_label"] = xr.DataArray(
-        l2_dataset["priority_label"].values,
+        l2_dataset["priority_label"].values.astype("<U1"),
         dims=("priority",),
         attrs=cdf_attrs.get_variable_attributes("priority_label", check_schema=False),
     )
+
+    print("\n=== DATA TYPE CHECK ===")
+    print(f"event_num_label dtype: {l2_dataset['event_num_label'].dtype}")
+    print(f"priority_label dtype: {l2_dataset['priority_label'].dtype}")
+    print(f"elevation_angle dtype: {l2_dataset['elevation_angle'].dtype}")
+    print(f"spin_angle dtype: {l2_dataset['spin_angle'].dtype}")
+    print(f"apd_energy dtype: {l2_dataset['apd_energy'].dtype}")
+    print(f"energy_per_charge dtype: {l2_dataset['energy_per_charge'].dtype}")
+    print(f"tof dtype: {l2_dataset['tof'].dtype}")
+    print(f"epoch_delta_minus dtype: {l2_dataset['epoch_delta_minus'].dtype}")
+    print(f"epoch_delta_plus dtype: {l2_dataset['epoch_delta_plus'].dtype}")
+
+    # Check for any unexpected dtypes
+    for var in l2_dataset.data_vars:
+        if "U" in str(l2_dataset[var].dtype) and "|S" not in str(l2_dataset[var].dtype):
+            if "<U" not in str(l2_dataset[var].dtype):
+                print(f"⚠️  WARNING: {var} has dtype {l2_dataset[var].dtype}")
+
     return l2_dataset
 
 

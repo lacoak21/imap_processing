@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 from imap_data_access import AncillaryInput, ProcessingInputCollection
+from sammi.validation import CDFValidator
 
 from imap_processing import imap_module_directory
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
@@ -557,6 +558,7 @@ def test_codice_l2_lo_de(mock_get_file_paths, codice_lut_path):
 
     processed_l2_ds.attrs["Data_version"] = "001"
     assert processed_l2_ds.attrs["Logical_source"] == "imap_codice_l2_lo-direct-events"
-    print(processed_l2_ds)
     file = write_cdf(processed_l2_ds)
+    errors = CDFValidator().validate_raw(file)
+    assert not errors
     load_cdf(file)

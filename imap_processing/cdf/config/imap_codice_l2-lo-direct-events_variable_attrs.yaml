@@ -32,6 +32,7 @@ event_num:
 epoch_delta_minus:
   CATDESC: Time from acquisition start to acquisition center
   FIELDNAM: epoch delta minus
+  DEPEND_0: epoch
   FILLVAL: -9223372036854775808
   FORMAT: I18
   LABLAXIS: Epoch Delta Minus
@@ -45,6 +46,7 @@ epoch_delta_minus:
 epoch_delta_plus:
   CATDESC: Time from acquisition center to acquisition end
   FIELDNAM: epoch delta plus
+  DEPEND_0: epoch
   FILLVAL: -9223372036854775808
   FORMAT: I18
   LABLAXIS: Epoch Delta Plus
