@@ -20,6 +20,7 @@ from imap_processing.ena_maps.utils.naming import (
     ns_to_duration_months,
 )
 from imap_processing.quality_flags import ImapPSETUltraFlags
+from imap_processing.spice.time import et_to_utc, ttj2000ns_to_et
 from imap_processing.ultra.constants import UltraConstants
 from imap_processing.ultra.l1c.l1c_lookup_utils import build_energy_bins
 from imap_processing.ultra.l1c.ultra_l1c_pset_bins import (

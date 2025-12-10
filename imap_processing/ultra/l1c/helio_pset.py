@@ -10,7 +10,6 @@ import xarray as xr
 from imap_processing.cdf.utils import parse_filename_like
 from imap_processing.quality_flags import ImapPSETUltraFlags
 from imap_processing.spice.geometry import SpiceFrame
-from imap_processing.spice.repoint import get_pointing_times_from_id
 from imap_processing.spice.time import (
     et_to_met,
     met_to_ttj2000ns,
@@ -126,18 +125,35 @@ def calculate_helio_pset(
     instrument_frame = (
         SpiceFrame.IMAP_ULTRA_90 if sensor_id == 90 else SpiceFrame.IMAP_ULTRA_45
     )
-    pointing_range_met = get_pointing_times_from_id(repoint_id)
+    # pointing_range_met = get_pointing_times_from_id(repoint_id)
+    pointing_range_met = (pointing_start, pointing_stop)
 
-    logger.info("Generating helio pointing lookup tables.")
+    # Cache file for helio pointing dataset
+    helio_pointing_file = f"helio_pointing_ds_{sensor_id}.pkl"
 
-    helio_pointing_ds = make_helio_index_maps_with_nominal_kernels(
-        kernel_paths=SIM_KERNELS_FOR_HELIO_INDEX_MAPS,
-        nside=nside,
-        spin_duration=15.0,
-        num_steps=num_spin_steps,
-        instrument_frame=instrument_frame,
-        compute_bsf=apply_bsf,
-    )
+    try:
+        # Try to load from cache
+        with open(helio_pointing_file, "rb") as f:
+            helio_pointing_ds = pickle.load(f)
+        logger.info(f"Loaded helio pointing dataset from {helio_pointing_file}")
+    except (FileNotFoundError, EOFError, pickle.UnpicklingError):
+        # Calculate if not cached
+        logger.info("Generating helio pointing lookup tables.")
+        logger.info("Calculating helio index maps with nominal kernels.")
+        helio_pointing_ds = make_helio_index_maps_with_nominal_kernels(
+            kernel_paths=SIM_KERNELS_FOR_HELIO_INDEX_MAPS,
+            nside=nside,
+            spin_duration=15.0,
+            num_steps=num_spin_steps,
+            instrument_frame=instrument_frame,
+            compute_bsf=apply_bsf,
+        )
+        # Save for future use
+        with open(helio_pointing_file, "wb") as f:
+            pickle.dump(helio_pointing_ds, f)
+        logger.info(f"Saved helio pointing dataset to {helio_pointing_file}")
+
+    # Extract values from dataset
     boundary_scale_factors = helio_pointing_ds.bsf
     theta_vals = helio_pointing_ds.theta
     phi_vals = helio_pointing_ds.phi
@@ -157,14 +173,17 @@ def calculate_helio_pset(
         logger.info(f"Loaded scattering results from {scattering_file}")
     except (FileNotFoundError, EOFError, pickle.UnpicklingError):
         logger.info("calculating spun FWHM scattering values.")
-        pixels_below_scattering, scattering_theta, scattering_phi, scattering_thresholds = (
-            calculate_fwhm_spun_scattering(
-                fov_index,
-                theta_vals,
-                phi_vals,
-                ancillary_files,
-                instrument_id,
-            )
+        (
+            pixels_below_scattering,
+            scattering_theta,
+            scattering_phi,
+            scattering_thresholds,
+        ) = calculate_fwhm_spun_scattering(
+            fov_index,
+            theta_vals,
+            phi_vals,
+            ancillary_files,
+            instrument_id,
         )
         # Save all four arrays
         with open(scattering_file, "wb") as f:

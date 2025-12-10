@@ -9,7 +9,8 @@ version = "0.0.0"
 description = "IMAP Science Operations Center Processing"
 authors = ["IMAP SDC Developers <imap-sdc@lists.lasp.colorado.edu>"]
 readme = "README.md"
-include = ["imap_processing/_version.py"]
+include = ["imap_processing/_version.py",
+"imap_processing/ultra/l1c/sim_spice_kernels/*"]
 license = "MIT"
 keywords = ["IMAP", "SDC", "SOC", "Science Operations"]
 classifiers = [
@@ -60,6 +61,7 @@ mypy = {version="1.10.1", optional=true}
 requests = {version = "^2.32.3", optional = true}
 healpy = {version = "^1.18.0", optional = true}
 netcdf4 = {version ="^1.7.2",  optional = true}
+notebook = "^7.5.0"
 
 [tool.poetry.extras]
 dev = ["pre-commit", "ruff", "mypy"]
