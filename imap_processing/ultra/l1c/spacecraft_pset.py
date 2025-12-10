@@ -18,14 +18,16 @@ from imap_processing.spice.time import (
 from imap_processing.ultra.l1b.ultra_l1b_culling import get_de_rejection_mask
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
     build_energy_bins,
-    get_spacecraft_pointing_lookup_tables, calculate_fwhm_spun_scattering,
+    calculate_fwhm_spun_scattering,
+    get_spacecraft_pointing_lookup_tables,
 )
 from imap_processing.ultra.l1c.ultra_l1c_culling import compute_culling_mask
 from imap_processing.ultra.l1c.ultra_l1c_pset_bins import (
+    get_efficiencies_and_geometric_function,
     get_energy_delta_minus_plus,
     get_spacecraft_background_rates,
     get_spacecraft_exposure_times,
-    get_spacecraft_histogram, get_efficiencies_and_geometric_function,
+    get_spacecraft_histogram,
 )
 from imap_processing.ultra.utils.ultra_l1_utils import create_dataset
 
@@ -130,7 +132,7 @@ def calculate_spacecraft_pset(
                 phi_vals,
                 ancillary_files,
                 instrument_id,
-                reject_scattering
+                reject_scattering,
             )
         )
         # Save all four arrays
@@ -190,9 +192,11 @@ def calculate_spacecraft_pset(
     logger.info(f"exposure_pointing type: {type(exposure_pointing)}")
     logger.info(f"exposure_pointing shape: {exposure_pointing.shape}")
     for i in range(min(5, exposure_pointing.shape[0])):
-        logger.info(f"  Bin {i}: non-zero={np.sum(exposure_pointing[i, :] > 0)}, "
-                    f"sum={exposure_pointing[i, :].sum():.2e}, "
-                    f"mean={exposure_pointing[i, :].mean():.2e}")
+        logger.info(
+            f"  Bin {i}: non-zero={np.sum(exposure_pointing[i, :] > 0)}, "
+            f"sum={exposure_pointing[i, :].sum():.2e}, "
+            f"mean={exposure_pointing[i, :].mean():.2e}"
+        )
     logger.info("Calculating spun efficiencies and geometric function.")
     # calculate efficiency and geometric function as a function of energy
     eff_file = f"eff_gf_exp{sensor_id}.pkl"
