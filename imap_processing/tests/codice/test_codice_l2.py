@@ -521,8 +521,9 @@ def test_codice_l2_lo_de(mock_get_file_paths, codice_lut_path):
     mock_get_file_paths.side_effect = [
         [file_path],
         [file_path],
-        codice_lut_path(descriptor="lo-mpq-cal"),
-        codice_lut_path(descriptor="lo-mpq-cal"),
+        codice_lut_path(descriptor="l2-lo-onboard-energy-table"),
+        codice_lut_path(descriptor="l2-lo-onboard-energy-bins"),
+        codice_lut_path(descriptor="l2-lo-onboard-mpq-cal"),
     ]
 
     processed_l2_ds = process_codice_l2("lo-direct-events", ProcessingInputCollection())

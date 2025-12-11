@@ -9,14 +9,13 @@ from imap_processing.codice.codice_l2 import process_codice_l2
 dataset = process_codice_l2(l1_filename)
 """
 
-import json
 import logging
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 from imap_data_access import ProcessingInputCollection, ScienceFilePath
+from numpy._typing import NDArray
 
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
 from imap_processing.cdf.utils import load_cdf
@@ -43,6 +42,39 @@ from imap_processing.codice.constants import (
 from imap_processing.codice.utils import apply_replacements_to_attrs
 
 logger = logging.getLogger(__name__)
+
+
+def get_lo_de_energy_luts(
+    dependencies: ProcessingInputCollection,
+) -> tuple[NDArray, NDArray]:
+    """
+    Get the LO DE lookup tables for energy conversions.
+
+    Parameters
+    ----------
+    dependencies : ProcessingInputCollection
+        The collection of processing input files.
+
+    Returns
+    -------
+    energy_lut : np.ndarray
+        An array of energy in keV for each energy table index.
+    energy_bins_lut : np.ndarray
+        An array of energy bins.
+    """
+    # Get lookup tables
+    energy_table_file = dependencies.get_file_paths(
+        descriptor="l2-lo-onboard-energy-table"
+    )[0]
+    energy_bins_file = dependencies.get_file_paths(
+        descriptor="l2-lo-onboard-energy-bins"
+    )[0]
+    energy_lut = pd.read_csv(energy_table_file, header=None, skiprows=1).to_numpy()
+    energy_bins_lut = pd.read_csv(energy_bins_file, header=None, skiprows=1).to_numpy()[
+        :, 1
+    ]
+
+    return energy_lut, energy_bins_lut
 
 
 def get_mpq_calc_energy_conversion_vals(
@@ -86,7 +118,9 @@ def get_mpq_calc_tof_conversion_vals(
     tof_ns : np.ndarray
         Tof in ns for each TOF bit.
     """
-    mpq_calc_lut_file = dependencies.get_file_paths(descriptor="lo-mpq-cal")[0]
+    mpq_calc_lut_file = dependencies.get_file_paths(descriptor="l2-lo-onboard-mpq-cal")[
+        0
+    ]
     mpq_df = pd.read_csv(mpq_calc_lut_file, header=None)
     ns_channel_sq = float(mpq_df.loc[2, 1])
     ns_channel = float(mpq_df.loc[3, 1])
@@ -944,7 +978,7 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
     cdf_attrs = ImapCdfAttributes()
     cdf_attrs.add_instrument_global_attrs("codice")
     cdf_attrs.add_instrument_variable_attrs("codice", "l2-lo-direct-events")
-
+    energy_table, energy_bins = get_lo_de_energy_luts(dependencies)
     # Convert from position to elevation angle in degrees relative to the spacecraft
     # axis
     l2_dataset = l1a_dataset.copy(deep=True)
@@ -977,32 +1011,30 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
     )
     # convert apd energy to physical units
     # Set the gain labels based on gain values
-    gains = l2_dataset["gain"].values.flat
-    apd_ids = l2_dataset["apd_id"].values.flat
-    apd_energy = l2_dataset["apd_energy"].values.flat
+    gains = l2_dataset["gain"].values.ravel()
+    apd_ids = l2_dataset["apd_id"].values.ravel()
+    apd_energy = l2_dataset["apd_energy"].values.ravel()
     apd_energy_shape = l2_dataset["apd_energy"].shape
 
-    file_path = Path(
-        "/Users/luco3133/projects/imap_processing/imap_processing/tests"
-        "/codice/data/l2_lut/imap_codice_l2-lo-onboard.json"
+    # The energy table lookup columns are ordered by apd_id and gain
+    # E.g. APD-0-LG, APD-0-HG, APD-1-LG, APD-1-HG, ..., APD-29-LG
+    # So we can get the col index like so: ind = apd_id * 2 + gain
+    col_inds = apd_ids * 2 + gains
+    # Get a mask of valid indices
+    valid_mask = (apd_energy < energy_table.shape[0]) & (
+        col_inds < energy_table.shape[1]
     )
-    onboard_lut = json.loads(file_path.read_text()).get("20250519")
-    energy_table = onboard_lut.get("energy_table", {})
-    energy_bins = onboard_lut.get("energy_bins", {})
-    energy_kevs = []
-
-    for apd_id, gain, energy_pos in zip(apd_ids, gains, apd_energy, strict=False):
-        if (energy_pos != 65535) & (apd_id < 30) & (apd_id != 0):
-            gain_str = "LG" if gain == 0 else "HG"
-            # TODO remove the -1 when Joey fixes the LUT to have correct apd_id
-            key = "APD-" + str(apd_id - 1) + "-" + gain_str
-            energy_bin = energy_table[key][energy_pos]
-            energy_kevs.append(energy_bins[str(energy_bin)])
-        else:
-            energy_kevs.append(np.nan)
+    # Initialize output array with NaNs
+    energy_bins_inds = np.full(apd_energy.shape, np.nan)
+    energy_kev = np.full(apd_energy.shape, np.nan)
+    # The rows are apd_energy bins
+    energy_bins_inds[valid_mask] = energy_table[
+        apd_energy[valid_mask], col_inds[valid_mask]
+    ]
+    energy_kev[valid_mask] = energy_bins[energy_bins_inds[valid_mask].astype(int)]
 
     l2_dataset["apd_energy"].data = (
-        np.array(energy_kevs).astype(np.float32).reshape(apd_energy_shape)
+        np.array(energy_kev).astype(np.float32).reshape(apd_energy_shape)
     )
 
     # Calculate TOF in nanoseconds
