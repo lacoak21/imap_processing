@@ -48,10 +48,7 @@ EXPECTED_LOGICAL_SOURCES = [
 def processing_dependencies(codice_lut_path):
     eff_file = "imap_codice_l2-lo-efficiency_20251008_v001.csv"
     gf_file = "imap_codice_l2-lo-gfactor_20251008_v001.csv"
-    mpq_file = "imap_codice_lo-mpq-cal_20250101_v001.csv"
-    return ProcessingInputCollection(
-        AncillaryInput(gf_file), AncillaryInput(eff_file), AncillaryInput(mpq_file)
-    )
+    return ProcessingInputCollection(AncillaryInput(gf_file), AncillaryInput(eff_file))
 
 
 @pytest.fixture
@@ -181,9 +178,9 @@ def test_get_efficiency_lut(processing_dependencies, mock_get_file_paths):
 def test_get_tof_ns_from_mpq_lut(processing_dependencies, mock_get_file_paths):
     tof_ns = get_mpq_calc_tof_conversion_vals(processing_dependencies)
     assert tof_ns.shape == (1024,)
-    mpq_calc_lut_file = processing_dependencies.get_file_paths(descriptor="lo-mpq-cal")[
-        0
-    ]
+    mpq_calc_lut_file = processing_dependencies.get_file_paths(
+        descriptor="l2-lo-onboard-mpq-cal"
+    )[0]
     mpq_df = pd.read_csv(mpq_calc_lut_file, header=None)
     expected_tof_ns = mpq_df.loc[6:, 1].to_numpy().astype(np.float64)
     # Calculated values should be more precise than LUT but should be close
@@ -193,9 +190,9 @@ def test_get_tof_ns_from_mpq_lut(processing_dependencies, mock_get_file_paths):
 def test_get_energy_kev_from_mpq_lut(processing_dependencies, mock_get_file_paths):
     energy_kev = get_mpq_calc_energy_conversion_vals(processing_dependencies)
     assert energy_kev.shape == (128,)
-    mpq_calc_lut_file = processing_dependencies.get_file_paths(descriptor="lo-mpq-cal")[
-        0
-    ]
+    mpq_calc_lut_file = processing_dependencies.get_file_paths(
+        descriptor="l2-lo-onboard-mpq-cal"
+    )[0]
     mpq_df = pd.read_csv(mpq_calc_lut_file, header=None)
     expected_tof_ns = mpq_df.loc[5, 4:].to_numpy().astype(np.float64)
     # Calculated values should be more precise than LUT but should be close
@@ -524,6 +521,7 @@ def test_codice_l2_lo_de(mock_get_file_paths, codice_lut_path):
         codice_lut_path(descriptor="l2-lo-onboard-energy-table"),
         codice_lut_path(descriptor="l2-lo-onboard-energy-bins"),
         codice_lut_path(descriptor="l2-lo-onboard-mpq-cal"),
+        codice_lut_path(descriptor="l2-lo-onboard-mpq-cal"),
     ]
 
     processed_l2_ds = process_codice_l2("lo-direct-events", ProcessingInputCollection())
@@ -538,7 +536,9 @@ def test_codice_l2_lo_de(mock_get_file_paths, codice_lut_path):
             f"_{VALIDATION_FILE_VERSION}.cdf"
         )
     )
+
     l2_val_data = load_cdf(l2_val_data)
+
     for variable in l2_val_data.data_vars:
         if variable in ["spin_angle"]:
             # TODO remove this block when joey fixes spin_angle calculation
@@ -555,11 +555,11 @@ def test_codice_l2_lo_de(mock_get_file_paths, codice_lut_path):
                 l2_val_data[variable].values,
                 rtol=5e-5,
                 err_msg=f"Mismatch in variable '{variable}'",
+                equal_nan=True,
             )
-
     processed_l2_ds.attrs["Data_version"] = "001"
     assert processed_l2_ds.attrs["Logical_source"] == "imap_codice_l2_lo-direct-events"
     file = write_cdf(processed_l2_ds)
-    errors = CDFValidator().validate_raw(file)
+    errors = CDFValidator().validate(file)
     assert not errors
     load_cdf(file)

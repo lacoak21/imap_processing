@@ -93,7 +93,9 @@ def get_mpq_calc_energy_conversion_vals(
     esa_kev : np.ndarray
         An array of energy in keV for each esa step.
     """
-    mpq_calc_lut_file = dependencies.get_file_paths(descriptor="lo-mpq-cal")[0]
+    mpq_calc_lut_file = dependencies.get_file_paths(descriptor="l2-lo-onboard-mpq-cal")[
+        0
+    ]
     mpq_df = pd.read_csv(mpq_calc_lut_file, header=None)
     k_factor = float(mpq_df.loc[0, 10])
     esa_v = mpq_df.loc[4, 4:].to_numpy().astype(np.float64)
@@ -1017,12 +1019,14 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
     apd_energy_shape = l2_dataset["apd_energy"].shape
 
     # The energy table lookup columns are ordered by apd_id and gain
-    # E.g. APD-0-LG, APD-0-HG, APD-1-LG, APD-1-HG, ..., APD-29-LG
+    # E.g. APD-1-LG, APD-1-HG, ..., APD-29-LG
     # So we can get the col index like so: ind = apd_id * 2 + gain
     col_inds = apd_ids * 2 + gains
     # Get a mask of valid indices
-    valid_mask = (apd_energy < energy_table.shape[0]) & (
-        col_inds < energy_table.shape[1]
+    valid_mask = (
+        (apd_energy < energy_table.shape[0])
+        & (col_inds < energy_table.shape[1])
+        & (apd_ids > 0)
     )
     # Initialize output array with NaNs
     energy_bins_inds = np.full(apd_energy.shape, np.nan)
@@ -1105,23 +1109,6 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
         dims=("priority",),
         attrs=cdf_attrs.get_variable_attributes("priority_label", check_schema=False),
     )
-
-    print("\n=== DATA TYPE CHECK ===")
-    print(f"event_num_label dtype: {l2_dataset['event_num_label'].dtype}")
-    print(f"priority_label dtype: {l2_dataset['priority_label'].dtype}")
-    print(f"elevation_angle dtype: {l2_dataset['elevation_angle'].dtype}")
-    print(f"spin_angle dtype: {l2_dataset['spin_angle'].dtype}")
-    print(f"apd_energy dtype: {l2_dataset['apd_energy'].dtype}")
-    print(f"energy_per_charge dtype: {l2_dataset['energy_per_charge'].dtype}")
-    print(f"tof dtype: {l2_dataset['tof'].dtype}")
-    print(f"epoch_delta_minus dtype: {l2_dataset['epoch_delta_minus'].dtype}")
-    print(f"epoch_delta_plus dtype: {l2_dataset['epoch_delta_plus'].dtype}")
-
-    # Check for any unexpected dtypes
-    for var in l2_dataset.data_vars:
-        if "U" in str(l2_dataset[var].dtype) and "|S" not in str(l2_dataset[var].dtype):
-            if "<U" not in str(l2_dataset[var].dtype):
-                print(f"⚠️  WARNING: {var} has dtype {l2_dataset[var].dtype}")
 
     return l2_dataset
 
