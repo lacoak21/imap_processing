@@ -194,9 +194,9 @@ def test_get_energy_kev_from_mpq_lut(processing_dependencies, mock_get_file_path
         descriptor="l2-lo-onboard-mpq-cal"
     )[0]
     mpq_df = pd.read_csv(mpq_calc_lut_file, header=None)
-    expected_tof_ns = mpq_df.loc[5, 4:].to_numpy().astype(np.float64)
+    expected_e_kev = mpq_df.loc[5, 4:].to_numpy().astype(np.float64)
     # Calculated values should be more precise than LUT but should be close
-    np.testing.assert_allclose(energy_kev, expected_tof_ns, rtol=0.01)
+    np.testing.assert_allclose(energy_kev, expected_e_kev, rtol=0.01)
 
 
 def test_process_lo_species_intensity(mock_get_file_paths, codice_lut_path):

@@ -10,12 +10,13 @@ dataset = process_codice_l2(l1_filename)
 """
 
 import logging
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 from imap_data_access import ProcessingInputCollection, ScienceFilePath
-from numpy._typing import NDArray
+from numpy.typing import NDArray
 
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
 from imap_processing.cdf.utils import load_cdf
@@ -983,7 +984,7 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
     energy_table, energy_bins = get_lo_de_energy_luts(dependencies)
     # Convert from position to elevation angle in degrees relative to the spacecraft
     # axis
-    l2_dataset = l1a_dataset.copy(deep=True)
+    l2_dataset = l1a_dataset
     # Create a new coordinate for elevation_angle based on inst_az
     pos_to_els = (
         LO_POSITION_TO_ELEVATION_ANGLE["sw"] | LO_POSITION_TO_ELEVATION_ANGLE["nsw"]
@@ -999,17 +1000,15 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
     # Convert spin_sector to spin_angle in degrees
     # Use equation from section 11.2.2 of algorithm document
     # Shift all spin sectors for all positions 13 - 24 adding 12 and mod 24
+    original_spin_sector = l2_dataset["spin_sector"].values
     l2_dataset["spin_sector"] = xr.where(
         (l2_dataset["position"] >= 13) & (l2_dataset["position"] <= 24),
         (l2_dataset["spin_sector"] + 12) % 24,
         l2_dataset["spin_sector"],
     )
-    l2_dataset["spin_angle"] = xr.DataArray(
-        data=l2_dataset["spin_sector"].data * 15.0 + 7.5,
-        dims=l2_dataset["spin_sector"].dims,
-    ).astype(np.float32)
+    l2_dataset["spin_angle"] = l2_dataset["spin_sector"].astype(np.float32) * 15.0 + 7.5
     l2_dataset["spin_angle"] = xr.where(
-        (l2_dataset["spin_sector"] > 23), np.nan, l2_dataset["spin_angle"]
+        (original_spin_sector > 23), np.nan, l2_dataset["spin_angle"]
     )
     # convert apd energy to physical units
     # Set the gain labels based on gain values
@@ -1085,18 +1084,6 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
         l2_dataset["epoch"].data,
         dims="epoch",
         attrs=cdf_attrs.get_variable_attributes("epoch", check_schema=False),
-    )
-    l2_dataset["epoch_delta_minus"] = xr.DataArray(
-        data=l2_dataset["epoch_delta_minus"].data.astype(np.int64),
-        dims="epoch",
-        attrs=cdf_attrs.get_variable_attributes(
-            "epoch_delta_minus", check_schema=False
-        ),
-    )
-    l2_dataset["epoch_delta_plus"] = xr.DataArray(
-        l2_dataset["epoch_delta_plus"].data.astype(np.int64),
-        dims="epoch",
-        attrs=cdf_attrs.get_variable_attributes("epoch_delta_plus", check_schema=False),
     )
     # Add labels
     l2_dataset["event_num_label"] = xr.DataArray(
