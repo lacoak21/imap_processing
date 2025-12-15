@@ -82,7 +82,7 @@ def get_mpq_calc_energy_conversion_vals(
     dependencies: ProcessingInputCollection,
 ) -> np.ndarray:
     """
-    Get the MPQ calculation esa step to energy kev conversion lookup table values.
+    Get the mass per charge (MPQ) esa step to energy kev conversion lookup table values.
 
     Parameters
     ----------
