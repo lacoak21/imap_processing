@@ -675,38 +675,38 @@ def test_process_codice_lo(
     c_over_o_abundance_ratio = np.divide(
         pseudo_density_dict[species[1]] + pseudo_density_dict[species[2]],
         o_abundance_ratio,
-        out=np.zeros_like(o_abundance_ratio, dtype=float),  # fill with 0s by default
+        out=np.full(o_abundance_ratio.shape, np.nan),  # fill with nans by default
         where=o_abundance_ratio != 0,
     )
     mg_over_o_abundance_ratio = np.divide(
         pseudo_density_dict[species[6]],
         o_abundance_ratio,
-        out=np.zeros_like(o_abundance_ratio, dtype=float),
+        out=np.full(o_abundance_ratio.shape, np.nan),
         where=o_abundance_ratio != 0,
     )
     fe_over_o_abundance_ratio = np.divide(
         pseudo_density_dict[species[7]] + pseudo_density_dict[species[8]],
         o_abundance_ratio,
-        out=np.zeros_like(o_abundance_ratio, dtype=float),
+        out=np.full(o_abundance_ratio.shape, np.nan),
         where=o_abundance_ratio != 0,
     )
 
     c_plus_6_over_c_plus_5_ratio = np.divide(
         pseudo_density_dict[species[2]],
         pseudo_density_dict[species[1]],
-        out=np.zeros_like(pseudo_density_dict[species[1]], dtype=float),
+        out=np.full(pseudo_density_dict[species[1]].shape, np.nan),
         where=o_abundance_ratio != 0,
     )
     o_plus_7_over_o_plus_6_ratio = np.divide(
         pseudo_density_dict[species[4]],
         pseudo_density_dict[species[3]],
-        out=np.zeros_like(pseudo_density_dict[species[3]], dtype=float),
+        out=np.full(pseudo_density_dict[species[1]].shape, np.nan),
         where=o_abundance_ratio != 0,
     )
     fe_low_over_fe_high_ratio = np.divide(
         pseudo_density_dict[species[7]],
         pseudo_density_dict[species[8]],
-        out=np.zeros_like(pseudo_density_dict[species[8]], dtype=float),
+        out=np.full(pseudo_density_dict[species[1]].shape, np.nan),
         where=o_abundance_ratio != 0,
     )
 
