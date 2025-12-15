@@ -19,6 +19,7 @@ from imap_processing.ultra.l1c.ultra_l1c_pset_bins import (
     calculate_exposure_time,
     get_deadtime_ratios,
     get_deadtime_ratios_by_spin_phase,
+    get_efficiencies_and_geometric_function,
     get_energy_delta_minus_plus,
     get_helio_adjusted_data,
     get_sectored_rates,
@@ -346,6 +347,53 @@ def test_apply_deadtime_correction_energy_dep(imap_ena_sim_metakernel, ancillary
     assert np.all(exposure_pointing_adjusted[last_energy_bin_vals, :inside_inds] > 0)
     # Assert that pixels outside the FOR remain at 0.
     assert np.all(exposure_pointing_adjusted[:, inside_inds:] == 0)
+
+
+@pytest.mark.external_kernel
+def test_get_eff_and_gf(imap_ena_sim_metakernel, ancillary_files):
+    """Tests apply_deadtime_correction function when scattering rejection is on."""
+    nside = 8
+    pix = hp.nside2npix(nside)
+    steps = 500  # Reduced for testing
+    np.random.seed(42)
+    mock_theta = np.random.uniform(-60, 60, (pix, steps))
+    mock_phi = np.random.uniform(-60, 60, (pix, steps))
+    spin_phase_steps = np.zeros((pix, steps)).astype(bool)  # Spin phase steps 1-15000,
+    # Simulate first 100 pixels are in the FOR for all spin phases
+    inside_inds = 100
+    spin_phase_steps[:inside_inds, :] = True
+
+    valid_spun_pixels, fwhm_theta, fwhm_phi, thresholds = (
+        calculate_fwhm_spun_scattering(
+            spin_phase_steps,
+            mock_theta,
+            mock_phi,
+            ancillary_files,
+            45,
+            reject_scattering=True,
+        )
+    )
+    boundary_sf = xr.DataArray(np.ones((pix, steps)), dims=("pixel", "spin_phase_step"))
+    eff, gf = get_efficiencies_and_geometric_function(
+        valid_spun_pixels,
+        boundary_sf,
+        mock_theta,
+        mock_phi,
+        npix=pix,
+        ancillary_files=ancillary_files,
+        apply_bsf=False,
+    )
+    # The efficiencies should be of shape (46,npix)
+    np.testing.assert_array_equal(eff.shape, (46, pix))
+    np.testing.assert_array_equal(gf.shape, (46, pix))
+    # Check that the pixels inside the FOR have efficiencies and geometric factors > 0.
+    # Subset the energy dimension to check values in the last energy bin.
+    last_energy_bin_vals = np.where(build_energy_bins()[2] >= 40)[0]
+    assert np.all(eff[last_energy_bin_vals, :inside_inds] > 0)
+    assert np.all(gf[last_energy_bin_vals, :inside_inds] > 0)
+    # Assert that pixels outside the FOR remain at 0.
+    assert np.all(eff[:, inside_inds:] == 0)
+    assert np.all(gf[:, inside_inds:] == 0)
 
 
 @pytest.mark.external_test_data
