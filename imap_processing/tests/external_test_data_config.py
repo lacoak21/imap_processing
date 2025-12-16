@@ -83,6 +83,9 @@ EXTERNAL_TEST_DATA = [
     ("imap_codice_l2-hi-ialirt-efficiency_20251008_v001.csv", "codice/data/l2_lut/"),
     ("imap_codice_l2-lo-gfactor_20251008_v001.csv", "codice/data/l2_lut/"),
     ("imap_codice_l2-lo-efficiency_20251008_v001.csv", "codice/data/l2_lut/"),
+    ("imap_codice_l2-lo-onboard-energy-bins_20250101_v001.csv", "codice/data/l2_lut/"),
+    ("imap_codice_l2-lo-onboard-energy-table_20250101_v001.csv", "codice/data/l2_lut/"),
+    ("imap_codice_l2-lo-onboard-mpq-cal_20250101_v001.csv", "codice/data/l2_lut/"),
 
     # L2 Validation data
     (f"imap_codice_l2_hi-omni_{VALIDATION_FILE_DATE}_{VALIDATION_FILE_VERSION}.cdf", "codice/data/l2_validation/"),
@@ -91,6 +94,8 @@ EXTERNAL_TEST_DATA = [
     (f"imap_codice_l2_lo-sw-angular_{VALIDATION_FILE_DATE}_{VALIDATION_FILE_VERSION}.cdf", "codice/data/l2_validation/"),
     (f"imap_codice_l2_lo-nsw-species_{VALIDATION_FILE_DATE}_{VALIDATION_FILE_VERSION}.cdf", "codice/data/l2_validation/"),
     (f"imap_codice_l2_lo-sw-species_{VALIDATION_FILE_DATE}_{VALIDATION_FILE_VERSION}.cdf", "codice/data/l2_validation/"),
+    (f"imap_codice_l2_lo-direct-events_{VALIDATION_FILE_DATE}_{VALIDATION_FILE_VERSION}.cdf", "codice/data/l2_validation/"),
+    (f"imap_codice_l2_hi-direct-events_{VALIDATION_FILE_DATE}_{VALIDATION_FILE_VERSION}.cdf", "codice/data/l2_validation/"),
     (f"imap_codice_l2_hi-ialirt_{VALIDATION_FILE_DATE}_{VALIDATION_FILE_VERSION}.cdf", "codice/data/l2_validation/"),
     (f"imap_codice_l2_lo-ialirt_{VALIDATION_FILE_DATE}_{VALIDATION_FILE_VERSION}.cdf", "codice/data/l2_validation/"),
 
