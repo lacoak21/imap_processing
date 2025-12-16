@@ -184,7 +184,7 @@ def calculate_spacecraft_pset(
     # use either the pointing end time + 30 mins or the max event time,
     # whichever is smaller.
     end = min(end + 1800, ttj2000ns_to_et(pointing_range_ns[1]))
-    # Time bins in 30 minute intervals
+    # Time bins in 30 minute intervals in et
     time_bins = np.arange(start, end, 1800)
 
     # Compute mask for culling the Earth
