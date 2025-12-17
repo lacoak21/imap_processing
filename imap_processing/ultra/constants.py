@@ -3,6 +3,10 @@
 from dataclasses import dataclass
 from typing import ClassVar
 
+from imap_processing import imap_module_directory
+
+SPICE_DATA_SIM_PATH = imap_module_directory / "ultra/l1c/sim_spice_kernels"
+
 
 @dataclass(frozen=True)
 class UltraConstants:
@@ -157,7 +161,19 @@ class UltraConstants:
         "non_proton": [20, 21, 22, 23, 24, 25, 26],
     }
 
-    # For FOV calculations
+    SIM_KERNELS_FOR_HELIO_INDEX_MAPS: ClassVar[list] = [
+        str(SPICE_DATA_SIM_PATH / k)
+        for k in [
+            "imap_sclk_0000.tsc",
+            "naif0012.tls",
+            "imap_spk_demo.bsp",
+            "sim_1yr_imap_attitude.bc",
+            "imap_001.tf",
+            "imap_science_100.tf",
+            "sim_1yr_imap_pointing_frame.bc",
+        ]
+    ]
+
     FOV_THETA_OFFSET_DEG = 0.0
     FOV_PHI_LIMIT_DEG = 60.0
 
