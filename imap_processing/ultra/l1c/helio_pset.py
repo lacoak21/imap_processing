@@ -13,6 +13,7 @@ from imap_processing.spice.time import (
     met_to_ttj2000ns,
     ttj2000ns_to_et,
 )
+from imap_processing.ultra.constants import UltraConstants
 from imap_processing.ultra.l1b.ultra_l1b_culling import get_de_rejection_mask
 from imap_processing.ultra.l1c.l1c_lookup_utils import (
     build_energy_bins,
@@ -203,7 +204,7 @@ def calculate_helio_pset(
     # Compute mask for culling the Earth
     compute_culling_mask(
         time_bins,
-        6378.1,  # Earth radius
+        UltraConstants.DEFAULT_EARTH_CULLING_RADIUS,
         helio_pset_quality_flags,
         nside=nside,
     )
@@ -229,8 +230,10 @@ def calculate_helio_pset(
     pset_dict["spin_phase_step"] = np.arange(len(deadtime_ratios))
     pset_dict["quality_flags"] = helio_pset_quality_flags[np.newaxis, ...]
 
-    pset_dict["scatter_theta"] = scattering_theta
-    pset_dict["scatter_phi"] = scattering_phi
+    # Convert FWHM to gaussian uncertainty by dividing by 2.355
+    # See algorithm documentation (section 3.5.7, third bullet point) for more details
+    pset_dict["scatter_theta"] = scattering_theta / 2.355
+    pset_dict["scatter_phi"] = scattering_phi / 2.355
     pset_dict["scatter_threshold"] = scattering_thresholds
 
     # Add the energy delta plus/minus to the dataset
