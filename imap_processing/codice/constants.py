@@ -1142,3 +1142,52 @@ LO_POSITION_TO_ELEVATION_ANGLE = {
         13: 180,
     },
 }
+
+# SSD ID to Elevation Angle
+# The index corresponds to the SSD ID. Missing SSD IDs are represented with np.nan.
+SSD_ID_TO_ELEVATION = np.array(
+    [
+        150.0,
+        138.6,
+        np.nan,
+        115.7,
+        90.0,
+        64.3,
+        np.nan,
+        41.4,
+        30.0,
+        41.4,
+        np.nan,
+        64.3,
+        90.0,
+        115.7,
+        np.nan,
+        138.6,
+    ]
+)
+
+# gain lookup table
+GAIN_ID_TO_STR = {1: "LG", 2: "MG", 3: "HG"}
+
+# SSD ID to Spin Angle (degrees)
+# The index corresponds to the SSD ID. Missing SSD IDs are represented with np.nan.
+SSD_ID_TO_SPIN_ANGLE = np.array(
+    [
+        277.50,
+        236.61,
+        np.nan,
+        221.19,
+        217.5,
+        221.19,
+        np.nan,
+        236.61,
+        277.50,
+        318.39,
+        np.nan,
+        333.81,
+        337.50,
+        333.81,
+        np.nan,
+        318.39,
+    ]
+)

@@ -1,9 +1,9 @@
-# ----------------------------- Useful variables -----------------------------
 uint8_fillval: &uint8_fillval 255
 uint16_fillval: &uint16_fillval 65535
 real_fillval: &real_fillval -1.0e+31
 min_int: &min_int -9223372036854775808
 max_int: &max_int 9223372036854775807
+
 # ------------------------------- Coordinates -------------------------------
 priority:
   CATDESC: Priority Level
@@ -43,6 +43,7 @@ epoch_delta_minus:
   VALIDMIN: *min_int
   VALIDMAX: *max_int
   VAR_TYPE: support_data
+  DISPLAY_TYPE: 'no_plot'
   DICT_KEY: SPASE>Support>SupportQuantity:Temporal,Qualifier:Uncertainty
 
 epoch_delta_plus:
@@ -57,6 +58,7 @@ epoch_delta_plus:
   VALIDMIN: *min_int
   VALIDMAX: *max_int
   VAR_TYPE: support_data
+  DISPLAY_TYPE: 'no_plot'
   DICT_KEY: SPASE>Support>SupportQuantity:Temporal,Qualifier:Uncertainty
 
 # ------------------------------- Data Variables -------------------------------
@@ -128,24 +130,6 @@ energy_per_charge:
   VAR_TYPE: data
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge
 
-apd_energy:
-  CATDESC: APD Energy
-  DEPEND_0: epoch
-  DEPEND_1: priority
-  DEPEND_2: event_num
-  FIELDNAM: APD Energy
-  FILLVAL: *real_fillval
-  FORMAT: F12.4
-  LABLAXIS: APD Energy
-  LABL_PTR_1: priority_label
-  LABL_PTR_2: event_num_label
-  SCALETYP: linear
-  UNITS: keV
-  VALIDMAX: 512.0
-  VALIDMIN: 0.0
-  VAR_TYPE: data
-  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:Energy
-
 gain:
   CATDESC: Gain Setting
   DEPEND_0: epoch
@@ -160,42 +144,6 @@ gain:
   SCALETYP: linear
   UNITS: " "
   VALIDMAX: 1
-  VALIDMIN: 0
-  VAR_TYPE: data
-  DICT_KEY: SPASE>Support>SupportQuantity:Other
-
-apd_id:
-  CATDESC: APD Identifier
-  DEPEND_0: epoch
-  DEPEND_1: priority
-  DEPEND_2: event_num
-  FIELDNAM: APD ID
-  FILLVAL: *uint8_fillval
-  FORMAT: I2
-  LABLAXIS: APD ID
-  LABL_PTR_1: priority_label
-  LABL_PTR_2: event_num_label
-  SCALETYP: linear
-  UNITS: " "
-  VALIDMAX: 31
-  VALIDMIN: 0
-  VAR_TYPE: data
-  DICT_KEY: SPASE>Support>SupportQuantity:Other
-
-position:
-  CATDESC: Position Index
-  DEPEND_0: epoch
-  DEPEND_1: priority
-  DEPEND_2: event_num
-  FIELDNAM: Position
-  FILLVAL: *uint8_fillval
-  FORMAT: I2
-  LABLAXIS: Position
-  LABL_PTR_1: priority_label
-  LABL_PTR_2: event_num_label
-  SCALETYP: linear
-  UNITS: " "
-  VALIDMAX: 31
   VALIDMIN: 0
   VAR_TYPE: data
   DICT_KEY: SPASE>Support>SupportQuantity:Other
@@ -307,22 +255,76 @@ elevation_angle:
   VAR_TYPE: data
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:ArrivalDirection,Qualifier:DirectionAngle.ElevationAngle
 
-esa_step:
-  CATDESC: Energy per charge (E/q) sweeping step
-  FIELDNAM: Energy Index
+ssd_energy:
+  CATDESC: SSD Energy
   DEPEND_0: epoch
   DEPEND_1: priority
   DEPEND_2: event_num
+  FIELDNAM: SSD Energy
+  FILLVAL: *real_fillval
+  FORMAT: F12.4
+  LABLAXIS: SSD Energy
   LABL_PTR_1: priority_label
   LABL_PTR_2: event_num_label
+  SCALETYP: linear
+  UNITS: keV
+  VALIDMAX: 512.0
+  VALIDMIN: 0.0
+  VAR_TYPE: data
+  DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:Energy
+
+energy_per_nuc:
+  CATDESC: Energy per Nucleon
+  DEPEND_0: epoch
+  DEPEND_1: priority_label
+  DEPEND_2: event_num
+  FIELDNAM: Energy per Nucleon
+  FILLVAL: *real_fillval
+  FORMAT: F12.4
+  LABLAXIS: Energy per Nucleon
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
+  SCALETYP: linear
+  UNITS: MeV/nuc
+  VALIDMAX: 200.0
+  VALIDMIN: 0.0
+  VAR_TYPE: data
+  DICT_KEY: SPASE>Support>SupportQuantity:Other
+
+ssd_id:
+  CATDESC: SSD Identifier
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  DEPEND_2: event_num
+  FIELDNAM: SSD ID
   FILLVAL: *uint8_fillval
-  FORMAT: I3
-  LABLAXIS: Energy Index
+  FORMAT: I2
+  LABLAXIS: SSD ID
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
   SCALETYP: linear
   UNITS: " "
+  VALIDMAX: 15
   VALIDMIN: 0
-  VALIDMAX: 127
   VAR_TYPE: data
+  DICT_KEY: SPASE>Support>SupportQuantity:Other
+
+spin_number:
+  CATDESC: Spin Number
+  DEPEND_0: epoch
+  DEPEND_1: priority
+  DEPEND_2: event_num
+  FIELDNAM: Spin Number
+  FILLVAL: *uint8_fillval
+  FORMAT: I10
+  LABLAXIS: Spin Number
+  LABL_PTR_1: priority_label
+  LABL_PTR_2: event_num_label
+  SCALETYP: linear
+  UNITS: " "
+  VALIDMAX: 4294967295
+  VALIDMIN: 0
+  VAR_TYPE: support_data
   DICT_KEY: SPASE>Support>SupportQuantity:Other
 # ------------------------------- labels -------------------------------
 
