@@ -148,54 +148,33 @@ def mock_imap_state(time, ref_frame):
     return np.array([0, 0, 0, 0, 0, 0])
 
 
-def test_get_sectored_rates():
+def test_get_sectored_rates(rates_dataset):
     """Tests get_sectored_rates function."""
+    sectored_rates = get_sectored_rates(rates_dataset)
+    expected_sectored_rates = rates_dataset.isel(epoch=slice(14, None))
+    xr.testing.assert_equal(sectored_rates, expected_sectored_rates)
 
-    # Simulate a test rates dataset.
-    epoch = 60
-    test_l1a_rates_dataset = xr.Dataset(
-        {
-            "test_data": (["epoch"], np.arange(epoch)),
-        },
-    )
-    # Sector mode (image rates cadence = 3) happens 3 times a day (per pointing).
-    # each time the mode changes, it is recorded in the params packet.
-    # Create a test params dataset that simulates the mode changing to 3, 3 times.
-    modes = np.tile(np.array([1, 3]), 3)
-    test_l1a_params_dataset = xr.Dataset(
-        {
-            "imageratescadence": (["epoch"], modes),
-        },
-        coords={"epoch": ("epoch", np.arange(0, epoch, epoch / len(modes)))},
-    )
-    sectored_rates = get_sectored_rates(test_l1a_rates_dataset, test_l1a_params_dataset)
-    np.testing.assert_array_equal(
-        sectored_rates["test_data"].data,
-        np.arange(
-            10, 20
-        ),  # Make sure duplicate epochs with the same mode are filtered out
-    )
-    # Test with one mode shift in the middle of the dataset.
-    modes = np.array([1, 3, 1])
-    test_l1a_params_dataset = xr.Dataset(
-        {
-            "imageratescadence": (["epoch"], modes),
-        },
-        coords={"epoch": ("epoch", np.arange(0, epoch, epoch / len(modes)))},
-    )
-    sectored_rates = get_sectored_rates(test_l1a_rates_dataset, test_l1a_params_dataset)
-    np.testing.assert_array_equal(sectored_rates["test_data"].data, np.arange(20, 40))
 
-    # Test with one mode shift in the middle of the dataset.
-    modes = np.array([1, 3, 1])
-    test_l1a_params_dataset = xr.Dataset(
+def test_get_sectored_rates_manual():
+    """Tests get_sectored_rates function."""
+    # This dataset has 2 sections where it goes into sectored mode.
+    test_spins = np.concatenate([np.full(15, 0), np.array([10, 11]), np.full(15, 12)])
+    rates_dataset = xr.Dataset(
         {
-            "imageratescadence": (["epoch"], modes),
-        },
-        coords={"epoch": ("epoch", np.arange(0, epoch, epoch / len(modes)))},
+            "epoch": ("epoch", np.arange(32)),
+            "spin": ("epoch", test_spins),
+        }
     )
-    sectored_rates = get_sectored_rates(test_l1a_rates_dataset, test_l1a_params_dataset)
-    np.testing.assert_array_equal(sectored_rates["test_data"].data, np.arange(20, 40))
+    sectored_rates = get_sectored_rates(rates_dataset)
+    # The sectored rates should be the first and last 15 epochs.
+    expected_sectored_rates = xr.concat(
+        [
+            rates_dataset.isel(epoch=slice(0, 15)),
+            rates_dataset.isel(epoch=slice(17, 32)),
+        ],
+        dim="epoch",
+    )
+    xr.testing.assert_equal(sectored_rates, expected_sectored_rates)
 
 
 def test_get_deadtime_ratios():
@@ -215,14 +194,16 @@ def test_get_deadtime_ratios():
             "stop_bn": (["epoch"], np.random.randint(0, 5, epoch)),
         }
     )
+    durations = np.full(epoch, 15)
+    sectored_rates_ds["spin_durations"] = (["epoch"], durations)
     deadtime_correction_factors = get_deadtime_ratios(sectored_rates_ds)
     assert deadtime_correction_factors.shape == (sectored_rates_ds.sizes["epoch"],)
     assert np.all(deadtime_correction_factors >= 0)
 
 
-def test_get_deadtime_interpolator(random_spin_data):
+def test_get_deadtime_interpolator(use_fake_spin_data_for_time):
     """Tests get_deadtime_correction_factors function."""
-
+    use_fake_spin_data_for_time(1, 10)
     sector_rate_seconds = 20 * 60  # 20 minutes in seconds
     num_sectors = 3  # Number of sectors per pointing
     num_spins = sector_rate_seconds * num_sectors / 15  # 15 seconds per spin
@@ -233,7 +214,10 @@ def test_get_deadtime_interpolator(random_spin_data):
     deadtime_ratios = xr.DataArray(
         np.random.uniform(0.1, 1.0, num_deadtimes), dims=["epoch"]
     )
-    sectored_rates_ds = xr.Dataset({"epoch": ("epoch", np.ones_like(deadtime_ratios))})
+    sectored_rates_ds = xr.Dataset(
+        {"epoch": ("epoch", np.ones_like(deadtime_ratios))},
+        {"shcoarse": ("epoch", np.ones_like(deadtime_ratios))},
+    )
     with mock.patch(
         "imap_processing.ultra.l1c.ultra_l1c_pset_bins.get_deadtime_ratios",
         return_value=deadtime_ratios,
@@ -405,19 +389,16 @@ def test_get_eff_and_gf(imap_ena_sim_metakernel, ancillary_files, spun_index_dat
 
 @pytest.mark.external_test_data
 def test_get_spacecraft_exposure_times(
-    deadtime_datasets,
-    random_spin_data,
+    rates_dataset,
     imap_ena_sim_metakernel,
     ancillary_files,
     use_fake_spin_data_for_time,
 ):
     """Test get_spacecraft_exposure_times function."""
-    data_start_time = 453051293.0
+    data_start_time = 445015665.0
     data_end_time = 453070000.0
     use_fake_spin_data_for_time(data_start_time, data_end_time)
     steps = 500  # reduced for testing
-    rates = deadtime_datasets["rates"]
-    params = deadtime_datasets["params"]
 
     pix = 786
     mock_theta = np.random.uniform(-60, 60, (steps, pix))
@@ -435,8 +416,7 @@ def test_get_spacecraft_exposure_times(
     )
     boundary_sf = xr.DataArray(np.ones((steps, pix)), dims=("spin_phase_step", "pixel"))
     exposure_pointing, deadtimes = get_spacecraft_exposure_times(
-        rates,
-        params,
+        rates_dataset,
         pixels_below_threshold,
         boundary_sf,
         (
