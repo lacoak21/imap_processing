@@ -298,8 +298,8 @@ class MagL1d(MagL2L1dBase):  # type: ignore[misc]
         self.vectors = frame_transform(
             self.epoch_et,
             self.vectors,
-            from_frame=start_frame.value,
-            to_frame=end_frame.value,
+            from_frame=start_frame.spice_frame,
+            to_frame=end_frame.spice_frame,
             allow_spice_noframeconnect=True,
         )
 
@@ -311,8 +311,8 @@ class MagL1d(MagL2L1dBase):  # type: ignore[misc]
         self.magi_vectors = frame_transform(
             self.magi_epoch_et,
             self.magi_vectors,
-            from_frame=start_frame.value,
-            to_frame=end_frame.value,
+            from_frame=start_frame.spice_frame,
+            to_frame=end_frame.spice_frame,
             allow_spice_noframeconnect=True,
         )
 
