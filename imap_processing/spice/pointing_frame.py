@@ -11,7 +11,7 @@ import spiceypy
 from imap_data_access import SPICEFilePath
 from numpy.typing import NDArray
 
-from imap_processing.spice.geometry import SpiceFrame
+from imap_processing.spice.geometry import SpiceFrame, frame_transform
 from imap_processing.spice.repoint import get_repoint_data
 from imap_processing.spice.time import (
     TICK_DURATION,
@@ -284,8 +284,8 @@ def calculate_pointing_attitude_segments(
             f"range: ({et_to_utc(pointing_start_et)}, {et_to_utc(pointing_end_et)})"
         )
 
-        # 1 spin/15 seconds; 10 quaternions / spin.
-        num_samples = (pointing_end_et - pointing_start_et) / 15 * 10
+        # Sample at 1Hz
+        num_samples = pointing_end_et - pointing_start_et
         # There were rounding errors when using spiceypy.pxform
         # so np.ceil and np.floor were used to ensure the start
         # and end times were within the ck range.
@@ -295,11 +295,11 @@ def calculate_pointing_attitude_segments(
             int(num_samples),
         )
 
-        # Get the average quaternions for the pointing
-        q_avg = _average_quaternions(et_times)
+        # Get the average spin-axis in HAE coordinates
+        z_avg = _mean_spin_axis(et_times)
 
         # Create a rotation matrix
-        rotation_matrix = _create_rotation_matrix(q_avg)
+        rotation_matrix = _create_rotation_matrix(z_avg)
 
         # Convert the rotation matrix to a quaternion.
         # https://spiceypy.readthedocs.io/en/main/documentation.html#spiceypy.spiceypy.m2q
@@ -317,9 +317,14 @@ def calculate_pointing_attitude_segments(
     return pointing_segments
 
 
-def _average_quaternions(et_times: np.ndarray) -> NDArray:
+def _mean_spin_axis(et_times: np.ndarray) -> NDArray:
     """
-    Average the quaternions.
+    Compute the mean spin axis for a given time range.
+
+    The mean spin-axis is computed by taking the mean of the spacecraft z-axis
+    expressed in HAE Cartesian coordinates at each of the input et_times. The
+    mean is computed by finding the mean of each component of the vector across
+    time.
 
     Parameters
     ----------
@@ -328,72 +333,52 @@ def _average_quaternions(et_times: np.ndarray) -> NDArray:
 
     Returns
     -------
-    q_avg : np.ndarray
-        Average quaternion.
+    z_avg : np.ndarray
+        Mean spin-axis. Shape is (3,), a single 3D vector (x, y, z).
     """
-    aggregate = np.zeros((4, 4))
-    for tdb in et_times:
-        # we use a quick and dirty method here for grabbing the quaternions
-        # from the attitude kernel.  Depending on how well the kernel input
-        # data is built and sampled, there may or may not be aliasing with this
-        # approach.  If it turns out that we need to pull the quaternions
-        # directly from the CK there are several routines that exist to do this
-        # but it's not straight forward.  We'll revisit this if needed.
+    # we use a quick and dirty method here for sampling the instantaneous
+    # spin-axis.  Depending on how well the kernel input
+    # data is built and sampled, there may or may not be aliasing with this
+    # approach.  If it turns out that we need to pull the quaternions
+    # directly from the CK there are several routines that exist to do this
+    # but it's not straight forward.  We'll revisit this if needed.
+    z_inertial_hae = frame_transform(
+        et_times, np.array([0, 0, 1]), SpiceFrame.IMAP_SPACECRAFT, SpiceFrame.ECLIPJ2000
+    )
 
-        # Rotation matrix from IMAP spacecraft frame to ECLIPJ2000.
-        # https://spiceypy.readthedocs.io/en/main/documentation.html#spiceypy.spiceypy.pxform
-        body_rots = spiceypy.pxform("IMAP_SPACECRAFT", "ECLIPJ2000", tdb)
-        # Convert rotation matrix to quaternion.
-        # https://spiceypy.readthedocs.io/en/main/documentation.html#spiceypy.spiceypy.m2q
-        body_quat = spiceypy.m2q(body_rots)
+    # Compute the average spin axis by averaging each component across time
+    z_avg = np.mean(z_inertial_hae, axis=0)
+    # We don't need to worry about the magnitude being close to zero when
+    # normalizing because the instantaneous spin-axes will always be close
+    # to the same direction.
+    z_avg /= np.linalg.norm(z_avg)
 
-        # Standardize the quaternion so that they may be compared.
-        body_quat = body_quat * np.sign(body_quat[0])
-        # Aggregate quaternions into a single matrix.
-        aggregate += np.outer(body_quat, body_quat)
-
-    # Reference: "On Averaging Rotations".
-    # Link: https://link.springer.com/content/pdf/10.1023/A:1011129215388.pdf
-    aggregate /= len(et_times)
-
-    # Compute eigen values and vectors of the matrix A
-    # Eigenvalues tell you how much "influence" each
-    # direction (eigenvector) has.
-    # The largest eigenvalue corresponds to the direction
-    # that has the most influence.
-    # The eigenvector corresponding to the largest
-    # eigenvalue points in the direction that has the most
-    # combined rotation influence.
-    eigvals, eigvecs = np.linalg.eig(aggregate)
-    # q0: The scalar part of the quaternion.
-    # q1, q2, q3: The vector part of the quaternion.
-    q_avg = eigvecs[:, np.argmax(eigvals)]
-
-    return q_avg
+    return z_avg
 
 
-def _create_rotation_matrix(q_avg: np.ndarray) -> NDArray:
+def _create_rotation_matrix(z_avg: np.ndarray) -> NDArray:
     """
-    Create a rotation matrix.
+    Create a rotation matrix from the average spin axis.
 
     Parameters
     ----------
-    q_avg : numpy.ndarray
-        Averaged quaternions for the pointing.
+    z_avg : numpy.ndarray
+        Average spin-axis that has been normalized to have unit length expressed
+        in HAE coordinates.
 
     Returns
     -------
     rotation_matrix : np.ndarray
         Rotation matrix.
     """
-    # Converts the averaged quaternion (q_avg) into a rotation matrix
-    # and get inertial z axis.
-    # https://spiceypy.readthedocs.io/en/main/documentation.html#spiceypy.spiceypy.q2m
-    z_avg = spiceypy.q2m(list(q_avg))[:, 2]
-    # y_avg is perpendicular to both z_avg and the standard Z-axis.
+    # y_avg is perpendicular to both z_avg and the HAE Z-axis.
+    # Since z_avg will never point anywhere near the HAE Z-axis, this
+    # cross-product will always work to define the Pointing Y-axis
     y_avg = np.cross(z_avg, [0, 0, 1])
+    y_avg /= np.linalg.norm(y_avg)
     # x_avg is perpendicular to y_avg and z_avg.
     x_avg = np.cross(y_avg, z_avg)
+    x_avg /= np.linalg.norm(x_avg)
 
     # Construct the rotation matrix from x_avg, y_avg, z_avg
     rotation_matrix = np.asarray([x_avg, y_avg, z_avg])
