@@ -1046,7 +1046,9 @@ PIXEL_ORIENTATIONS = {
     126: "B",
     127: "B",
 }
-
+# TODO Add a variable in l1a (carrying through l2) that indicates mapping from
+#   half spin to esa step (shape 128)
+#   use this var when computing intensities for both angular and species intensity
 # Lookup table for mapping half-spin (keys) to esa steps (values)
 # This is used to determine geometry factors L2
 HALF_SPIN_LUT = {
@@ -1088,8 +1090,6 @@ NSW_POSITIONS = [x for x in range(3, 22)]
 SW_POSITIONS = [0, 1, 2, 22, 23]
 SOLAR_WIND_POSITIONS = [0]
 PUI_POSITIONS = SW_POSITIONS
-L2_GEOMETRIC_FACTOR = 0.013
-L2_HI_NUMBER_OF_SSD = 12.0
 IALIRT_HI_NUMBER_OF_SSD_PER_GROUP = 3.0
 
 L2_HI_SECTORED_ANGLE = np.array(

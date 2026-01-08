@@ -26,8 +26,6 @@ from imap_processing.codice.constants import (
     HI_L2_ELEVATION_ANGLE,
     HI_OMNI_VARIABLE_NAMES,
     HI_SECTORED_VARIABLE_NAMES,
-    L2_GEOMETRIC_FACTOR,
-    L2_HI_NUMBER_OF_SSD,
     L2_HI_SECTORED_ANGLE,
     LO_NSW_ANGULAR_VARIABLE_NAMES,
     LO_NSW_SPECIES_VARIABLE_NAMES,
@@ -370,7 +368,12 @@ def calculate_intensity(
         The updated L2 dataset with species intensities calculated.
     """
     # Select the relevant positions from the geometric factors
-    geometric_factors = geometric_factors.isel(inst_az=positions)
+    # TODO revisit gfactor calculation. For pickup ions, only position 0 is used
+    #   Eventually, the CoDICE team wants to standardize this.
+    if species_list == LO_SW_PICKUP_ION_SPECIES_VARIABLE_NAMES:
+        geometric_factors = geometric_factors.isel(inst_az=[0])
+    else:
+        geometric_factors = geometric_factors.isel(inst_az=positions)
     if average_across_positions:
         # take the mean geometric factor across positions
         geometric_factors = geometric_factors.mean(dim="inst_az")
@@ -674,9 +677,13 @@ def process_hi_omni(dependencies: ProcessingInputCollection) -> xr.Dataset:
     #   etc.
     # Because of that, we need to loop over each species and calculate
     # omni-directional intensities separately.
+    # Read geometric factor. It is labeled as GF in the CSV file
+    geometric_factor = efficiencies_df[efficiencies_df["species"] == "GF"].values[0][-1]
     for species in HI_OMNI_VARIABLE_NAMES:
-        species_data = efficiencies_df[efficiencies_df["species"] == species]
-        # Read current species' effificiency
+        # replace '_' with '-' to match CSV species naming
+        species_csv_name = species.replace("_", "-")
+        species_data = efficiencies_df[efficiencies_df["species"] == species_csv_name]
+        # Read current species' efficiency
         species_efficiencies = species_data["average_efficiency"].values[np.newaxis, :]
         # Calculate energy passband from L1B data
         energy_passbands = (
@@ -685,10 +692,7 @@ def process_hi_omni(dependencies: ProcessingInputCollection) -> xr.Dataset:
         ).values[np.newaxis, :]
         # Calculate omni-directional intensities
         omni_direction_intensities = l1b_dataset[species] / (
-            L2_GEOMETRIC_FACTOR
-            * L2_HI_NUMBER_OF_SSD
-            * species_efficiencies
-            * energy_passbands
+            geometric_factor * species_efficiencies * energy_passbands
         )
         # Store by replacing existing species data with omni-directional intensities
         l1b_dataset[species].values = omni_direction_intensities
@@ -921,7 +925,15 @@ def process_hi_sectored(dependencies: ProcessingInputCollection) -> xr.Dataset:
             dims=(f"energy_{species}", "inst_az"),
             coords=l1b_dataset[[f"energy_{species}", "inst_az"]],
         )
-
+        # Read geometric factor. It is labeled as GF in the CSV file
+        geometric_factor = efficiencies_df[efficiencies_df["species"] == "GF"].values
+        geometric_factor_da = xr.DataArray(
+            geometric_factor[0, 2:].astype(
+                np.float64
+            ),  # Skip first two columns (species, energy_bin)
+            dims="inst_az",
+            coords=l1b_dataset[["inst_az"]],
+        )
         # energy_passbands has shape:
         #   (8,) -> (energy)
         energy_passbands = xr.DataArray(
@@ -933,7 +945,7 @@ def process_hi_sectored(dependencies: ProcessingInputCollection) -> xr.Dataset:
         )
 
         sectored_intensities = l1b_dataset[species] / (
-            L2_GEOMETRIC_FACTOR * species_efficiencies * energy_passbands
+            geometric_factor_da * species_efficiencies * energy_passbands
         )
 
         # Replace existing species data with omni-directional intensities
