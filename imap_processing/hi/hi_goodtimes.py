@@ -36,11 +36,10 @@ def create_goodtimes_dataset(l1a_de: xr.Dataset) -> xr.Dataset:
     """
     Create goodtimes dataset from L1A Direct Event data.
 
-    Initializes all times and spin bins as good (cull_flags=0) for complete
-    8-spin periods. Since we receive one packet every 4 spins but only record
-    MET every 8 spins, we expect MET values to appear in pairs. Only MET values
-    that appear as duplicates (pairs) are included, as single occurrences indicate
-    incomplete 8-spin periods.
+    Initializes all times and spin bins as good (cull_flags=0). The goodtimes
+    dataset is created with one entry per unique MET timestamp found in the
+    L1A DE data. Culling functions (e.g., mark_incomplete_spin_sets) should be
+    called after creation to identify and flag bad times.
 
     Parameters
     ----------
@@ -51,9 +50,9 @@ def create_goodtimes_dataset(l1a_de: xr.Dataset) -> xr.Dataset:
     Returns
     -------
     xarray.Dataset
-        Initialized goodtimes dataset with cull_flags set to 0 (all good) for
-        complete 8-spin periods only. Access goodtimes methods via the
-        .goodtimes accessor (e.g., dataset.goodtimes.remove_times()).
+        Initialized goodtimes dataset with cull_flags set to 0 (all good).
+        Access goodtimes methods via the .goodtimes accessor
+        (e.g., dataset.goodtimes.remove_times()).
     """
     logger.info("Creating Goodtimes from L1A Direct Event data")
 
@@ -66,26 +65,13 @@ def create_goodtimes_dataset(l1a_de: xr.Dataset) -> xr.Dataset:
     )
     logger.debug(f"Extracted {len(met_all)} total MET entries from L1A DE data")
 
-    # Find unique MET values, their counts, and indices of first occurrences
-    unique_mets, first_indices, counts = np.unique(
-        met_all.values, return_index=True, return_counts=True
-    )
-    logger.debug(f"Found {len(unique_mets)} unique MET values")
+    # Find unique MET values and indices of first occurrences
+    unique_mets, first_indices = np.unique(met_all.values, return_index=True)
+    logger.info(f"Found {len(unique_mets)} unique MET values")
 
-    # Keep only MET values that appear as pairs (count == 2)
-    paired_mask = counts == 2
-    first_occurrence_indices = first_indices[paired_mask]
-
-    n_paired = int(np.sum(paired_mask))
-    n_unpaired = len(unique_mets) - n_paired
-    logger.info(
-        f"Filtered to {n_paired} complete 8-spin periods "
-        f"(excluded {n_unpaired} incomplete periods)"
-    )
-
-    # Extract data for paired METs only
-    met = met_all.isel(epoch=first_occurrence_indices)
-    esa_step = l1a_de["esa_step"].isel(epoch=first_occurrence_indices)
+    # Extract data for unique METs (use first occurrence of each)
+    met = met_all.isel(epoch=first_indices)
+    esa_step = l1a_de["esa_step"].isel(epoch=first_indices)
 
     # Create coordinates
     coords = {
@@ -96,7 +82,8 @@ def create_goodtimes_dataset(l1a_de: xr.Dataset) -> xr.Dataset:
     # Create data variables
     # Initialize cull_flags - all good (0) by default
     # Shape: (n_met_timestamps, 90 spin_bins)
-    # Per alg doc Section 2.2.4: 90-element arrays, one per histogram packet
+    # Per alg doc Section 2.3.2: 90-element arrays, one per histogram packet
+    # Culling functions will set non-zero cull codes for bad times
     data_vars = {
         "cull_flags": xr.DataArray(
             np.zeros((len(met), 90), dtype=np.uint8),
@@ -169,7 +156,7 @@ class GoodtimesAccessor:
     Examples
     --------
     >>> gt_dataset = create_goodtimes_dataset(l1a_de)
-    >>> gt_dataset.goodtimes.remove_times(met=1000.5, cull=CullCode.LOOSE)
+    >>> gt_dataset.goodtimes.mark_bad_times(met=1000.5, cull=CullCode.LOOSE)
     >>> intervals = gt_dataset.goodtimes.get_good_intervals()
     """
 
@@ -177,7 +164,7 @@ class GoodtimesAccessor:
         """Initialize the accessor with an xarray Dataset."""
         self._obj = xarray_obj
 
-    def remove_times(
+    def mark_bad_times(
         self,
         met: np.ndarray | float | tuple[float, float],
         bins: np.ndarray | int | None = None,
@@ -217,20 +204,22 @@ class GoodtimesAccessor:
         Examples
         --------
         >>> # Flag all spin bins for MET=1000.5 as loose (cull=1)
-        >>> goodtimes.remove_times(met=1000.5, bins=None, cull=CullCode.LOOSE)
+        >>> goodtimes.mark_bad_times(met=1000.5, bins=None, cull=CullCode.LOOSE)
 
         >>> # Flag spin bins 0-10 for MET=1000.5
-        >>> goodtimes.remove_times(met=1000.5, bins=np.arange(11), cull=CullCode.LOOSE)
+        >>> goodtimes.mark_bad_times(
+        ...     met=1000.5, bins=np.arange(11), cull=CullCode.LOOSE
+        ... )
 
         >>> # Flag time range around a repoint (240s before/after)
         >>> repoint_time = 1000.0
-        >>> goodtimes.remove_times(
+        >>> goodtimes.mark_bad_times(
         ...     met=(repoint_time - 240, repoint_time + 240),
         ...     cull=CullCode.LOOSE
         ... )
 
         >>> # Flag multiple specific METs, all bins
-        >>> goodtimes.remove_times(
+        >>> goodtimes.mark_bad_times(
         ...     met=np.array([1000.5, 1001.5]), bins=None, cull=CullCode.LOOSE
         ... )
         """
@@ -255,7 +244,16 @@ class GoodtimesAccessor:
         met_array = np.atleast_1d(met)
         # Add the difference between the last two MET values to the valid range
         # to get the time of the last MET + 8_spins
-        valid_met_range = (met_values[0], met_values[-1] + np.diff(met_values[-2:])[0])
+        if len(met_values) >= 2:
+            met_interval = np.diff(met_values[-2:])[0]
+        elif len(met_values) == 1:
+            # Only one MET value - use a default interval (120 seconds)
+            met_interval = 120.0
+        else:
+            # No MET values - can't validate range
+            met_interval = 0.0
+
+        valid_met_range = (met_values[0], met_values[-1] + met_interval)
         invalid_met_mask = (met_array < valid_met_range[0]) | (
             met_array > valid_met_range[-1]
         )
@@ -487,3 +485,198 @@ class GoodtimesAccessor:
 
         logger.info(f"Wrote {len(intervals)} intervals to {output_path}")
         return output_path
+
+
+# ==============================================================================
+# Culling/Filtering Functions
+# Based on culling.c - Reference: IMAP-Hi Algorithm Document Sections 2.2.4, 2.3.2
+# ==============================================================================
+
+
+def mark_incomplete_spin_sets(
+    goodtimes_ds: xr.Dataset,
+    l1a_de: xr.Dataset,
+    cull_code: int = CullCode.LOOSE,
+) -> None:
+    """
+    Filter out incomplete 8-spin histogram periods.
+
+    Ensures data completeness by removing histogram packets that don't represent
+    complete 8-spin periods. Histogram packets are the fundamental time unit for
+    IMAP-Hi science data, and incomplete periods indicate data gaps or telemetry
+    issues that would compromise scientific analysis.
+
+    Algorithm Document Reference:
+        Section 2.3.2: Good times selection requiring complete data coverage
+
+    Background:
+        Direct Event (DE) packets contain the "last_spin_num" field indicating
+        which spin number (1-8) was the last spin included in that packet. The
+        instrument can operate in different cadences:
+          - Every 4th spin: last_spin_num values of 4 and 8 only
+          - Every 2nd spin: last_spin_num values of 2, 4, 6, 8
+          - Every spin: last_spin_num values of 1-8
+
+        For a complete 8-spin period, we must see all the expected last_spin_num values
+        with no gaps. The cadence cannot change during HVSCI mode.
+
+    Parameters
+    ----------
+    goodtimes_ds : xarray.Dataset
+        Goodtimes dataset to update with cull flags.
+    l1a_de : xarray.Dataset
+        L1A Direct Event data containing DE packets with last_spin_num field.
+    cull_code : int, optional
+        Cull code to use for marking bad times (default: CullCode.LOOSE).
+
+    Notes
+    -----
+    This function modifies goodtimes_ds in place by calling remove_times()
+    for MET timestamps with incomplete spin coverage.
+    """
+    logger.info("Running mark_incomplete_spin_sets culling")
+
+    met_values = goodtimes_ds.coords["met"].values
+
+    # Calculate DE packet MET times
+    de_met = (
+        l1a_de["meta_seconds"].astype(float)
+        + l1a_de["meta_subseconds"].astype(float) / 1000
+    )
+
+    # Assign each DE packet to nearest goodtimes MET using searchsorted
+    # This maps each DE packet to a MET index
+    met_indices = np.searchsorted(met_values, de_met.values, side="right") - 1
+
+    # Clip to valid range
+    met_indices = np.clip(met_indices, 0, len(met_values) - 1)
+
+    # Calculate actual distance to assigned MET
+    time_slop = 10.0  # seconds tolerance
+    distances = np.abs(de_met.values - met_values[met_indices])
+    valid_assignment = distances <= time_slop
+
+    # Create a new coordinate in l1a_de for grouping
+    l1a_de_with_group = l1a_de.assign_coords(met_group=("epoch", met_indices))
+
+    # Only keep packets with valid time assignment
+    l1a_de_valid = l1a_de_with_group.isel(epoch=valid_assignment)
+
+    # Valid pattern bitmasks
+    valid_pattern_1 = 0b10001000  # bits 3,7: every 4th spin (last_spin_num 4,8)
+    valid_pattern_2 = 0b10101010  # bits 1,3,5,7: every 2nd spin (2,4,6,8)
+    valid_pattern_3 = 0b11111111  # bits 0-7: every spin (1-8)
+    valid_patterns = [valid_pattern_1, valid_pattern_2, valid_pattern_3]
+
+    # Group by MET and validate each group
+    bad_mets = []
+
+    for met_idx, group in l1a_de_valid.groupby("met_group"):
+        met_time = met_values[met_idx]
+
+        # Check for invalid spins flag
+        if np.any(group["spin_invalids"].values != 0):
+            bad_mets.append(met_time)
+            continue
+
+        # Get last_spin_num values for this group
+        last_spin_num_values = group["last_spin_num"].values
+
+        # Count occurrences of each last_spin_num value (1-8)
+        last_spin_num_counts = np.bincount(
+            last_spin_num_values,
+            minlength=9,
+        )[1:9]  # bins 1-8, ignore 0
+
+        # Check if we have exactly one of each expected last_spin_num value
+        # has_exactly_one[i] corresponds to last_spin_num i+1
+        # bit i in pattern_bits represents last_spin_num i+1
+        has_exactly_one = last_spin_num_counts == 1
+        pattern_bits = np.packbits(has_exactly_one, bitorder="little")[0]
+
+        if pattern_bits not in valid_patterns:
+            bad_mets.append(met_time)
+
+    # Also mark MET times with no DE packets as bad
+    mets_with_packets = np.unique(met_indices[valid_assignment])
+    all_met_indices = np.arange(len(met_values))
+    mets_without_packets = np.setdiff1d(all_met_indices, mets_with_packets)
+    bad_mets.extend(met_values[mets_without_packets])
+
+    # Remove all bad times at once
+    if bad_mets:
+        goodtimes_ds.goodtimes.mark_bad_times(met=np.array(bad_mets), cull=cull_code)
+
+    logger.info(f"Dropped {len(bad_mets)} incomplete 8-spin period(s)")
+
+
+def mark_drf_times(
+    goodtimes_ds: xr.Dataset,
+    hk: xr.Dataset,
+    cull_code: int = CullCode.LOOSE,
+) -> None:
+    """
+    Remove times during spacecraft drift restabilization.
+
+    Filters out data collected during and immediately after Drift Restabilization
+    Flag (DRF) periods. When the spacecraft drift rate exceeds acceptable limits,
+    the DRF is asserted and the spacecraft performs a restabilization maneuver.
+    During restabilization, the spacecraft pointing is unstable, making the data
+    unsuitable for science.
+
+    Algorithm Document Reference:
+        Section 2.2.4: Housekeeping checks for spacecraft attitude and pointing
+        Section 2.2.7: Bad times during spacecraft maneuvers
+
+    Background:
+        The spacecraft must maintain precise pointing for Hi sensors to correctly
+        measure ENA arrival directions. When DRF is asserted, the spacecraft is
+        performing active stabilization, and pointing may be off-nominal for up to
+        30 minutes after DRF deasserts. This implementation conservatively removes
+        all times within 30 minutes following DRF deassertion.
+
+    Parameters
+    ----------
+    goodtimes_ds : xarray.Dataset
+        Goodtimes dataset to update with cull flags.
+    hk : xarray.Dataset
+        Housekeeping data containing DRF status in fsw_thruster_warn field.
+    cull_code : int, optional
+        Cull code to use for marking bad times (default: CullCode.LOOSE).
+
+    Notes
+    -----
+    This function modifies goodtimes_ds in place. If no housekeeping data is
+    available, a warning is logged but no times are removed.
+    """
+    logger.info("Running mark_drf_times culling")
+
+    if len(hk.epoch) == 0:
+        logger.warning("No NHK loaded to check for DRF times")
+        return
+
+    # Get HK times and DRF status from fsw_thruster_warn
+    hk_met = hk["ccsds_met"]
+    drf_status = hk["fsw_thruster_warn"].values != 0
+
+    # Find transitions from DRF active (1) to inactive (0) using numpy.diff
+    drf_diff = np.diff(drf_status.astype(int))
+    # Transition from 1->0 shows as -1 in diff
+    # diff[i] = status[i+1] - status[i], so add 1 to get index where it became 0
+    transition_indices = np.nonzero(drf_diff == -1)[0] + 1
+    # Ensure transition_indices is always iterable, even if a scalar is returned
+    transition_indices = np.atleast_1d(transition_indices)
+
+    # For each DRF deactivation, remove times in 30-minute window before
+    for idx in transition_indices:
+        drf_end_time = hk_met.values[idx]
+        window_start = drf_end_time - 30 * 60  # 30 minutes before
+
+        # Remove time range using tuple input
+        goodtimes_ds.goodtimes.mark_bad_times(
+            met=(window_start, drf_end_time), cull=cull_code
+        )
+
+    logger.info(
+        f"Dropped times during {len(transition_indices)} DRF restabilization period(s)"
+    )
