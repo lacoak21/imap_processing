@@ -84,26 +84,24 @@ def mock_cdf_attrs():
 
 
 @pytest.fixture
-def mock_half_spin_lut(monkeypatch):
+def mock_half_spin_per_esa_step():
     """
-    Mock HALF_SPIN_LUT for testing.
+    Mock half_spin_per_esa_step for testing.
     Example:
       ESA steps 0–63 belong to half_spin=1
       ESA steps 64–127 belong to half_spin=2
     """
-    mock_lut = {
-        1: list(range(0, 64)),
-        2: list(range(64, 128)),
-    }
-    monkeypatch.setattr(
-        "imap_processing.codice.codice_l2.HALF_SPIN_LUT",
-        mock_lut,
-    )
+    return np.repeat([1, 2], 64)
 
 
-def test_compute_geometric_factors_all_full_mode(mock_half_spin_lut):
+def test_compute_geometric_factors_all_full_mode(mock_half_spin_per_esa_step):
     # rgfo_half_spin = 3 means all half_spin values (1 or 2) are < rgfo_half_spin
-    dataset = xr.Dataset({"rgfo_half_spin": (("epoch",), np.array([3, 3]))})
+    dataset = xr.Dataset(
+        {
+            "rgfo_half_spin": (("epoch",), np.array([3, 3])),
+            "half_spin_per_esa_step": (("esa_step",), mock_half_spin_per_esa_step),
+        },
+    )
     geometric_factor_lut = {
         "full": np.zeros((128, 24)),
         "reduced": np.ones((128, 24)),
@@ -115,9 +113,14 @@ def test_compute_geometric_factors_all_full_mode(mock_half_spin_lut):
     np.testing.assert_array_equal(result, expected)
 
 
-def test_compute_geometric_factors_all_reduced_mode(mock_half_spin_lut):
+def test_compute_geometric_factors_all_reduced_mode(mock_half_spin_per_esa_step):
     # rgfo_half_spin = 0 means all half_spin values (>=1) are >= rgfo_half_spin
-    dataset = xr.Dataset({"rgfo_half_spin": (("epoch",), np.array([0]))})
+    dataset = xr.Dataset(
+        {
+            "rgfo_half_spin": (("epoch",), np.array([0])),
+            "half_spin_per_esa_step": (("esa_step",), mock_half_spin_per_esa_step),
+        },
+    )
     geometric_factor_lut = {
         "full": np.zeros((128, 24)),
         "reduced": np.ones((128, 24)),
@@ -129,9 +132,14 @@ def test_compute_geometric_factors_all_reduced_mode(mock_half_spin_lut):
     np.testing.assert_array_equal(result, expected)
 
 
-def test_compute_geometric_factors_mixed(mock_half_spin_lut):
+def test_compute_geometric_factors_mixed(mock_half_spin_per_esa_step):
     # rgfo_half_spin = 1
-    dataset = xr.Dataset({"rgfo_half_spin": (("epoch",), np.array([1]))})
+    dataset = xr.Dataset(
+        {
+            "rgfo_half_spin": (("epoch",), np.array([1])),
+            "half_spin_per_esa_step": (("esa_step",), mock_half_spin_per_esa_step),
+        },
+    )
     geometric_factor_lut = {
         "full": np.zeros((128, 24)),
         "reduced": np.ones((128, 24)),

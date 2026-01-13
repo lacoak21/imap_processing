@@ -22,7 +22,6 @@ from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
 from imap_processing.cdf.utils import load_cdf
 from imap_processing.codice.constants import (
     GAIN_ID_TO_STR,
-    HALF_SPIN_LUT,
     HI_L2_ELEVATION_ANGLE,
     HI_OMNI_VARIABLE_NAMES,
     HI_SECTORED_VARIABLE_NAMES,
@@ -307,22 +306,16 @@ def compute_geometric_factors(
     geometric_factors : xarray.DataArray
         A 3D array of geometric factors with shape (epoch, esa_steps, positions).
     """
-    # Convert the HALF_SPIN_LUT to a reverse mapping of esa_step to half_spin
-    esa_step_to_half_spin_map = {
-        val: key for key, vals in HALF_SPIN_LUT.items() for val in vals
-    }
+    # Get half spin values per esa step from the dataset
+    half_spin_per_esa_step = dataset.half_spin_per_esa_step.values
 
-    # Create a list of half_spin values corresponding to ESA steps (0 to 127)
-    half_spin_values = np.array(
-        [esa_step_to_half_spin_map[step] for step in range(128)]
-    )
     # Expand dimensions to compare each rgfo_half_spin value against
     # all half_spin_values
     rgfo_half_spin = dataset.rgfo_half_spin.data[:, np.newaxis]  # Shape: (epoch, 1)
     # Perform the comparison and calculate modes
     # Modes will be true (reduced mode) anywhere half_spin > rgfo_half_spin otherwise
     # false (full mode)
-    modes = half_spin_values > rgfo_half_spin
+    modes = half_spin_per_esa_step > rgfo_half_spin
 
     # Get the geometric factors based on the modes
     gf = np.where(
