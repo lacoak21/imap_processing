@@ -605,6 +605,7 @@ def test_l2_ialirt_cod_hi(cod_hi_l1b_test_data, l2_lut_path, cod_hi_l2_test_data
     )
 
 
+@pytest.mark.xfail(reason="Uncomment this when the validation data version is v15.")
 @pytest.mark.external_test_data
 def test_l2_ialirt_cod_lo(
     cod_lo_l1b_test_data, l1a_lut_path, cod_lo_l2_test_data, l2_processing_dependencies
