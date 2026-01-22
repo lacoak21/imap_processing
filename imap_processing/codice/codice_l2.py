@@ -9,6 +9,7 @@ from imap_processing.codice.codice_l2 import process_codice_l2
 dataset = process_codice_l2(l1_filename)
 """
 
+import datetime
 import logging
 from pathlib import Path
 
@@ -41,6 +42,7 @@ from imap_processing.codice.constants import (
     SW_POSITIONS,
 )
 from imap_processing.codice.utils import apply_replacements_to_attrs
+from imap_processing.spice.time import et_to_datetime64, ttj2000ns_to_et
 
 logger = logging.getLogger(__name__)
 
@@ -315,7 +317,19 @@ def compute_geometric_factors(
     # Perform the comparison and calculate modes
     # Modes will be true (reduced mode) anywhere half_spin > rgfo_half_spin otherwise
     # false (full mode)
-    modes = half_spin_per_esa_step > rgfo_half_spin
+    # TODO: The mode calculation will need to be revisited after FW changes in january
+    #  2026. We also need to fix this on days when the sci Lut changes.
+    # After November 24th 2025 we need to do this step a different way.
+    date_switch = datetime.datetime(2025, 11, 24)
+    dataset_midpoint_ns = dataset["epoch"].values[dataset["epoch"].size // 2]
+    # Convert to datetime64 for comparison
+    dataset_midpoint = et_to_datetime64(ttj2000ns_to_et(dataset_midpoint_ns))
+    if dataset_midpoint < date_switch:
+        modes = (half_spin_per_esa_step > rgfo_half_spin) & (rgfo_half_spin > 0)
+    else:
+        # After November 24th, 2025, we no longer apply reduced geometric factors;
+        # always use the full geometric factor lookup.
+        modes = np.zeros_like(half_spin_per_esa_step, dtype=bool)
 
     # Get the geometric factors based on the modes
     gf = np.where(
