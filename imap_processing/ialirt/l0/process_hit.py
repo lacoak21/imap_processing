@@ -5,9 +5,11 @@ import logging
 import numpy as np
 import xarray as xr
 
-from imap_processing.ialirt.utils.grouping import find_groups
+from imap_processing.ialirt.utils.grouping import (
+    _populate_instrument_header_items,
+    find_groups,
+)
 from imap_processing.ialirt.utils.time import calculate_time
-from imap_processing.spice.time import met_to_ttj2000ns, met_to_utc
 
 logger = logging.getLogger(__name__)
 
@@ -161,16 +163,12 @@ def process_hit(xarray_data: xr.Dataset) -> list[dict]:
         slow_rate = grouped_data["hit_slow_rate"][
             (grouped_data["group"] == group).values
         ]
-        met = int(grouped_data["met"][(grouped_data["group"] == group).values][0])
-
+        met = grouped_data["met"][(grouped_data["group"] == group).values]
         l1 = create_l1(fast_rate_1, fast_rate_2, slow_rate)
 
         hit_data.append(
-            {
-                "apid": 478,
-                "met": int(met),
-                "met_in_utc": met_to_utc(met).split(".")[0],
-                "ttj2000ns": int(met_to_ttj2000ns(met)),
+            _populate_instrument_header_items(met)
+            | {
                 "instrument": "hit",
                 "hit_e_a_side_low_en": int(l1["IALRT_RATE_1"] + l1["IALRT_RATE_2"]),
                 "hit_e_a_side_med_en": int(l1["IALRT_RATE_5"] + l1["IALRT_RATE_6"]),

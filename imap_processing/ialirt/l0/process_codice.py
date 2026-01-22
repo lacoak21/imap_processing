@@ -21,9 +21,11 @@ from imap_processing.codice.codice_l2 import (
     get_geometric_factor_lut,
     process_lo_species_intensity,
 )
-from imap_processing.ialirt.utils.grouping import find_groups
+from imap_processing.ialirt.utils.grouping import (
+    _populate_instrument_header_items,
+    find_groups,
+)
 from imap_processing.ialirt.utils.time import calculate_time
-from imap_processing.spice.time import met_to_ttj2000ns, met_to_utc
 
 logger = logging.getLogger(__name__)
 
@@ -476,11 +478,8 @@ def process_codice(
             l2_lo = calculate_ratios(l1b_lo, l2_lut_path, l2_geometric_factor_path)
 
             codice_lo_data.append(
-                {
-                    "apid": 478,
-                    "met": int(met[0]),
-                    "met_in_utc": met_to_utc(met[0]).split(".")[0],
-                    "ttj2000ns": int(met_to_ttj2000ns(met[0])),
+                _populate_instrument_header_items(met)
+                | {
                     "instrument": f"{sensor}",
                     f"{sensor}_c_over_o_abundance": l2_lo.c_over_o_abundance,
                     f"{sensor}_mg_over_o_abundance": l2_lo.mg_over_o_abundance,
@@ -518,11 +517,8 @@ def process_codice(
             ).tolist()
 
             codice_hi_data.append(
-                {
-                    "apid": 478,
-                    "met": int(met[0]),
-                    "met_in_utc": met_to_utc(met[0]).split(".")[0],
-                    "ttj2000ns": int(met_to_ttj2000ns(met[0])),
+                _populate_instrument_header_items(met)
+                | {
                     "instrument": f"{sensor}",
                     f"{sensor}_epoch": [int(epoch) for epoch in l1b_hi["epoch"]],
                     f"{sensor}_h": dec_l2_hi,
