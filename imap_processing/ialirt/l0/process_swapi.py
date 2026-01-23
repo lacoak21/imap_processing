@@ -15,6 +15,7 @@ from imap_processing.ialirt.utils.grouping import (
     find_groups,
 )
 from imap_processing.ialirt.utils.time import calculate_time
+from imap_processing.spice.time import met_to_ttj2000ns
 from imap_processing.swapi.l1.swapi_l1 import process_sweep_data
 from imap_processing.swapi.l2.swapi_l2 import SWAPI_LIVETIME
 
@@ -163,8 +164,12 @@ def process_swapi_ialirt(
         seq_values = grouped_dataset["swapi_seq_number"][
             (grouped_dataset["group"] == group)
         ]
-
         met = grouped_dataset["met"][(grouped_dataset["group"] == group).values]
+
+        swapi_met = grouped_dataset["swapi_acq"][
+            (grouped_dataset["group"] == group).values
+        ]
+        mid_measurement = int((swapi_met[0] + swapi_met[-1]) // 2)
 
         # Ensure no duplicates and all values from 0 to 11 are present
         if not np.array_equal(seq_values.values.astype(int), np.arange(12)):
@@ -209,6 +214,7 @@ def process_swapi_ialirt(
             _populate_instrument_header_items(met)
             | {
                 "instrument": "swapi",
+                "swapi_epoch": int(met_to_ttj2000ns(mid_measurement)),
                 "swapi_pseudo_proton_speed": Decimal(f"{pseudo_speed:.3f}"),
                 "swapi_pseudo_proton_density": Decimal(f"{pseudo_density:.3f}"),
                 "swapi_pseudo_proton_temperature": Decimal(f"{pseudo_temperature:.3f}"),

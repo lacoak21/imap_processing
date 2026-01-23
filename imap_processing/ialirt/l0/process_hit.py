@@ -10,6 +10,7 @@ from imap_processing.ialirt.utils.grouping import (
     find_groups,
 )
 from imap_processing.ialirt.utils.time import calculate_time
+from imap_processing.spice.time import met_to_ttj2000ns, met_to_utc
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +155,17 @@ def process_hit(xarray_data: xr.Dataset) -> list[dict]:
             incomplete_groups.append(group)
             continue
 
+        hit_met = grouped_data["hit_met"][(grouped_data["group"] == group).values]
+        mid_measurement = int((hit_met[0] + hit_met[-1]) // 2)
+
+        status_values = grouped_data["hit_status"][
+            (grouped_data["group"] == group).values
+        ]
+
+        if np.any(status_values == 0):
+            logger.info(f"Off-nominal value detected at {met_to_utc(mid_measurement)}")
+            continue
+
         fast_rate_1 = grouped_data["hit_fast_rate_1"][
             (grouped_data["group"] == group).values
         ]
@@ -164,12 +176,14 @@ def process_hit(xarray_data: xr.Dataset) -> list[dict]:
             (grouped_data["group"] == group).values
         ]
         met = grouped_data["met"][(grouped_data["group"] == group).values]
+
         l1 = create_l1(fast_rate_1, fast_rate_2, slow_rate)
 
         hit_data.append(
             _populate_instrument_header_items(met)
             | {
                 "instrument": "hit",
+                "hit_epoch": int(met_to_ttj2000ns(mid_measurement)),
                 "hit_e_a_side_low_en": int(l1["IALRT_RATE_1"] + l1["IALRT_RATE_2"]),
                 "hit_e_a_side_med_en": int(l1["IALRT_RATE_5"] + l1["IALRT_RATE_6"]),
                 "hit_e_a_side_high_en": int(l1["IALRT_RATE_7"]),
