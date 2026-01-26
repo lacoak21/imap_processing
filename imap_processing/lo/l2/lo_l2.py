@@ -1047,6 +1047,7 @@ def calculate_sputtering_corrections(
     # Equation 9
     j_o_prime = o_small_dataset["ena_intensity"] - o_small_dataset["bg_intensity"]
     j_o_prime.values[j_o_prime.values < 0] = 0  # No negative intensities
+    j_o_prime_valid = np.isfinite(j_o_prime) & (j_o_prime > 0)
 
     # Equation 10
     j_o_prime_var = (
@@ -1060,30 +1061,38 @@ def calculate_sputtering_corrections(
     )
     # Equation 11
     # Remove the sputtered oxygen intensity to correct the original H intensity
-    sputter_corrected_intensity = (
-        small_dataset["ena_intensity"] - sputter_correction_factor * j_o_prime
+    sputter_corrected_intensity = xr.where(
+        j_o_prime_valid,
+        small_dataset["ena_intensity"] - sputter_correction_factor * j_o_prime,
+        small_dataset["ena_intensity"],
     )
 
     # Equation 12
-    sputter_corrected_intensity_var = (
+    sputter_corrected_intensity_var = xr.where(
+        j_o_prime_valid,
         small_dataset["ena_intensity_stat_uncert"] ** 2
-        + (sputter_correction_factor**2) * j_o_prime_var
+        + (sputter_correction_factor**2) * j_o_prime_var,
+        small_dataset["ena_intensity_stat_uncert"] ** 2,
     )
 
     # Equation 13
-    sputter_corrected_intensity_sys_err = (
+    sputter_corrected_intensity_sys_err = xr.where(
+        j_o_prime_valid,
         sputter_corrected_intensity
         / small_dataset["ena_intensity"]
-        * small_dataset["ena_intensity_sys_err"]
+        * small_dataset["ena_intensity_sys_err"],
+        small_dataset["ena_intensity_sys_err"],
     )
 
     # Now put the corrected values into the original dataset
-    dataset["ena_intensity"][0, energy_indices, ...] = sputter_corrected_intensity
-    dataset["ena_intensity_stat_uncert"][0, energy_indices, ...] = np.sqrt(
-        sputter_corrected_intensity_var
+    dataset["ena_intensity"].values[0, energy_indices, ...] = (
+        sputter_corrected_intensity.values
     )
-    dataset["ena_intensity_sys_err"][0, energy_indices, ...] = (
-        sputter_corrected_intensity_sys_err
+    dataset["ena_intensity_stat_uncert"].values[0, energy_indices, ...] = np.sqrt(
+        sputter_corrected_intensity_var.values
+    )
+    dataset["ena_intensity_sys_err"].values[0, energy_indices, ...] = (
+        sputter_corrected_intensity_sys_err.values
     )
 
     return dataset
@@ -1224,26 +1233,34 @@ def calculate_bootstrap_corrections(dataset: xr.Dataset) -> xr.Dataset:
         j_c_prime > 0, dataset["bootstrap_intensity"] / j_c_prime * j_c_prime_err, 0
     )
 
+    valid_bootstrap = (dataset["bootstrap_intensity"] > 0) & np.isfinite(
+        dataset["bootstrap_intensity"]
+    )
     # Update the original intensity values
     # Equation 32 / 33
     # ena_intensity = ena_intensity (J_c) - (j_c_prime - J_b)
-    dataset["ena_intensity"] -= j_c_prime - dataset["bootstrap_intensity"]
+    dataset["ena_intensity"] = xr.where(
+        valid_bootstrap,
+        dataset["ena_intensity"] - j_c_prime + dataset["bootstrap_intensity"],
+        dataset["ena_intensity"],
+    )
 
     # Ensure corrected intensities are non-negative
-    dataset["ena_intensity"] = dataset["ena_intensity"].where(
-        dataset["ena_intensity"] >= 0, 0
+    dataset["ena_intensity"] = xr.where(
+        dataset["ena_intensity"] < 0, 0, dataset["ena_intensity"]
     )
 
     # Equation 34 - statistical uncertainty
     # Take the square root, since we were in variances up to this point
-    dataset["ena_intensity_stat_uncert"] = np.sqrt(dataset["bootstrap_intensity_var"])
+    dataset["ena_intensity_stat_uncert"] = xr.where(
+        valid_bootstrap,
+        np.sqrt(dataset["bootstrap_intensity_var"]),
+        dataset["ena_intensity_stat_uncert"],
+    )
 
     # Equation 35 - systematic error for corrected intensity
     # Handle division by zero and ensure reasonable values
     dataset["ena_intensity_sys_err"] = xr.zeros_like(dataset["ena_intensity"])
-    valid_bootstrap = (dataset["bootstrap_intensity"] > 0) & np.isfinite(
-        dataset["bootstrap_intensity"]
-    )
 
     # Only compute where bootstrap intensity is valid
     dataset["ena_intensity_sys_err"] = xr.where(
