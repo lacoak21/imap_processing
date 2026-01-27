@@ -151,7 +151,10 @@ def match_coords_to_indices(
 
     # Az/El pixel center coords of the input object in its own frame
     input_obj_az_el_input_frame = input_object.az_el_points
-
+    print(event_et)
+    if event_et == 817596200.7830932:
+        print("HI")
+        event_et += 0.0000001
     # Transform the input pixel centers to the output frame
     input_obj_az_el_output_frame = geometry.frame_transform_az_el(
         et=event_et,

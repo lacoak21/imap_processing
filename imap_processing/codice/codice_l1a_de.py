@@ -374,8 +374,7 @@ def process_de_data(
     # with the same acq_start_seconds value
     acq_start_seconds = packets["acq_start_seconds"].values
     unique_times, counts = np.unique(acq_start_seconds, return_counts=True)
-
-    # Find incomplete groups (not exactly num_priorities packets)
+    # Find incomplete groups
     incomplete_mask = counts != num_priorities
     if np.any(incomplete_mask):
         incomplete_times = unique_times[incomplete_mask]
@@ -384,16 +383,44 @@ def process_de_data(
             f"Found {len(incomplete_times)} incomplete priority group(s) "
             f"for APID {apid}. Expected {num_priorities} packets per group. "
             f"Incomplete groups at acq_start_seconds {incomplete_times.tolist()} "
-            f"with counts {incomplete_counts.tolist()}. Dropping these packets."
+            f"with counts {incomplete_counts.tolist()}. Padding with fill values."
         )
 
-    # Keep only complete groups
-    complete_times = unique_times[~incomplete_mask]
-    keep_mask = np.isin(acq_start_seconds, complete_times)
-    packets = packets.isel(epoch=keep_mask)
+        # Creat a list of groups with padding if any priorities are missing
+        padded_groups = []
+        for time_val, count in zip(unique_times, counts, strict=False):
+            group_mask = acq_start_seconds == time_val
+            group = packets.isel(epoch=group_mask)
+            if count < num_priorities:
+                # Find missing priorities
+                existing_priorities = set(group["priority"].values)
+                missing_priorities = sorted(
+                    [p for p in range(num_priorities) if p not in existing_priorities]
+                )
+                num_missing_priorities = len(missing_priorities)
+                # Create a Dataset to hold the padded packets
+                # Use first packet as a template
+                pad_packet = group.isel(epoch=[0] * num_missing_priorities).copy()
+                # Set padding values
+                pad_packet["num_events"].values = np.full(num_missing_priorities, 0)
+                pad_packet["byte_count"].values = np.full(num_missing_priorities, 0)
+                pad_packet["priority"].values = missing_priorities
+                # Set event_data to empty object arrays for padding packets
+                for i in range(num_missing_priorities):
+                    pad_packet["event_data"].data[i] = np.array([], dtype=np.uint8)
+                # Concatenate and sort by priority to maintain correct order
+                group = xr.concat([group, pad_packet], dim="epoch")
+                # Sort by priority to ensure packets are in the right order
+                sort_idx = np.argsort(group["priority"].values)
+                group = group.isel(epoch=sort_idx)
 
-    # Calculate number of epochs from complete groups
-    num_epochs = len(complete_times)
+            padded_groups.append(group)
+
+        # Concatenate all groups
+        packets = xr.concat(padded_groups, dim="epoch")
+
+    # Calculate number of epochs
+    num_epochs = len(unique_times)
 
     # Create dataset with coordinates
     de_data = _create_dataset_coords(packets, apid, num_priorities, cdf_attrs)
