@@ -115,6 +115,60 @@ def optimize_pseudo_parameters(
     return sol[0]
 
 
+def geometric_mean(
+    swapi_met_list: list,
+    pseudo_speed_list: list,
+    pseudo_proton_density_list: list,
+    pseudo_proton_temperature_list: list,
+) -> tuple:
+    """
+    Find moving geometric mean of SWAPI data.
+
+    Parameters
+    ----------
+    swapi_met_list : list
+        Mission elapsed time for first time measurement of SWAPI sweep.
+    pseudo_speed_list : list
+        Pseudo speed for SWAPI sweep.
+    pseudo_proton_density_list : list
+        Pseudo proton density for SWAPI sweep.
+    pseudo_proton_temperature_list : list
+        Pseudo proton temperature for SWAPI sweep.
+
+    Returns
+    -------
+    avg_swapi_met : float
+        Average swapi met value.
+    avg_proton_density : float
+        Average proton density value.
+    avg_pseudo_speed : float
+        Average pseudo speed value.
+    avg_proton_temperature : float
+        Average proton temperature value.
+    """
+    met_arr = np.asarray(swapi_met_list)
+
+    # If any of the values are equal to nan then do not include that index.
+    valid = (
+        ~np.isnan(pseudo_speed_list)
+        & ~np.isnan(pseudo_proton_density_list)
+        & ~np.isnan(pseudo_proton_temperature_list)
+    )
+
+    pseudo_speed_arr = np.asarray(pseudo_speed_list)[valid]
+    avg_pseudo_speed = np.exp(np.mean(np.log(pseudo_speed_arr)))
+
+    density_arr = np.asarray(pseudo_proton_density_list)[valid]
+    avg_proton_density = np.exp(np.mean(np.log(density_arr)))
+
+    temperature_arr = np.asarray(pseudo_proton_temperature_list)[valid]
+    avg_proton_temperature = np.exp(np.mean(np.log(temperature_arr)))
+
+    avg_swapi_met = np.mean(met_arr[valid])
+
+    return avg_swapi_met, avg_proton_density, avg_pseudo_speed, avg_proton_temperature
+
+
 def process_swapi_ialirt(
     unpacked_data: xr.Dataset, calibration_lut_table: pd.DataFrame
 ) -> list[dict]:
@@ -145,6 +199,10 @@ def process_swapi_ialirt(
     sci_dataset["met"] = met
     incomplete_groups = []
     swapi_data = []
+    pseudo_proton_speed_list = []
+    pseudo_proton_density_list = []
+    pseudo_proton_temperature_list = []
+    swapi_met_list = []
 
     # Extract energy values from the calibration lookup table file
     calibration_lut_table["timestamp"] = pd.to_datetime(
@@ -210,16 +268,44 @@ def process_swapi_ialirt(
             raw_coin_rate.squeeze(), count_rate_error.squeeze(), energy_passbands
         )
 
-        swapi_data.append(
-            _populate_instrument_header_items(met)
-            | {
-                "instrument": "swapi",
-                "swapi_epoch": int(met_to_ttj2000ns(mid_measurement)),
-                "swapi_pseudo_proton_speed": Decimal(f"{pseudo_speed:.3f}"),
-                "swapi_pseudo_proton_density": Decimal(f"{pseudo_density:.3f}"),
-                "swapi_pseudo_proton_temperature": Decimal(f"{pseudo_temperature:.3f}"),
-            }
-        )
+        pseudo_proton_speed_list.append(pseudo_speed)
+        pseudo_proton_density_list.append(pseudo_density)
+        pseudo_proton_temperature_list.append(pseudo_temperature)
+        swapi_met_list.append(mid_measurement)
+
+        # Begin averaging after 1 minute has passed (5 sweeps) and make certain that
+        # the data is sequential (~12 s cadence).
+        if len(swapi_met_list) >= 5 and np.all(
+            np.isclose(np.diff(swapi_met_list[-5:]), 12.0, atol=0.05)
+        ):
+            (
+                avg_swapi_met,
+                avg_pseudo_proton_density,
+                avg_pseudo_proton_speed,
+                avg_pseudo_proton_temperature,
+            ) = geometric_mean(
+                swapi_met_list[-5:],
+                pseudo_proton_speed_list[-5:],
+                pseudo_proton_density_list[-5:],
+                pseudo_proton_temperature_list[-5:],
+            )
+
+            swapi_data.append(
+                _populate_instrument_header_items(met)
+                | {
+                    "instrument": "swapi",
+                    "swapi_epoch": int(met_to_ttj2000ns(avg_swapi_met)),
+                    "swapi_pseudo_proton_speed": Decimal(
+                        f"{avg_pseudo_proton_speed:.3f}"
+                    ),
+                    "swapi_pseudo_proton_density": Decimal(
+                        f"{avg_pseudo_proton_density:.3f}"
+                    ),
+                    "swapi_pseudo_proton_temperature": Decimal(
+                        f"{avg_pseudo_proton_temperature:.3f}"
+                    ),
+                }
+            )
     if incomplete_groups:
         logger.info(
             f"The following swapi groups were skipped due to "
