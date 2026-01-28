@@ -755,6 +755,8 @@ def test_direct_events_incomplete_groups(codice_lut_path, caplog):
     apid = CODICEAPID.COD_LO_PHA
     de_dataset = datasets_by_apid[apid]
     # Drop the first packet to test incomplete group handling
+    # This mocks the case when one priority group is incomplete
+    # in this example, the first group is missing the first priority
     len_epoch = de_dataset.sizes["epoch"]
     de_dataset = de_dataset.isel(epoch=slice(1, len_epoch))
     dataset = l1a_direct_event(de_dataset, apid)

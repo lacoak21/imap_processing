@@ -387,7 +387,7 @@ def process_de_data(
             f"with counts {incomplete_counts.tolist()}. Padding with fill values."
         )
 
-        # Creat a list of groups with padding if any priorities are missing
+        # Create a list of groups with padding if any priorities are missing
         padded_groups = []
         for time, count in zip(unique_times, counts, strict=False):
             # Get the packets for this group
