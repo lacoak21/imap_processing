@@ -374,7 +374,8 @@ def process_de_data(
     # with the same acq_start_seconds value
     acq_start_seconds = packets["acq_start_seconds"].values
     unique_times, counts = np.unique(acq_start_seconds, return_counts=True)
-    # Find incomplete groups
+
+    # Find incomplete groups (not exactly num_priorities packets)
     incomplete_mask = counts != num_priorities
     if np.any(incomplete_mask):
         incomplete_times = unique_times[incomplete_mask]
@@ -388,9 +389,10 @@ def process_de_data(
 
         # Creat a list of groups with padding if any priorities are missing
         padded_groups = []
-        for time_val, count in zip(unique_times, counts, strict=False):
-            group_mask = acq_start_seconds == time_val
-            group = packets.isel(epoch=group_mask)
+        for time, count in zip(unique_times, counts, strict=False):
+            # Get the packets for this group
+            group_ids = np.where(acq_start_seconds == time)[0]
+            group = packets.isel(epoch=group_ids)
             if count < num_priorities:
                 # Find missing priorities
                 existing_priorities = set(group["priority"].values)
@@ -398,8 +400,8 @@ def process_de_data(
                     [p for p in range(num_priorities) if p not in existing_priorities]
                 )
                 num_missing_priorities = len(missing_priorities)
-                # Create a Dataset to hold the padded packets
-                # Use first packet as a template
+                # Use first packet as a template and expand along the epoch dimension
+                # for the number of missing priorities.
                 pad_packet = group.isel(epoch=[0] * num_missing_priorities).copy()
                 # Set padding values
                 pad_packet["num_events"].values = np.full(num_missing_priorities, 0)
@@ -408,9 +410,9 @@ def process_de_data(
                 # Set event_data to empty object arrays for padding packets
                 for i in range(num_missing_priorities):
                     pad_packet["event_data"].data[i] = np.array([], dtype=np.uint8)
-                # Concatenate and sort by priority to maintain correct order
+                # Concatenate the existing priorities with the fillval priority groups
                 group = xr.concat([group, pad_packet], dim="epoch")
-                # Sort by priority to ensure packets are in the right order
+                # Sort by priority
                 sort_idx = np.argsort(group["priority"].values)
                 group = group.isel(epoch=sort_idx)
 
