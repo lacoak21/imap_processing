@@ -415,7 +415,13 @@ def process_de_data(
                 # Sort by priority
                 sort_idx = np.argsort(group["priority"].values)
                 group = group.isel(epoch=sort_idx)
-
+            elif counts > num_priorities:
+                # TODO is this possible?
+                # Sort by priority
+                sort_idx = np.argsort(group["priority"].values)
+                group = group.isel(epoch=sort_idx)
+                # Keep only the first num_priorities packets
+                group = group.isel(epoch=slice(0, num_priorities))
             padded_groups.append(group)
 
         # Concatenate all groups
