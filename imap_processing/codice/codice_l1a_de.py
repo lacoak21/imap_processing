@@ -384,7 +384,7 @@ def process_de_data(
             f"Found {len(incomplete_times)} incomplete priority group(s) "
             f"for APID {apid}. Expected {num_priorities} packets per group. "
             f"Incomplete groups at acq_start_seconds {incomplete_times.tolist()} "
-            f"with counts {incomplete_counts.tolist()}. Padding with fill values."
+            f"with counts {incomplete_counts.tolist()}. Padding with zeros."
         )
 
         # Create a list of groups with padding if any priorities are missing
@@ -397,25 +397,25 @@ def process_de_data(
                 # Find missing priorities
                 existing_priorities = set(group["priority"].values)
                 missing_priorities = sorted(
-                    [p for p in range(num_priorities) if p not in existing_priorities]
+                    set(range(num_priorities)) - existing_priorities
                 )
                 num_missing_priorities = len(missing_priorities)
                 # Use first packet as a template and expand along the epoch dimension
                 # for the number of missing priorities.
                 pad_packet = group.isel(epoch=[0] * num_missing_priorities).copy()
-                # Set padding values
+                # Set padding values to zero
                 pad_packet["num_events"].values = np.full(num_missing_priorities, 0)
                 pad_packet["byte_count"].values = np.full(num_missing_priorities, 0)
                 pad_packet["priority"].values = missing_priorities
                 # Set event_data to empty object arrays for padding packets
                 for i in range(num_missing_priorities):
                     pad_packet["event_data"].data[i] = np.array([], dtype=np.uint8)
-                # Concatenate the existing priorities with the fillval priority groups
+                # Concatenate the existing priorities with the zeros priority groups
                 group = xr.concat([group, pad_packet], dim="epoch")
                 # Sort by priority
                 sort_idx = np.argsort(group["priority"].values)
                 group = group.isel(epoch=sort_idx)
-            elif counts > num_priorities:
+            elif count > num_priorities:
                 # TODO is this possible?
                 # Sort by priority
                 sort_idx = np.argsort(group["priority"].values)
