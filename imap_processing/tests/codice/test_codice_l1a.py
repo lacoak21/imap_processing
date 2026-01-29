@@ -19,11 +19,13 @@ from imap_processing import imap_module_directory
 from imap_processing.cdf.utils import load_cdf, write_cdf
 from imap_processing.codice import constants
 from imap_processing.codice.codice_l1a import process_l1a
-from imap_processing.codice.utils import read_sci_lut
+from imap_processing.codice.codice_l1a_de import l1a_direct_event
+from imap_processing.codice.utils import CODICEAPID, read_sci_lut
 from imap_processing.tests.codice.conftest import (
     VALIDATION_FILE_DATE,
     VALIDATION_FILE_VERSION,
 )
+from imap_processing.utils import packet_file_to_datasets
 
 logger = logging.getLogger(__name__)
 pytestmark = pytest.mark.external_test_data
@@ -734,6 +736,39 @@ def test_lo_direct_events(mock_get_file_paths, codice_lut_path):
         cdf_file.name
         == f"imap_codice_l1a_lo-direct-events_{VALIDATION_FILE_DATE}_v002.cdf"
     )
+
+
+def test_direct_events_incomplete_groups(codice_lut_path, caplog):
+    """Tests lo-direct-events with a packet containing incomplete groups."""
+
+    # Get science data which is L0 packet file
+    science_file = codice_lut_path(descriptor="lo-direct-events", data_type="l0")[0]
+
+    xtce_file = (
+        imap_module_directory / "codice/packet_definitions/codice_packet_definition.xml"
+    )
+    # Decom packet
+    datasets_by_apid = packet_file_to_datasets(
+        science_file,
+        xtce_file,
+    )
+    apid = CODICEAPID.COD_LO_PHA
+    de_dataset = datasets_by_apid[apid]
+    # Drop the first packet to test incomplete group handling
+    # This mocks the case when one priority group is incomplete
+    # in this example, the first group is missing the first priority
+    len_epoch = de_dataset.sizes["epoch"]
+    de_dataset = de_dataset.isel(epoch=slice(1, len_epoch))
+    dataset = l1a_direct_event(de_dataset, apid)
+    # Check that fillvals are used for the first missing priority for the first epoch
+    assert np.all(dataset.tof[0, 0, :].values == 65535)
+    # Check that there is data for the remaining priorities
+    assert np.any(dataset.tof[0, 1:, :].values != 65535)
+    # Check logs for incomplete groups
+    assert (
+        f"Found 1 incomplete priority group(s) for APID {apid}. "
+        f"Expected 8 packets per group"
+    ) in caplog.text
 
 
 @patch("imap_data_access.processing_input.ProcessingInputCollection.get_file_paths")

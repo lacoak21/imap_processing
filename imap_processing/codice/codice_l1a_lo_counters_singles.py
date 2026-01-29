@@ -137,7 +137,9 @@ def l1a_lo_counters_singles(unpacked_dataset: xr.Dataset, lut_file: Path) -> xr.
     )
     # For every energy after nso_half_spin, set data to fill values
     nso_half_spin = unpacked_dataset["nso_half_spin"].values
-    nso_mask = half_spin_per_esa_step > nso_half_spin[:, np.newaxis]
+    nso_mask = (half_spin_per_esa_step > nso_half_spin[:, np.newaxis]) | (
+        half_spin_per_esa_step == HALF_SPIN_FILLVAL
+    )
     counters_mask = nso_mask[:, :, np.newaxis, np.newaxis]
     counters_mask = np.broadcast_to(counters_mask, counters_data.shape)
     counters_data = counters_data.astype(np.float64)

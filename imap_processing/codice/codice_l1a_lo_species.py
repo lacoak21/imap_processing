@@ -150,7 +150,9 @@ def l1a_lo_species(unpacked_dataset: xr.Dataset, lut_file: Path) -> xr.Dataset:
     )
     # For every energy after nso_half_spin, set data to fill values
     nso_half_spin = unpacked_dataset["nso_half_spin"].values
-    nso_mask = half_spin_per_esa_step > nso_half_spin[:, np.newaxis]
+    nso_mask = (half_spin_per_esa_step > nso_half_spin[:, np.newaxis]) | (
+        half_spin_per_esa_step == HALF_SPIN_FILLVAL
+    )
     species_mask = nso_mask[:, np.newaxis, :, np.newaxis]
     species_mask = np.repeat(species_mask, num_species, 1)
     species_data = species_data.astype(np.float64)
