@@ -213,26 +213,29 @@ def lo_l1b(
             datasets_to_return.append(badtimes_ds)
 
     # if the dependencies are used to create Annotated Direct Events
-    if descriptor == "de":
+    elif descriptor == "de":
         logger.info("\nProcessing IMAP-Lo L1B Direct Events...")
         ds = l1b_de(sci_dependencies, anc_dependencies, attr_mgr_l1b, attr_mgr_l1a)
         datasets_to_return.append(ds)
 
     # If dependencies are used to create Histogram Rates
-    if descriptor == "all-rates":
+    elif descriptor == "all-rates":
         logger.info("\nProcessing IMAP-Lo L1B Hist and Monitor Rates...")
         ds = l1b_allrates(sci_dependencies, anc_dependencies, attr_mgr_l1b)
         datasets_to_return.extend(ds)
 
-    if descriptor == "derates":
+    elif descriptor == "derates":
         logger.info("\nProcessing IMAP-Lo L1B DE Rates...")
         ds = calculate_de_rates(sci_dependencies, anc_dependencies, attr_mgr_l1b)
         datasets_to_return.append(ds)
 
-    if descriptor == "star":
+    elif descriptor == "prostar":
         logger.info("\nProcessing IMAP-Lo L1B Star Sensor Profile...")
         ds = l1b_star(sci_dependencies, attr_mgr_l1b)
         datasets_to_return.append(ds)
+
+    else:
+        logger.warning(f"Unexpected descriptor: {descriptor!r}")
 
     return datasets_to_return
 
@@ -2353,6 +2356,14 @@ def l1b_star(
     l1a_star = sci_dependencies["imap_lo_l1a_star"]
     l1b_nhk = sci_dependencies["imap_lo_l1b_nhk"]
     spin_data = sci_dependencies["imap_lo_l1a_spin"]
+
+    # L1A files have a coordinate of shcoarse due to DEPEND_0 issue.
+    # This is a temporary fix for that.
+    # TODO: Fix L1A shcoarse DEPEND_0 and then remove this
+    if "shcoarse" in l1a_star.dims:
+        var_shcoarse = xr.DataArray(l1a_star["shcoarse"].values, dims=("epoch",))
+        l1a_star = l1a_star.drop_vars("shcoarse")
+        l1a_star["shcoarse"] = var_shcoarse
 
     # Get sampling cadence from NHK
     sampling_cadence = get_sampling_cadence_from_nhk(l1b_nhk)
