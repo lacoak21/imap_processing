@@ -258,7 +258,7 @@ swe_electron_energy:
 # Variables
 codice_hi_h:
   <<: *default_float32
-  CATDESC: Proton intensity in 4 epochs, 15 energy ranges, 4 spin sectors, and 4 elevations
+  CATDESC: Proton flux from CoDICE-Hi in 15 energy bins between 0.02 to 3.62 MeV over 4 spin sectors and 4 azimuth bins
   FIELDNAM: H+ intensity
   LABLAXIS: H+ intensity
   DEPEND_0: codice_hi_epoch
@@ -274,7 +274,7 @@ codice_hi_h:
 
 codice_lo_c_over_o_abundance:
   <<: *default_float32
-  CATDESC: C/O abundance ratio
+  CATDESC: C/O elemental abundance ratio from CoDICE-Lo
   FIELDNAM: C/O abundance ratio
   LABLAXIS: C/O ratio
   DEPEND_0: codice_lo_epoch
@@ -285,7 +285,7 @@ codice_lo_c_over_o_abundance:
 
 codice_lo_mg_over_o_abundance:
   <<: *default_float32
-  CATDESC: Mg/O abundance ratio
+  CATDESC: Mg/O elemental abundance ratio from CoDICE-Lo
   FIELDNAM: Mg/O abundance ratio
   LABLAXIS: Mg/O ratio
   DEPEND_0: codice_lo_epoch
@@ -296,7 +296,7 @@ codice_lo_mg_over_o_abundance:
 
 codice_lo_fe_over_o_abundance:
   <<: *default_float32
-  CATDESC: Fe/O abundance ratio
+  CATDESC: Fe/O elemental abundance ratio from CoDICE-Lo
   FIELDNAM: Fe/O abundance ratio
   LABLAXIS: Fe/O ratio
   DEPEND_0: codice_lo_epoch
@@ -307,7 +307,7 @@ codice_lo_fe_over_o_abundance:
 
 codice_lo_c_plus_6_over_c_plus_5:
   <<: *default_float32
-  CATDESC: C+6/C+5 charge state ratio
+  CATDESC: C+6/C+5 charge state ratio from CoDICE-Lo
   FIELDNAM: C+6/C+5 charge state ratio
   LABLAXIS: C+6/C+5 ratio
   DEPEND_0: codice_lo_epoch
@@ -318,7 +318,7 @@ codice_lo_c_plus_6_over_c_plus_5:
 
 codice_lo_o_plus_7_over_o_plus_6:
   <<: *default_float32
-  CATDESC: O+7/O+6 charge state ratio
+  CATDESC: O+7/O+6 charge state ratio from CoDICE-Lo
   FIELDNAM: O7+/O6+ charge state ratio
   LABLAXIS: O7+/O6+ ratio
   DEPEND_0: codice_lo_epoch
@@ -329,7 +329,7 @@ codice_lo_o_plus_7_over_o_plus_6:
 
 codice_lo_fe_low_over_fe_high:
   <<: *default_float32
-  CATDESC: Fe low/high charge state ratio (low=6 to 12, high=13 to 17)
+  CATDESC: Fe low/Fe high charge state ratio from CoDICE-Lo
   FIELDNAM: Fe low/high charge state ratio
   LABLAXIS: Fe low/high ratio
   DEPEND_0: codice_lo_epoch
@@ -340,7 +340,7 @@ codice_lo_fe_low_over_fe_high:
 
 hit_e_a_side_low_en:
   <<: *default_uint32
-  CATDESC: Low energy (>0.5 MeV) electron count rate (A-side, anti-sunward)
+  CATDESC: Count rates from HIT for electrons above 0.5 MeV, A-side aperture (anti-sunward) look direction
   FIELDNAM: Low energy electron count rate (A-side)
   LABLAXIS: A-side e- >0.5 MeV
   DEPEND_0: hit_epoch
@@ -351,7 +351,7 @@ hit_e_a_side_low_en:
 
 hit_e_a_side_med_en:
   <<: *default_uint32
-  CATDESC: Medium energy (<1 MeV) electron count rate (A-side, anti-sunward)
+  CATDESC: Count rates from HIT for electrons below 1 MeV, A-side aperture (anti-sunward) look direction
   FIELDNAM: Medium energy electron count rate (A-side)
   LABLAXIS: A-side e- <1 MeV
   DEPEND_0: hit_epoch
@@ -373,7 +373,7 @@ hit_e_a_side_high_en:
 
 hit_e_b_side_low_en:
   <<: *default_uint32
-  CATDESC: Low energy (>0.5 MeV) electron count rate (B-side, sunward)
+  CATDESC: Count rates from HIT for electrons above 0.5 MeV, B-side aperture (sunward) look direction
   FIELDNAM: Low energy electron count rate (B-side)
   LABLAXIS: B-side e- >0.5 MeV
   DEPEND_0: hit_epoch
@@ -384,7 +384,7 @@ hit_e_b_side_low_en:
 
 hit_e_b_side_med_en:
   <<: *default_uint32
-  CATDESC: Medium energy (<1 MeV) electron count rate (B-side, sunward)
+  CATDESC: Count rates from HIT for electrons below 1 MeV, B-side aperture (sunward) look direction
   FIELDNAM: Medium energy electron count rate (B-side)
   LABLAXIS: B-side e- <1 MeV
   DEPEND_0: hit_epoch
@@ -406,7 +406,7 @@ hit_e_b_side_high_en:
 
 hit_h_omni_low_en:
   <<: *default_uint32
-  CATDESC: Low energy (6 to 8 MeV) proton count rate (omnidirectional)
+  CATDESC: Count rates from HIT for protons between 6 to 8 MeV, omnidirectional (sum of particles divided by full sky area)
   FIELDNAM: Proton count rate 6 to 8 MeV (omni)
   LABLAXIS: Omni H+ 6 to 8 MeV
   DEPEND_0: hit_epoch
@@ -417,7 +417,7 @@ hit_h_omni_low_en:
 
 hit_h_omni_med_en:
   <<: *default_uint32
-  CATDESC: Medium energy (12 to 15 MeV) proton count rate (omnidirectional)
+  CATDESC: Count rates from HIT for protons between 12 to 15 MeV, omnidirectional (sum of particles divided by full sky area)
   FIELDNAM: Proton count rate 12 to 15 MeV (omni)
   LABLAXIS: Omni H+ 12 to 15 MeV
   DEPEND_0: hit_epoch
@@ -450,7 +450,7 @@ hit_h_b_side_high_en:
 
 hit_he_omni_low_en:
   <<: *default_uint32
-  CATDESC: Low energy (6 to 8 MeV/nuc) helium count rate (omnidirectional)
+  CATDESC: Count rates from HIT for He4 between 6 to 8 MeV/nuc, omnidirectional (sum of particles divided by full sky area)
   FIELDNAM: Helium count rate 6 to 8 MeV/nuc (omni)
   LABLAXIS: Omni He 6 to 8 MeV/nuc
   DEPEND_0: hit_epoch
@@ -461,7 +461,7 @@ hit_he_omni_low_en:
 
 hit_he_omni_high_en:
   <<: *default_uint32
-  CATDESC: High energy (15 to 70 MeV/nuc) helium count rate (omnidirectional)
+  CATDESC: Count rates from HIT for He4 between 15 to 70 MeV/nuc, omnidirectional (sum of particles divided by full sky area)
   FIELDNAM: Helium count rate 15 to 70 MeV/nuc (omni)
   LABLAXIS: Omni He 15 to 70 MeV/nuc
   DEPEND_0: hit_epoch
@@ -472,7 +472,7 @@ hit_he_omni_high_en:
 
 mag_B_magnitude:
   <<: *default_float32
-  CATDESC: Magnitude of the magnetic field vector
+  CATDESC: Magnitude of the magnetic field vector from MAG
   FIELDNAM: B vector magnitude
   LABLAXIS: B Magnitude
   DEPEND_0: mag_epoch
@@ -482,7 +482,7 @@ mag_B_magnitude:
 
 mag_theta_B_GSE:
   <<: *default_float32
-  CATDESC: Elevation angle of the magnetic field in GSE coordinates
+  CATDESC: Elevation (theta) angle of the magnetic field in GSE coordinates from MAG
   FIELDNAM: B elevation angle in GSE coordinates
   LABLAXIS: B elevation (GSE)
   DEPEND_0: mag_epoch
@@ -492,7 +492,7 @@ mag_theta_B_GSE:
 
 mag_phi_B_GSE:
   <<: *default_float32
-  CATDESC: Azimuth angle of the magnetic field in GSE coordinates
+  CATDESC: Azimuth (phi) angle of the magnetic field in GSE coordinates from MAG
   FIELDNAM: B azimuth angle in GSE coordinates
   LABLAXIS: B azimuth (GSE)
   DEPEND_0: mag_epoch
@@ -502,7 +502,7 @@ mag_phi_B_GSE:
 
 mag_theta_B_GSM:
   <<: *default_float32
-  CATDESC: Elevation angle of the magnetic field in GSM coordinates
+  CATDESC: Elevation (theta) angle of the magnetic field in GSM coordinates from MAG
   FIELDNAM: B elevation angle in GSM coordinates
   LABLAXIS: B elevation (GSM)
   DEPEND_0: mag_epoch
@@ -512,7 +512,7 @@ mag_theta_B_GSM:
 
 mag_phi_B_GSM:
   <<: *default_float32
-  CATDESC: Azimuth angle of the magnetic field in GSM coordinates
+  CATDESC: Azimuth (phi) angle of the magnetic field in GSM coordinates from MAG
   FIELDNAM: B azimuth angle in GSM coordinates
   LABLAXIS: B azimuth (GSM)
   DEPEND_0: mag_epoch
@@ -522,7 +522,7 @@ mag_phi_B_GSM:
 
 mag_B_GSE:
   <<: *default_float32
-  CATDESC: Magnetic field vector in GSE coordinates
+  CATDESC: Magnetic field vector in GSE coordinates from MAG
   FIELDNAM: B vector in GSE coordinates
   LABLAXIS: B (GSE)
   DEPEND_0: mag_epoch
@@ -534,7 +534,7 @@ mag_B_GSE:
 
 mag_B_GSM:
   <<: *default_float32
-  CATDESC: Magnetic field vector in GSM coordinates
+  CATDESC: Magnetic field vector in GSM coordinates from MAG
   FIELDNAM: B vector in GSM coordinates
   LABLAXIS: B (GSM)
   DEPEND_0: mag_epoch
@@ -546,7 +546,7 @@ mag_B_GSM:
 
 mag_B_RTN:
   <<: *default_float32
-  CATDESC: Magnetic field vector in RTN coordinates
+  CATDESC: Magnetic field vector in RTN coordinates from MAG
   FIELDNAM: B vector in RTN coordinates
   LABLAXIS: B (RTN)
   DEPEND_0: mag_epoch
@@ -558,7 +558,7 @@ mag_B_RTN:
 
 swapi_pseudo_proton_density:
   <<: *default_float32
-  CATDESC: Pseudo density of solar wind protons
+  CATDESC: Pseudo solar wind proton number density from SWAPI
   FIELDNAM: SW proton pseudo density
   LABLAXIS: SW p pseudo N
   DEPEND_0: swapi_epoch
@@ -569,7 +569,7 @@ swapi_pseudo_proton_density:
 
 swapi_pseudo_proton_speed:
   <<: *default_float32
-  CATDESC: Pseudo speed of solar wind protons in solar inertial frame
+  CATDESC: Pseudo solar wind proton speed from SWAPI
   FIELDNAM: SW proton pseudo V in solar inertial frame
   LABLAXIS: SW p pseudo V
   DEPEND_0: swapi_epoch
@@ -580,7 +580,7 @@ swapi_pseudo_proton_speed:
 
 swapi_pseudo_proton_temperature:
   <<: *default_float32
-  CATDESC: Pseudo temperature of solar wind protons in plasma frame
+  CATDESC: Pseudo solar wind proton temperature from SWAPI
   FIELDNAM: SW proton pseudo temperature
   LABLAXIS: SW p pseudo T
   DEPEND_0: swapi_epoch
@@ -593,7 +593,7 @@ swapi_pseudo_proton_temperature:
 # SWE Normalized Counts
 swe_normalized_counts:
   <<: *default_int64
-  CATDESC: Normalized electron counts
+  CATDESC: Normalized electron counts from SWE in 8 energy bins between 100.4 to 1101 eV
   FIELDNAM: Normalized electron counts
   UNITS: normalized counts
   VALIDMIN: 0
@@ -606,7 +606,7 @@ swe_normalized_counts:
 
 swe_counterstreaming_electrons:
   <<: *default_uint8
-  CATDESC: Counterstreaming electrons flag (1=counterstreaming, 0=unidirectional)
+  CATDESC: Binary value from SWE indicating the presence (1) or absence (0) of counterstreaming electron flow
   FIELDNAM: Counterstreaming e- (1=counterstreaming)
   LABLAXIS: Counterstreaming e-
   DEPEND_0: swe_epoch
