@@ -50,10 +50,14 @@ class StationProperties(NamedTuple):
     min_elevation_deg: float  # minimum elevation angle in degrees
 
 
-# Verified by Kiel and KSWC Observatory staff.
-# Notes: the KSWC station is not yet operational,
-# but will have the following properties:
+# Verified by Observatory staff.
 STATIONS = {
+    "Formosa": StationProperties(
+        longitude=-47.256408,  # degrees East (negative = West)
+        latitude=-15.578032,  # degrees North (negative = South)
+        altitude=0.968,  # kilometers (~968 meters)
+        min_elevation_deg=5,  # 5 degrees is the requirement
+    ),
     "Kiel": StationProperties(
         longitude=10.1808,  # degrees East
         latitude=54.2632,  # degrees North
@@ -67,9 +71,9 @@ STATIONS = {
         min_elevation_deg=5,  # 5 degrees is the requirement
     ),
     "Manaus": StationProperties(
-        longitude=-59.969334,  # degrees East (negative = West)
-        latitude=-2.891257,  # degrees North (negative = South)
-        altitude=0.1,  # approx 100 meters
+        longitude=-59.969319,  # degrees East (negative = West)
+        latitude=-2.891215,  # degrees North (negative = South)
+        altitude=0.9578,  # approx 957.8 meters
         min_elevation_deg=5,  # 5 degrees is the requirement
     ),
     "SANSA": StationProperties(
