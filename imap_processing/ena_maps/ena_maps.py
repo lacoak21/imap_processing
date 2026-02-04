@@ -13,6 +13,7 @@ import astropy_healpix.healpy as hp
 import numpy as np
 import xarray as xr
 from numpy.typing import NDArray
+from spiceypy import SpiceNOFRAMECONNECT
 
 from imap_processing.cdf.imap_cdf_manager import ImapCdfAttributes
 from imap_processing.cdf.utils import load_cdf
@@ -151,15 +152,28 @@ def match_coords_to_indices(
 
     # Az/El pixel center coords of the input object in its own frame
     input_obj_az_el_input_frame = input_object.az_el_points
-
-    # Transform the input pixel centers to the output frame
-    input_obj_az_el_output_frame = geometry.frame_transform_az_el(
-        et=event_et,
-        az_el=input_obj_az_el_input_frame,
-        from_frame=input_object.spice_reference_frame,
-        to_frame=output_object.spice_reference_frame,
-        degrees=True,
-    )
+    try:
+        # Transform the input pixel centers to the output frame
+        input_obj_az_el_output_frame = geometry.frame_transform_az_el(
+            et=event_et,
+            az_el=input_obj_az_el_input_frame,
+            from_frame=input_object.spice_reference_frame,
+            to_frame=output_object.spice_reference_frame,
+            degrees=True,
+        )
+    except SpiceNOFRAMECONNECT as e:
+        logger.info(
+            f"Start of pset (et: {event_et}) does not have SPICE coverage: {e}."
+        )
+        event_et += 1e-7  # Add 100 ns to ET and try again
+        # Transform the input pixel centers to the output frame
+        input_obj_az_el_output_frame = geometry.frame_transform_az_el(
+            et=event_et,
+            az_el=input_obj_az_el_input_frame,
+            from_frame=input_object.spice_reference_frame,
+            to_frame=output_object.spice_reference_frame,
+            degrees=True,
+        )
 
     # The way indices are matched depends on the tiling type of the 2nd object
     if output_object.tiling_type is SkyTilingType.RECTANGULAR:
