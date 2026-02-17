@@ -376,11 +376,7 @@ def compute_geometric_factors(
     elif (processing_date < date_switch) | (processing_date >= fsw_switch_date):
         # Modes will be true (reduced mode) anywhere half_spin > rgfo_half_spin
         # otherwise false (full mode)
-        modes = (
-            valid_half_spin
-            & (half_spin_per_esa_step > rgfo_half_spin)
-            & (rgfo_half_spin > 0)
-        )
+        modes = valid_half_spin & (half_spin_per_esa_step > rgfo_half_spin)
     else:
         # After November 24th, 2025, we no longer apply reduced geometric factors;
         # always use the full geometric factor lookup.
