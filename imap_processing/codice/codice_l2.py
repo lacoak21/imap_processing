@@ -1078,6 +1078,8 @@ def process_hi_sectored(dependencies: ProcessingInputCollection) -> xr.Dataset:
     spin_angle = (L2_HI_SECTORED_ANGLE[:, np.newaxis] + elevation_angles) % 360.0
 
     # Add spin angle variable using the new elevation_angle dimension
+    # Spin angle needs to be transposed to have dimensions
+    # (spin_sector, elevation_angle) to match the L2 dataset dimensions
     l2_dataset["spin_angle"] = (("spin_sector", "elevation_angle"), spin_angle.T)
     l2_dataset["spin_angle"].attrs = cdf_attrs.get_variable_attributes(
         "spin_angle", check_schema=False
