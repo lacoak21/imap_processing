@@ -633,7 +633,7 @@ def test_get_valid_events_per_energy_range_ultra45(mock_spkezr):
     2,
 )
 @mock.patch(
-    "imap_processing.ultra.l1b.ultra_l1b_culling.UltraConstants.HIGH_ENERGY_COMBINED_SPIN_BIN_SIZE",
+    "imap_processing.ultra.l1b.ultra_l1b_culling.UltraConstants.HIGH_ENERGY_COMBINED_SPIN_BIN_RADIUS",
     None,
 )
 def test_flag_high_energy():

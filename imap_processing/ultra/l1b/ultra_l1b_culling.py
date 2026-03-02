@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import spiceypy as sp
 import xarray as xr
-from numpy.lib._stride_tricks_impl import sliding_window_view
+from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import NDArray
 
 from imap_processing.quality_flags import (
@@ -737,7 +737,7 @@ def flag_high_energy(
         de_dataset,
         energy_ranges,
         spin_tbin_edges,
-        UltraConstants.HIGH_ENERGY_COMBINED_SPIN_BIN_SIZE,
+        UltraConstants.HIGH_ENERGY_COMBINED_SPIN_BIN_RADIUS,
         sensor_id,
     )
     cull_channel_counts = de_counts[cull_channel]
@@ -933,7 +933,7 @@ def get_valid_de_count_summary(
     de_dataset: xr.Dataset,
     energy_ranges: NDArray,
     spin_tbin_edges: NDArray,
-    combine_n_spin_bins: int | None = None,
+    combine_spin_bin_radius: int | None = None,
     sensor_id: int = 90,
 ) -> NDArray:
     """
@@ -947,8 +947,9 @@ def get_valid_de_count_summary(
         Array of energy range edges.
     spin_tbin_edges : numpy.ndarray
         Array of spin time bin edges.
-    combine_n_spin_bins : int
-        If not None, average counts across this many spin bins to get a coarser summary.
+    combine_spin_bin_radius : int
+        If not None, average counts across this many spin bins x 2 to get a smoother
+        estimate of the counts per bin.
     sensor_id : int
         Sensor ID (e.g., 45 or 90).
 
@@ -967,14 +968,16 @@ def get_valid_de_count_summary(
             de_dataset["de_event_met"].values[valid_events[i, :]], bins=spin_tbin_edges
         )
 
-    if combine_n_spin_bins is not None and combine_n_spin_bins > 1:
+    if combine_spin_bin_radius is not None and combine_spin_bin_radius > 0:
         # Pad array along the spin bin axis to ensure sliding_window_view returns
         # an array of the correct shape.
-        pad_size = int((combine_n_spin_bins - 1) / 2)
-        counts_padded = np.pad(counts, ((0, 0), (pad_size, pad_size)), mode="edge")
-        windows = sliding_window_view(
-            counts_padded, window_shape=combine_n_spin_bins, axis=1
+        counts_padded = np.pad(
+            counts,
+            ((0, 0), (combine_spin_bin_radius, combine_spin_bin_radius)),
+            mode="edge",
         )
+        window_size = combine_spin_bin_radius * 2 + 1
+        windows = sliding_window_view(counts_padded, window_shape=window_size, axis=1)
         counts = np.mean(windows, axis=-1)
     return counts
 
@@ -1131,7 +1134,7 @@ def get_binned_energy_ranges(
     energy_bin_edges : list[tuple[float, float]]
         List of (start, stop) tuples for each energy bin.
     max_energy : int | None
-        Maximum energy to include in the energy ranges. If None, dont set a max.
+        Maximum energy to include in the energy ranges. If None, don't set a max.
 
     Returns
     -------
@@ -1157,13 +1160,20 @@ def get_binned_energy_ranges(
     if max_energy is not None:
         # get the first index where the energy range exceeds the max energy
         # exclude the last edge since it is the stop energy of the last range
-        max_reached_idx = np.where(energy_ranges[:-1] > max_energy)[0][0]
+        max_reached_idx = np.where(energy_ranges[:-1] > max_energy)[0]
+        if np.any(energy_ranges[:-1] > max_energy):
+            max_reached_idx = max_reached_idx[0]
+        else:
+            # if no energy range exceeds the max energy, return the original energy
+            # ranges
+            return energy_ranges
         # Merge all energy ranges above the max energy into a single range and set the
         # stop
         energy_ranges_lim = energy_ranges[
             : max_reached_idx + 2
         ]  # include the first edge above max energy and the last edge
-        # Set the last edge to be the max energy to cap the final range
+        # Set the last edge to be the max energy to make the last bin a "catch-all" for
+        # all energies above the max energy.
         energy_ranges_lim[-1] = energy_ranges[-1]
         energy_ranges = energy_ranges_lim
 
