@@ -632,6 +632,10 @@ def test_get_valid_events_per_energy_range_ultra45(mock_spkezr):
     "imap_processing.ultra.l1b.ultra_l1b_culling.UltraConstants.HIGH_ENERGY_CULL_CHANNEL",
     2,
 )
+@mock.patch(
+    "imap_processing.ultra.l1b.ultra_l1b_culling.UltraConstants.HIGH_ENERGY_COMBINED_SPIN_BIN_SIZE",
+    None,
+)
 def test_flag_high_energy():
     """Tests flag_high_energy function."""
     # 7-18 is the culling energy bin and shown in the mock.patch above
@@ -695,11 +699,11 @@ def test_validate_high_energy_cull():
     """Validate that high energy spins are correctly flagged"""
     # Mock thresholds to match the test data (I used fake ones to create more
     # complexity)
-    mock_thresholds = np.array([0.05, 1.5, 0.6, 119.2, 0.2, 0.25]) * 20
+    mock_thresholds = np.array([0.05, 1.5, 0.6, 119.2, 0.2]) * 20
     # read test data from csv files
     xspin = pd.read_csv(TEST_PATH / "extendedspin_test_data_repoint00047.csv")
     expected_qf = pd.read_csv(
-        TEST_PATH / "validate_high_energy_culling_results_repoint00047.csv"
+        TEST_PATH / "validate_high_energy_culling_results_repoint00047_v2.csv"
     ).to_numpy()
     de_df = pd.read_csv(TEST_PATH / "de_test_data_repoint00047.csv")
     de_ds = xr.Dataset(
@@ -719,7 +723,9 @@ def test_validate_high_energy_cull():
         xspin.spin_start_time.values,
         spin_bin_size,
     )
-    energy_ranges = np.array([4.6, 10.27, 23.4444, 52.2113, 116.276, 258.95, 316.335])
+    intervals, _, _ = build_energy_bins()
+    energy_ranges = get_binned_energy_ranges(intervals)
+
     e_flags = flag_high_energy(
         de_ds, spin_tbin_edges, energy_ranges, None, mock_thresholds
     )
@@ -846,7 +852,7 @@ def test_get_energy_range_flags():
     energy_ranges = get_binned_energy_ranges(intervals)
     flags = get_energy_range_flags(energy_ranges)
 
-    np.testing.assert_array_equal(flags, 2 ** np.arange(6))
+    np.testing.assert_array_equal(flags, 2 ** np.arange(5))
 
 
 def test_get_binned_energy_ranges():

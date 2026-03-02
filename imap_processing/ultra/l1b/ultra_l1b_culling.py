@@ -716,7 +716,12 @@ def flag_high_energy(
     # the counts per spin
     energy_thresholds = energy_thresholds[:, np.newaxis]  # Shape (n_energy_bins, 1)
     cull_channel = UltraConstants.HIGH_ENERGY_CULL_CHANNEL
-    n_energy_bins = len(energy_thresholds)
+    n_energy_bins = len(energy_ranges) - 1
+    if len(energy_thresholds) != n_energy_bins:
+        raise ValueError(
+            f"Length of energy_thresholds ({len(energy_thresholds)}) must match"
+            f" the number of energy bins ({n_energy_bins})."
+        )
     if cull_channel >= n_energy_bins:
         raise ValueError(
             f"HIGH_ENERGY_CULL_CHANNEL ({cull_channel}) is out of bounds"
@@ -830,7 +835,7 @@ def flag_statistical_outliers(
     # keep track of the standard deviation difference from poisson stats per energy bin
     std_diff = np.zeros(n_energy_bins, dtype=float)
     count_summary = get_valid_de_count_summary(
-        de_dataset, energy_ranges, spin_tbin_edges, sensor_id
+        de_dataset, energy_ranges, spin_tbin_edges, sensor_id=sensor_id
     )  # shape (n_energy_bins, n_spin_bins)
     for e_idx in np.arange(n_energy_bins):
         for it in range(n_iterations):
@@ -966,9 +971,11 @@ def get_valid_de_count_summary(
         # Pad array along the spin bin axis to ensure sliding_window_view returns
         # an array of the correct shape.
         pad_size = int((combine_n_spin_bins - 1) / 2)
-        counts = np.pad(counts, (pad_size, pad_size), mode="edge")
-        windows = sliding_window_view(counts, window_shape=combine_n_spin_bins, axis=1)
-        counts = np.mean(windows, axis=1)
+        counts_padded = np.pad(counts, ((0, 0), (pad_size, pad_size)), mode="edge")
+        windows = sliding_window_view(
+            counts_padded, window_shape=combine_n_spin_bins, axis=1
+        )
+        counts = np.mean(windows, axis=-1)
     return counts
 
 
