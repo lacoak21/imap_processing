@@ -719,9 +719,7 @@ def test_validate_high_energy_cull():
         xspin.spin_start_time.values,
         spin_bin_size,
     )
-    energy_ranges = np.array(
-        [4.20000, 9.44250, 21.21160, 47.23880, 105.20200, 316.33500]
-    )
+    energy_ranges = np.array([4.6, 10.27, 23.4444, 52.2113, 116.276, 258.95, 316.335])
     e_flags = flag_high_energy(
         de_ds, spin_tbin_edges, energy_ranges, None, mock_thresholds
     )
