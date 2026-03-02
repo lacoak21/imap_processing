@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import spiceypy as sp
 import xarray as xr
+from numpy.lib._stride_tricks_impl import sliding_window_view
 from numpy.typing import NDArray
 
 from imap_processing.quality_flags import (
@@ -728,7 +729,11 @@ def flag_high_energy(
     # Get valid events and counts at each spin bin for the
     # designated culling channel.
     de_counts = get_valid_de_count_summary(
-        de_dataset, energy_ranges, spin_tbin_edges, sensor_id
+        de_dataset,
+        energy_ranges,
+        spin_tbin_edges,
+        UltraConstants.HIGH_ENERGY_COMBINED_SPIN_BIN_SIZE,
+        sensor_id,
     )
     cull_channel_counts = de_counts[cull_channel]
     # flag spins where the counts in the cull channel exceed the threshold for that
@@ -923,6 +928,7 @@ def get_valid_de_count_summary(
     de_dataset: xr.Dataset,
     energy_ranges: NDArray,
     spin_tbin_edges: NDArray,
+    combine_n_spin_bins: int | None = None,
     sensor_id: int = 90,
 ) -> NDArray:
     """
@@ -936,6 +942,8 @@ def get_valid_de_count_summary(
         Array of energy range edges.
     spin_tbin_edges : numpy.ndarray
         Array of spin time bin edges.
+    combine_n_spin_bins : int
+        If not None, average counts across this many spin bins to get a coarser summary.
     sensor_id : int
         Sensor ID (e.g., 45 or 90).
 
@@ -954,6 +962,13 @@ def get_valid_de_count_summary(
             de_dataset["de_event_met"].values[valid_events[i, :]], bins=spin_tbin_edges
         )
 
+    if combine_n_spin_bins is not None and combine_n_spin_bins > 1:
+        # Pad array along the spin bin axis to ensure sliding_window_view returns
+        # an array of the correct shape.
+        pad_size = int((combine_n_spin_bins - 1) / 2)
+        counts = np.pad(counts, (pad_size, pad_size), mode="edge")
+        windows = sliding_window_view(counts, window_shape=combine_n_spin_bins, axis=1)
+        counts = np.mean(windows, axis=1)
     return counts
 
 
@@ -1099,6 +1114,7 @@ def get_energy_range_flags(energy_ranges_edges: NDArray) -> NDArray:
 
 def get_binned_energy_ranges(
     energy_bin_edges: list[tuple[float, float]],
+    max_energy: int | None = UltraConstants.MAX_ENERGY_THRESHOLD,
 ) -> NDArray:
     """
     Create L1C energy ranges by grouping energy bins.
@@ -1107,6 +1123,8 @@ def get_binned_energy_ranges(
     ----------
     energy_bin_edges : list[tuple[float, float]]
         List of (start, stop) tuples for each energy bin.
+    max_energy : int | None
+        Maximum energy to include in the energy ranges. If None, dont set a max.
 
     Returns
     -------
@@ -1128,6 +1146,20 @@ def get_binned_energy_ranges(
     energy_ranges = np.append(
         energy_starts, energy_bin_edges[last_group_end_ind - 1][1]
     )
+
+    if max_energy is not None:
+        # get the first index where the energy range exceeds the max energy
+        # exclude the last edge since it is the stop energy of the last range
+        max_reached_idx = np.where(energy_ranges[:-1] > max_energy)[0][0]
+        # Merge all energy ranges above the max energy into a single range and set the
+        # stop
+        energy_ranges_lim = energy_ranges[
+            : max_reached_idx + 2
+        ]  # include the first edge above max energy and the last edge
+        # Set the last edge to be the max energy to cap the final range
+        energy_ranges_lim[-1] = energy_ranges[-1]
+        energy_ranges = energy_ranges_lim
+
     return energy_ranges
 
 

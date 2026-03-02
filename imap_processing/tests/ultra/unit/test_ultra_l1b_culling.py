@@ -719,9 +719,9 @@ def test_validate_high_energy_cull():
         xspin.spin_start_time.values,
         spin_bin_size,
     )
-    intervals, _, _ = build_energy_bins()
-    # Get the energy ranges
-    energy_ranges = get_binned_energy_ranges(intervals)
+    energy_ranges = np.array(
+        [4.20000, 9.44250, 21.21160, 47.23880, 105.20200, 316.33500]
+    )
     e_flags = flag_high_energy(
         de_ds, spin_tbin_edges, energy_ranges, None, mock_thresholds
     )
@@ -849,3 +849,12 @@ def test_get_energy_range_flags():
     flags = get_energy_range_flags(energy_ranges)
 
     np.testing.assert_array_equal(flags, 2 ** np.arange(6))
+
+
+def test_get_binned_energy_ranges():
+    """Tests get_binned_energy_ranges function."""
+    intervals, _, _ = build_energy_bins()
+    energy_ranges = get_binned_energy_ranges(intervals)
+
+    expected_energy_ranges = np.array([4.2, 9.4425, 21.2116, 47.2388, 105.202, 316.335])
+    np.testing.assert_array_equal(energy_ranges, expected_energy_ranges)
