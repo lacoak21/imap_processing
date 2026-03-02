@@ -1171,7 +1171,7 @@ def get_binned_energy_ranges(
         # stop
         energy_ranges_lim = energy_ranges[
             : max_reached_idx + 2
-        ]  # include the first edge above max energy and the last edge
+        ].copy()  # include the first edge above max energy and the last edge
         # Set the last edge to be the max energy to make the last bin a "catch-all" for
         # all energies above the max energy.
         energy_ranges_lim[-1] = energy_ranges[-1]
