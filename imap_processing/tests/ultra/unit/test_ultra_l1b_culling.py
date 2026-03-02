@@ -724,8 +724,8 @@ def test_validate_high_energy_cull():
         spin_bin_size,
     )
     intervals, _, _ = build_energy_bins()
+    # Get the energy ranges
     energy_ranges = get_binned_energy_ranges(intervals)
-
     e_flags = flag_high_energy(
         de_ds, spin_tbin_edges, energy_ranges, None, mock_thresholds
     )
