@@ -844,6 +844,50 @@ def test_get_poisson_stats():
     assert outlier_mask[-1]
 
 
+@pytest.mark.external_test_data
+def test_validate_stat_cull():
+    """Validate that statistical-outlier quality flags match expected results."""
+    # read test data from csv files
+    xspin = pd.read_csv(TEST_PATH / "extendedspin_test_data_repoint00047.csv")
+    results_df = pd.read_csv(
+        TEST_PATH / "validate_stat_culling_results_repoint00047.csv"
+    )
+    de_df = pd.read_csv(TEST_PATH / "de_test_data_repoint00047.csv")
+    de_ds = xr.Dataset(
+        {
+            "de_event_met": ("epoch", de_df.event_times.values),
+            "energy_spacecraft": ("epoch", de_df.energy_spacecraft.values),
+            "quality_outliers": ("epoch", de_df.quality_outliers.values),
+            "quality_scattering": ("epoch", de_df.quality_scattering.values),
+            "ebin": ("epoch", de_df.ebin.values),
+        }
+    )
+    # Use constants from the code to ensure consistency with the actual culling code
+    spin_bin_size = UltraConstants.SPIN_BIN_SIZE
+    spin_tbin_edges = get_binned_spins_edges(
+        xspin.spin_number.values,
+        xspin.spin_period.values,
+        xspin.spin_start_time.values,
+        spin_bin_size,
+    )
+    intervals, _, _ = build_energy_bins()
+    # Get the energy ranges
+    energy_ranges = get_binned_energy_ranges(intervals)
+    mask = np.zeros((len(energy_ranges) - 1, len(spin_tbin_edges) - 1), dtype=bool)
+    flags, con, it, std = flag_statistical_outliers(
+        de_ds, spin_tbin_edges, energy_ranges, mask, 90
+    )
+    expected_qf = results_df.iloc[:, :-3].values.astype(bool)
+    converge = results_df["converge"].values
+    iterations = results_df["iterations"].values
+    std_diff = results_df["std_diff"].values
+    # check that the flags match the expected results
+    np.testing.assert_array_equal(flags, ~expected_qf.astype(bool))
+    np.testing.assert_array_equal(con, converge)
+    np.testing.assert_array_equal(it, iterations)
+    np.testing.assert_allclose(std, std_diff, rtol=1e-10)
+
+
 def test_get_energy_range_flags():
     """Tests get_binned_energy_range_flags function."""
     # Get energy bins used at l1c
