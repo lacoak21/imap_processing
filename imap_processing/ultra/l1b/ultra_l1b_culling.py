@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import spiceypy as sp
 import xarray as xr
+from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import NDArray
 
 from imap_processing.quality_flags import (
@@ -715,7 +716,12 @@ def flag_high_energy(
     # the counts per spin
     energy_thresholds = energy_thresholds[:, np.newaxis]  # Shape (n_energy_bins, 1)
     cull_channel = UltraConstants.HIGH_ENERGY_CULL_CHANNEL
-    n_energy_bins = len(energy_thresholds)
+    n_energy_bins = len(energy_ranges) - 1
+    if len(energy_thresholds) != n_energy_bins:
+        raise ValueError(
+            f"Length of energy_thresholds ({len(energy_thresholds)}) must match"
+            f" the number of energy bins ({n_energy_bins})."
+        )
     if cull_channel >= n_energy_bins:
         raise ValueError(
             f"HIGH_ENERGY_CULL_CHANNEL ({cull_channel}) is out of bounds"
@@ -728,7 +734,11 @@ def flag_high_energy(
     # Get valid events and counts at each spin bin for the
     # designated culling channel.
     de_counts = get_valid_de_count_summary(
-        de_dataset, energy_ranges, spin_tbin_edges, sensor_id
+        de_dataset,
+        energy_ranges,
+        spin_tbin_edges,
+        UltraConstants.HIGH_ENERGY_COMBINED_SPIN_BIN_RADIUS,
+        sensor_id,
     )
     cull_channel_counts = de_counts[cull_channel]
     # flag spins where the counts in the cull channel exceed the threshold for that
@@ -825,7 +835,7 @@ def flag_statistical_outliers(
     # keep track of the standard deviation difference from poisson stats per energy bin
     std_diff = np.zeros(n_energy_bins, dtype=float)
     count_summary = get_valid_de_count_summary(
-        de_dataset, energy_ranges, spin_tbin_edges, sensor_id
+        de_dataset, energy_ranges, spin_tbin_edges, sensor_id=sensor_id
     )  # shape (n_energy_bins, n_spin_bins)
     for e_idx in np.arange(n_energy_bins):
         for it in range(n_iterations):
@@ -923,6 +933,7 @@ def get_valid_de_count_summary(
     de_dataset: xr.Dataset,
     energy_ranges: NDArray,
     spin_tbin_edges: NDArray,
+    combine_spin_bin_radius: int | None = None,
     sensor_id: int = 90,
 ) -> NDArray:
     """
@@ -936,6 +947,9 @@ def get_valid_de_count_summary(
         Array of energy range edges.
     spin_tbin_edges : numpy.ndarray
         Array of spin time bin edges.
+    combine_spin_bin_radius : int
+        If not None, average counts across this many spin bins x 2 to get a smoother
+        estimate of the counts per bin.
     sensor_id : int
         Sensor ID (e.g., 45 or 90).
 
@@ -954,6 +968,17 @@ def get_valid_de_count_summary(
             de_dataset["de_event_met"].values[valid_events[i, :]], bins=spin_tbin_edges
         )
 
+    if combine_spin_bin_radius is not None and combine_spin_bin_radius > 0:
+        # Pad array along the spin bin axis to ensure sliding_window_view returns
+        # an array of the correct shape.
+        counts_padded = np.pad(
+            counts,
+            ((0, 0), (combine_spin_bin_radius, combine_spin_bin_radius)),
+            mode="edge",
+        )
+        window_size = combine_spin_bin_radius * 2 + 1
+        windows = sliding_window_view(counts_padded, window_shape=window_size, axis=1)
+        counts = np.mean(windows, axis=-1)
     return counts
 
 
@@ -1099,6 +1124,7 @@ def get_energy_range_flags(energy_ranges_edges: NDArray) -> NDArray:
 
 def get_binned_energy_ranges(
     energy_bin_edges: list[tuple[float, float]],
+    max_energy: int | None = UltraConstants.MAX_ENERGY_THRESHOLD,
 ) -> NDArray:
     """
     Create L1C energy ranges by grouping energy bins.
@@ -1107,6 +1133,8 @@ def get_binned_energy_ranges(
     ----------
     energy_bin_edges : list[tuple[float, float]]
         List of (start, stop) tuples for each energy bin.
+    max_energy : int | None
+        Maximum energy to include in the energy ranges. If None, don't set a max.
 
     Returns
     -------
@@ -1128,6 +1156,27 @@ def get_binned_energy_ranges(
     energy_ranges = np.append(
         energy_starts, energy_bin_edges[last_group_end_ind - 1][1]
     )
+
+    if max_energy is not None:
+        # get the first index where the energy range exceeds the max energy
+        # exclude the last edge since it is the stop energy of the last range
+        max_reached_idx = np.where(energy_ranges[:-1] > max_energy)[0]
+        if np.any(energy_ranges[:-1] > max_energy):
+            max_reached_idx = max_reached_idx[0]
+        else:
+            # if no energy range exceeds the max energy, return the original energy
+            # ranges
+            return energy_ranges
+        # Merge all energy ranges above the max energy into a single range and set the
+        # stop
+        energy_ranges_lim = energy_ranges[
+            : max_reached_idx + 2
+        ].copy()  # include the first edge above max energy and the last edge
+        # Set the last edge to be the max energy to make the last bin a "catch-all" for
+        # all energies above the max energy.
+        energy_ranges_lim[-1] = energy_ranges[-1]
+        energy_ranges = energy_ranges_lim
+
     return energy_ranges
 
 
