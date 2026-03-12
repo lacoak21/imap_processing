@@ -166,14 +166,28 @@ def calculate_extendedspin(
     extendedspin_dict["quality_hk"] = hk_qf
     extendedspin_dict["quality_instruments"] = inst_qf
     extendedspin_dict["quality_low_voltage"] = voltage_qf  # shape (nspin,)
-    # TODO calculate flags for high energy (SEPS) and statistics culling
-    # Initialize these flags to NONE for now.
     extendedspin_dict["quality_statistics"] = stat_outliers_qf  # shape (nspin,)
     extendedspin_dict["quality_high_energy"] = high_energy_qf  # shape (nspin,)
-    # Add an array of flags for each energy bin. Shape: (n_energy_bins)
-    extendedspin_dict["energy_range_flags"] = energy_bin_flags
-    # Add energy ranges  Shape: (n_energy_bins + 1)
-    extendedspin_dict["energy_range_edges"] = np.array(energy_ranges)
+    # ISTP requires stable dimension sizes, so this field must always remain size 16.
+    # If fewer bins are used, pad the remaining entries with 0.
+    energy_flags = np.full(UltraConstants.MAX_ENERGY_RANGES, 0, dtype=np.uint16)
+    energy_flags[: len(energy_bin_flags)] = energy_bin_flags
+    extendedspin_dict["energy_range_flags"] = energy_flags
+    extendedspin_dict["energy_range_flags_dim"] = np.arange(
+        UltraConstants.MAX_ENERGY_RANGES
+    )
+
+    # Initialize array of energy range edges with fill value, then fill in the valid
+    # energy ranges. Set the length to be the max number of energy bins we expect to
+    # use for culling. The number of edges is one more than the number of bins (17).
+    ranges = np.full(
+        (UltraConstants.MAX_ENERGY_RANGE_EDGES,), FILLVAL_FLOAT32, dtype=np.float32
+    )
+    ranges[: len(energy_ranges)] = energy_ranges
+    extendedspin_dict["energy_range_edges"] = ranges
+    extendedspin_dict["energy_range_edges_dim"] = np.arange(
+        UltraConstants.MAX_ENERGY_RANGE_EDGES
+    )
 
     extendedspin_dataset = create_dataset(extendedspin_dict, name, "l1b")
     return extendedspin_dataset
