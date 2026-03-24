@@ -167,6 +167,7 @@ def mock_l1c_pset_product_rectangular(
                 ],
                 sensitivity,
             ),
+            "epoch_delta": ([CoordNames.TIME.value], np.array([10], dtype=np.float64)),
         },
         coords={
             CoordNames.TIME.value: [
@@ -405,6 +406,7 @@ def mock_l1c_pset_product_healpix(
                 [CoordNames.TIME.value, CoordNames.HEALPIX_INDEX.value],
                 np.full((1, npix), ImapPSETUltraFlags.NONE.value, dtype=np.uint16),
             ),
+            "epoch_delta": ([CoordNames.TIME.value], np.array([10], dtype=np.float64)),
         },
         coords={
             CoordNames.TIME.value: [

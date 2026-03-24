@@ -22,7 +22,7 @@ from imap_processing.ena_maps.utils import map_utils, naming, spatial_utils
 # so we define an enum to handle the coordinate names.
 from imap_processing.ena_maps.utils.coordinates import CoordNames
 from imap_processing.spice import geometry
-from imap_processing.spice.time import ttj2000ns_to_et
+from imap_processing.spice.time import met_to_ttj2000ns, ttj2000ns_to_et
 
 logger = logging.getLogger(__name__)
 
@@ -136,14 +136,15 @@ def match_coords_to_indices(
     if isinstance(input_object, PointingSet) and isinstance(output_object, PointingSet):
         raise ValueError("Cannot match indices between two PointingSet objects.")
 
-    # If event_et is not specified, use epoch of the PointingSet, if present.
+    # If event_et is not specified, use the midpoint of the PointingSet, if
+    # present.
     # The epoch will be in units of terrestrial time (TT) J2000 nanoseconds,
     # which must be converted to ephemeris time (ET) for SPICE.
     if event_et is None:
         if isinstance(input_object, PointingSet):
-            event_et = ttj2000ns_to_et(input_object.epoch)
+            event_et = input_object.midpoint_j2000_et
         elif isinstance(output_object, PointingSet):
-            event_et = ttj2000ns_to_et(output_object.epoch)
+            event_et = output_object.midpoint_j2000_et
         else:
             raise ValueError(
                 "Event time must be specified if both objects are SkyMaps."
@@ -300,6 +301,19 @@ class PointingSet(ABC):
             The epoch value [J2000 TT ns] of the pointing set.
         """
         return self.data["epoch"].values[0]
+
+    @property
+    def midpoint_j2000_et(self) -> float:
+        """
+        The midpoint of the pointing in ET.
+
+        Returns
+        -------
+        midpoint: int
+            The midpoint value [J2000 ET] of the pointing set.
+        """
+        epoch_delta = self.data["epoch_delta"].values[0]
+        return float(ttj2000ns_to_et(self.epoch + epoch_delta / 2))
 
     @property
     def unwrapped_dims_dict(self) -> dict[str, tuple[str, ...]]:
@@ -695,6 +709,21 @@ class LoPointingSet(LoHiBasePointingSet):
 
         # Update az_el_points using the base class method
         self.update_az_el_points()
+
+    @property
+    def midpoint_j2000_et(self) -> float:
+        """
+        The midpoint of the pointing in ET.
+
+        Returns
+        -------
+        midpoint: int
+            The midpoint value [J2000 ET] of the pointing set.
+        """
+        epoch_delta = met_to_ttj2000ns(
+            self.data["pointing_end_met"].data - self.data["pointing_start_met"].data
+        )
+        return float(ttj2000ns_to_et(self.epoch + epoch_delta / 2))
 
 
 # Define the Map classes
