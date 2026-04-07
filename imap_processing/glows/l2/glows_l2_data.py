@@ -14,7 +14,12 @@ from imap_processing.spice.geometry import (
     frame_transform_az_el,
     get_instrument_mounting_az_el,
 )
-from imap_processing.spice.time import met_to_sclkticks, sct_to_et
+from imap_processing.spice.time import (
+    et_to_datetime64,
+    met_to_sclkticks,
+    sct_to_et,
+    ttj2000ns_to_et,
+)
 
 
 @dataclass
@@ -46,6 +51,8 @@ class DailyLightcurve:
         number of bins in lightcurve
     l1b_data : xarray.Dataset
         L1B data filtered by good times, good angles, and good bins.
+    calibration_factor : float | None
+        Rayleigh calibration factor used for flux calculations.
     """
 
     # All variables should have n_bin elements
@@ -55,14 +62,19 @@ class DailyLightcurve:
     exposure_times: np.ndarray = field(init=False)
     flux_uncertainties: np.ndarray = field(init=False)
     histogram_flag_array: np.ndarray = field(init=False)
-    # TODO: ecliptic coordinates
     ecliptic_lon: np.ndarray = field(init=False)
     ecliptic_lat: np.ndarray = field(init=False)
     number_of_bins: int = field(init=False)
     l1b_data: InitVar[xr.Dataset]
     position_angle: InitVar[float]
+    calibration_factor: InitVar[float | None]
 
-    def __post_init__(self, l1b_data: xr.Dataset, position_angle: float) -> None:
+    def __post_init__(
+        self,
+        l1b_data: xr.Dataset,
+        position_angle: float,
+        calibration_factor: float | None,
+    ) -> None:
         """
         Compute all the daily lightcurve variables from L1B data.
 
@@ -74,6 +86,10 @@ class DailyLightcurve:
         position_angle : float
             The offset angle of the GLOWS instrument from the north spin point - this
             is used in spin angle calculations.
+        calibration_factor : float
+            Calibration factor used for flux calculations, in units of counts per second
+            per Rayleigh. This is used to convert from raw histograms and exposure times
+            to physical photon flux units.
         """
         # number_of_bins_per_histogram is the count of valid (non-FILLVAL) bins.
         # Histogram arrays from L1B are always GlowsConstants.STANDARD_BIN_COUNT
@@ -107,12 +123,16 @@ class DailyLightcurve:
         self.flux_uncertainties = np.zeros(self.number_of_bins)
 
         if (
-            len(self.exposure_times) != 0
+            self.number_of_bins > 0
             and self.exposure_times[0] > 0
-            and len(np.unique(self.exposure_times)) == 1
+            and calibration_factor
         ):
-            self.photon_flux = self.raw_histograms / self.exposure_times
-            self.flux_uncertainties = raw_uncertainties / self.exposure_times
+            self.photon_flux = (
+                self.raw_histograms / self.exposure_times
+            ) / calibration_factor
+            self.flux_uncertainties = (
+                raw_uncertainties / self.exposure_times
+            ) / calibration_factor
 
         self.spin_angle = np.zeros(0)
 
@@ -244,6 +264,8 @@ class HistogramL2:
             GLOWS histogram L1B dataset, as produced by glows_l1b.py.
         pipeline_settings : PipelineSettings
             Pipeline settings object read from ancillary file.
+        calibration_dataset : xr.Dataset
+            The cps-to-Rayleigh calibration dataset needed for flux calculations.
 
     Attributes
     ----------
@@ -327,7 +349,12 @@ class HistogramL2:
     spin_axis_orientation_average: np.ndarray[np.double]
     bad_time_flag_occurrences: np.ndarray
 
-    def __init__(self, l1b_dataset: xr.Dataset, pipeline_settings: PipelineSettings):
+    def __init__(
+        self,
+        l1b_dataset: xr.Dataset,
+        pipeline_settings: PipelineSettings,
+        calibration_dataset: xr.Dataset,
+    ) -> None:
         """
         Given an L1B dataset, process data into an output HistogramL2 object.
 
@@ -337,6 +364,9 @@ class HistogramL2:
             GLOWS histogram L1B dataset, as produced by glows_l1b.py.
         pipeline_settings : PipelineSettings
             Pipeline settings object read from ancillary file.
+        calibration_dataset : xr.Dataset
+            cps-to-Rayleigh calibration dataset used for flux calculations.
+            coords: start_time_utc,  data_vars: cps_per_r
         """
         active_flags = np.array(pipeline_settings.active_bad_time_flags, dtype=float)
 
@@ -438,7 +468,17 @@ class HistogramL2:
             .data[np.newaxis, :]
         )
 
-        self.daily_lightcurve = DailyLightcurve(good_data, position_angle)
+        # Select calibration factor corresponding to the mid-epoch in the L1B data.
+        if len(good_data["epoch"].data) != 0:
+            calibration_factor = self.get_calibration_factor(
+                good_data["epoch"].data, calibration_dataset
+            )
+        else:
+            calibration_factor = None  # No good data available. Still proceed
+
+        self.daily_lightcurve = DailyLightcurve(
+            good_data, position_angle, calibration_factor
+        )
 
     def filter_bad_bins(self, histograms: NDArray, bin_exclusions: NDArray) -> NDArray:
         """
@@ -517,3 +557,33 @@ class HistogramL2:
         # doesn't move from the SPICE determined mounting angle.
         glows_mounting_azimuth, _ = get_instrument_mounting_az_el(SpiceFrame.IMAP_GLOWS)
         return (360.0 - glows_mounting_azimuth) % 360.0
+
+    @staticmethod
+    def get_calibration_factor(
+        epoch_values: np.ndarray, calibration_dataset: xr.Dataset
+    ) -> float:
+        """
+        Select calibration factor for an observational day.
+
+        The calibration factor is needed to compute flux in Rayleigh units.
+        There is a strong assumption that the calibration is constant for
+        a given observational day.
+
+        Parameters
+        ----------
+        epoch_values : np.ndarray
+            Array of epoch values from the L1B dataset, in TT J2000 nanoseconds.
+        calibration_dataset : xr.Dataset
+            Dataset containing calibration data.
+
+        Returns
+        -------
+        float
+            The calibration factor needed to compute flux in Rayleigh units.
+        """
+        # Use the midpoint epoch for the day
+        mid_idx = len(epoch_values) // 2
+        mid_epoch_utc = et_to_datetime64(ttj2000ns_to_et(epoch_values[mid_idx].item()))
+        return calibration_dataset.sel(start_time_utc=mid_epoch_utc, method="pad")[
+            "cps_per_r"
+        ].data.item()
