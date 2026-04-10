@@ -1,11 +1,16 @@
 """Calculate ULTRA L1b."""
 
+import logging
+import re
+
 import xarray as xr
 
 from imap_processing.ultra.l1b.badtimes import calculate_badtimes
 from imap_processing.ultra.l1b.de import calculate_de
 from imap_processing.ultra.l1b.extendedspin import calculate_extendedspin
 from imap_processing.ultra.l1b.goodtimes import calculate_goodtimes
+
+logger = logging.getLogger(__name__)
 
 
 def ultra_l1b(data_dict: dict, ancillary_files: dict) -> list[xr.Dataset]:
@@ -32,15 +37,29 @@ def ultra_l1b(data_dict: dict, ancillary_files: dict) -> list[xr.Dataset]:
     3. l1b extended, goodtimes, badtimes created here
     """
     output_datasets = []
-
     # Account for possibility of having 45 and 90 in dictionary.
     for instrument_id in [45, 90]:
+        # Find any de product if it is in the data_dict
+        l1a_de_products = [
+            name
+            for name in data_dict.keys()
+            if re.search(rf"^imap_ultra_l1a_{instrument_id}sensor.*-de$", name)
+        ]
         # L1b de data will be created if L1a de data is available
-        if f"imap_ultra_l1a_{instrument_id}sensor-de" in data_dict:
+        # Including priority de products
+        if l1a_de_products:
+            l1a_de_product = l1a_de_products[0]
+            if len(l1a_de_products) > 1:
+                raise ValueError(
+                    f"Multiple L1a de products found for instrument {instrument_id}. "
+                    f"Expected only one but found {len(l1a_de_products)}: "
+                    f"{l1a_de_products}"
+                )
+            l1b_de_product = l1a_de_product.replace("l1a", "l1b")
             de_dataset = calculate_de(
-                data_dict[f"imap_ultra_l1a_{instrument_id}sensor-de"],
+                data_dict[l1a_de_product],
                 data_dict[f"imap_ultra_l1a_{instrument_id}sensor-aux"],
-                f"imap_ultra_l1b_{instrument_id}sensor-de",
+                l1b_de_product,
                 ancillary_files,
             )
             output_datasets.append(de_dataset)
