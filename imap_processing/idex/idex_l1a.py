@@ -129,21 +129,13 @@ class PacketParser:
             The processed message data.
         """
         # Convert the time to epoch time in nanoseconds since J2000 in the TT timescale
-        epoch = calculate_idex_event_time(data["shcoarse"].data, data["shfine"].data)
+        epoch = calculate_idex_event_time(
+            data["elsec_evtpkt"].data, data["elssec_evtpkt"].data
+        )
         # initialize dataset with time variables
         l1a_msg_ds = xr.Dataset(
             data_vars={
                 "epoch": xr.DataArray(epoch, name="epoch", dims=["epoch"]),
-                "shfine": xr.DataArray(
-                    data["shfine"].data,
-                    dims=["epoch"],
-                    attrs=self.idex_attrs.get_variable_attributes("shfine"),
-                ),
-                "shcoarse": xr.DataArray(
-                    data["shcoarse"].data,
-                    dims=["epoch"],
-                    attrs=self.idex_attrs.get_variable_attributes("shcoarse"),
-                ),
             },
             attrs=self.idex_attrs.get_global_attributes("imap_idex_l1a_msg"),
         )
