@@ -136,6 +136,16 @@ class PacketParser:
         l1a_msg_ds = xr.Dataset(
             data_vars={
                 "epoch": xr.DataArray(epoch, name="epoch", dims=["epoch"]),
+                "elsec_evtpkt": xr.DataArray(
+                    data["elsec_evtpkt"].data,
+                    dims=["epoch"],
+                    attrs=self.idex_attrs.get_variable_attributes("elsec_evtpkt"),
+                ),
+                "elssec_evtpkt": xr.DataArray(
+                    data["elssec_evtpkt"].data,
+                    dims=["epoch"],
+                    attrs=self.idex_attrs.get_variable_attributes("elssec_evtpkt"),
+                ),
             },
             attrs=self.idex_attrs.get_global_attributes("imap_idex_l1a_msg"),
         )
