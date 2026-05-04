@@ -129,6 +129,9 @@ class PacketParser:
             The processed message data.
         """
         # Convert the time to epoch time in nanoseconds since J2000 in the TT timescale
+        # elsec_evtpkt is the coarse time in seconds, elssec_evtpkt is the fine time in
+        # 20-microsecond intervals. We need to combine these to get the actual event
+        # time.
         epoch = calculate_idex_event_time(
             data["elsec_evtpkt"].data, data["elssec_evtpkt"].data
         )
