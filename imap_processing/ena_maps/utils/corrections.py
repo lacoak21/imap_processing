@@ -287,6 +287,13 @@ class PowerLawFluxCorrector:
         converged = np.zeros(observed_fluxes.shape[1:], dtype=bool)
         n_iterations = np.zeros(observed_fluxes.shape[1:], dtype=int)
 
+        # Mark pixels that are all zeros or all NaNs as already converged
+        # These pixels have no meaningful data to iterate on
+        all_zero_or_nan = np.all(
+            (observed_fluxes == 0) | ~np.isfinite(observed_fluxes), axis=0
+        )
+        converged[all_zero_or_nan] = True
+
         for iteration in range(max_iterations):
             # Get mask for unconverged pixels
             not_converged = ~converged
@@ -323,7 +330,7 @@ class PowerLawFluxCorrector:
             with np.errstate(divide="ignore", invalid="ignore"):
                 ratios_sq = (source_fluxes_new / source_fluxes_prev) ** 2
             # Compute chi per pixel (mean over energy axis)
-            chi_n = np.sqrt(np.mean(ratios_sq, axis=0)) - 1
+            chi_n = np.abs(np.sqrt(np.nanmean(ratios_sq, axis=0)) - 1)
 
             # Determine which pixels converged this iteration
             # Start with all False, then set True for newly converged pixels
