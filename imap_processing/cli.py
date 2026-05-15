@@ -87,7 +87,10 @@ from imap_processing.ultra.l1a import ultra_l1a
 from imap_processing.ultra.l1b import ultra_l1b
 from imap_processing.ultra.l1c import ultra_l1c
 from imap_processing.ultra.l2 import ultra_l2
-from imap_processing.utils import filter_day_boundary_data
+from imap_processing.utils import (
+    check_epochs_within_day_offsets,
+    filter_day_boundary_data,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -1409,6 +1412,10 @@ class Mag(ProcessInstrument):
                     f"Timestamps for output file {ds.attrs['Logical_source']} are not "
                     f"monotonically increasing."
                 )
+
+        # Will raise an error if any timestamps are outside the current day
+        check_epochs_within_day_offsets(datasets, current_day)
+
         return datasets
 
     def post_processing(
