@@ -21,6 +21,7 @@ from collections import defaultdict
 from enum import IntEnum
 from os import path
 from pathlib import Path
+from typing import NamedTuple
 
 import numpy as np
 import numpy.typing as npt
@@ -125,6 +126,15 @@ class Scitype(IntEnum):
     TARGET_LOW = 16
     TARGET_HIGH = 32
     ION_GRID = 64
+
+
+class _EventKey(NamedTuple):
+    """Stable identifier for one IDEX science event."""
+
+    coarse_upper: int
+    coarse_lower: int
+    fine_subseconds: int
+    event_number: int
 
 
 class PacketParser:
@@ -320,23 +330,35 @@ class PacketParser:
         xarray.Dataset
             Dataset containing processed dust events.
         """
-        dust_events = {}
+        dust_events: dict[_EventKey, RawDustEvent] = {}
+        active_event_keys: dict[int, _EventKey] = {}
         for packet in science_decom_packet_list:
             if "IDX__SCI0TYPE" in packet:
                 scitype = packet["IDX__SCI0TYPE"]
-                event_number = packet["IDX__SCI0EVTNUM"]
+                event_number = int(packet["IDX__SCI0EVTNUM"])
                 if scitype == Scitype.FIRST_PACKET:
-                    # Initial packet for new dust event
-                    # Further packets will fill in data
-                    dust_events[event_number] = RawDustEvent(packet)
-                elif event_number not in dust_events:
+                    event_key = RawDustEvent._get_event_key(packet)
+                    if event_key in dust_events:
+                        logger.warning(
+                            "Duplicate header packet for event %s. Skipping duplicate.",
+                            event_key,
+                        )
+                        active_event_keys[event_number] = event_key
+                        continue
+                    # Initial packet for new dust event. Further packets will fill in
+                    # data.
+                    dust_events[event_key] = RawDustEvent(packet, event_key)
+                    active_event_keys[event_number] = event_key
+                elif event_number not in active_event_keys:
                     raise KeyError(
                         f"Have not receive header information from event number\
                             {event_number}.  Packets are possibly out of order!"
                     )
                 else:
                     # Populate the IDEXRawDustEvent with 1's and 0's
-                    dust_events[event_number]._populate_bit_strings(packet)
+                    dust_events[active_event_keys[event_number]]._populate_bit_strings(
+                        packet
+                    )
             else:
                 logger.warning(f"Unhandled packet received: {packet}")
 
@@ -480,6 +502,8 @@ class RawDustEvent:
     ----------
     header_packet : space_packet_parser.SpacePacket
         The FPGA metadata event header.
+    event_key : tuple[int, int, int, int]
+        Stable event identifier for this science event header.
 
     Attributes
     ----------
@@ -530,7 +554,11 @@ class RawDustEvent:
     MAX_HIGH_BLOCKS = 16
     MAX_LOW_BLOCKS = 64
 
-    def __init__(self, header_packet: space_packet_parser.SpacePacket) -> None:
+    def __init__(
+        self,
+        header_packet: space_packet_parser.SpacePacket,
+        event_key: tuple[int, int, int, int],
+    ) -> None:
         """
         Initialize a raw dust event, with an FPGA Header Packet from IDEX.
 
@@ -544,6 +572,8 @@ class RawDustEvent:
         ----------
         header_packet : space_packet_parser.SpacePacket
             The FPGA metadata event header.
+        event_key : tuple[int, int, int, int]
+            Stable event identifier for this science event header.
         """
         # Calculate the impact time in seconds since epoch
         self.impact_time = 0
@@ -558,7 +588,8 @@ class RawDustEvent:
             header_packet["IDX__TXHDRTIMESUBS"],
         )
 
-        self.event_number = header_packet["IDX__SCI0EVTNUM"]
+        self.event_number = int(header_packet["IDX__SCI0EVTNUM"])
+        self.event_key = event_key
 
         # The actual trigger time for the low and high sample rate in
         # microseconds since the impact time
@@ -577,45 +608,64 @@ class RawDustEvent:
             f"telemetry_items:\n{self.telemetry_items}"
         )  # Log values here in case of error
 
-        # Initialize the binary data received from future packets
-        self.TOF_High_bits = ""
-        self.TOF_Mid_bits = ""
-        self.TOF_Low_bits = ""
-        self.Target_Low_bits = ""
-        self.Target_High_bits = ""
-        self.Ion_Grid_bits = ""
+        # Keep one fragment per (science type, fragment offset) slot and assemble the
+        # bit strings later. This lets us drop exact retransmit duplicates and prefer a
+        # more complete fragment if a shorter copy also arrived.
+        self.fragments_by_scitype: dict[Scitype, dict[int, bytes]] = {
+            Scitype.TOF_HIGH: {},
+            Scitype.TOF_LOW: {},
+            Scitype.TOF_MID: {},
+            Scitype.TARGET_LOW: {},
+            Scitype.TARGET_HIGH: {},
+            Scitype.ION_GRID: {},
+        }
+        self.conflicting_fragment_slots: set[tuple[int, int]] = set()
 
         self.compressed = self.telemetry_items["idx__sci0comp"]
         self.cdf_attrs = get_idex_attrs("l1a")
 
-    def _append_raw_data(self, scitype: Scitype, bits: str) -> None:
+    @staticmethod
+    def _get_event_key(packet: space_packet_parser.SpacePacket) -> _EventKey:
         """
-        Append data to the appropriate bit string.
+        Return a stable identifier for one science event header.
 
-        This function determines which variable to append the bits to, given a
-        specific scitype.
+        Parameters
+        ----------
+        packet : space_packet_parser.SpacePacket
+            The IDEX science header packet.
+
+        Returns
+        -------
+        tuple[int, int, int, int]
+            Stable event identifier built from the transmit timestamp and
+            event number.
+        """
+        return _EventKey(
+            int(packet["IDX__TXHDRTIMESEC1"]),
+            int(packet["IDX__TXHDRTIMESEC2"]),
+            int(packet["IDX__TXHDRTIMESUBS"]),
+            int(packet["IDX__TXHDREVTNUM"]),
+        )
+
+    def _assemble_bits(self, scitype: Scitype) -> str:
+        """
+        Assemble stored fragment bytes into one channel bitstring.
 
         Parameters
         ----------
         scitype : Scitype
-            The science type of the data.
-        bits : str
-            The binary data to append.
+            Science channel to assemble.
+
+        Returns
+        -------
+        str
+            Concatenated binary string for the requested science channel.
         """
-        if scitype == Scitype.TOF_HIGH:
-            self.TOF_High_bits += bits
-        elif scitype == Scitype.TOF_LOW:
-            self.TOF_Low_bits += bits
-        elif scitype == Scitype.TOF_MID:
-            self.TOF_Mid_bits += bits
-        elif scitype == Scitype.TARGET_LOW:
-            self.Target_Low_bits += bits
-        elif scitype == Scitype.TARGET_HIGH:
-            self.Target_High_bits += bits
-        elif scitype == Scitype.ION_GRID:
-            self.Ion_Grid_bits += bits
-        else:
-            logger.warning("Unknown science type received: [%s]", scitype)
+        fragments = self.fragments_by_scitype[scitype]
+        return "".join(
+            convert_to_binary_string(fragments[fragoff])
+            for fragoff in sorted(fragments)
+        )
 
     def _set_sample_trigger_times(
         self, packet: space_packet_parser.SpacePacket
@@ -821,9 +871,60 @@ class RawDustEvent:
             A single science data packet for one of the 6.
             IDEX observables.
         """
-        scitype = packet["IDX__SCI0TYPE"]
-        raw_science_bits = convert_to_binary_string(packet["IDX__SCI0RAW"])
-        self._append_raw_data(scitype, raw_science_bits)
+        scitype = Scitype(int(packet["IDX__SCI0TYPE"]))
+        fragoff = int(packet["IDX__SCI0FRAGOFF"])
+        raw_fragment = bytes(packet["IDX__SCI0RAW"])
+        fragment_slot = (int(scitype), fragoff)
+        stored_fragments = self.fragments_by_scitype[scitype]
+        existing_fragment = stored_fragments.get(fragoff)
+
+        if existing_fragment is None:
+            stored_fragments[fragoff] = raw_fragment
+            return
+
+        if raw_fragment == existing_fragment:
+            logger.warning(
+                "Duplicate science fragment for event %s scitype=%s fragoff=%s. "
+                "Skipping duplicate copy.",
+                self.event_key,
+                int(scitype),
+                fragoff,
+            )
+            return
+
+        if len(raw_fragment) > len(existing_fragment):
+            logger.warning(
+                "Replacing shorter science fragment for event %s scitype=%s "
+                "fragoff=%s (%s bytes -> %s bytes).",
+                self.event_key,
+                int(scitype),
+                fragoff,
+                len(existing_fragment),
+                len(raw_fragment),
+            )
+            stored_fragments[fragoff] = raw_fragment
+            return
+
+        if len(raw_fragment) < len(existing_fragment):
+            logger.warning(
+                "Ignoring shorter duplicate science fragment for event %s scitype=%s "
+                "fragoff=%s (%s bytes < %s bytes).",
+                self.event_key,
+                int(scitype),
+                fragoff,
+                len(raw_fragment),
+                len(existing_fragment),
+            )
+            return
+
+        logger.warning(
+            "Conflicting science fragments for event %s scitype=%s fragoff=%s. "
+            "Skipping event.",
+            self.event_key,
+            int(scitype),
+            fragoff,
+        )
+        self.conflicting_fragment_slots.add(fragment_slot)
 
     def process(self) -> Dataset | None:
         """
@@ -838,6 +939,13 @@ class RawDustEvent:
         dataset : xarray.Dataset, None
             A Dataset object containing the data from a single impact.
         """
+        if self.conflicting_fragment_slots:
+            logger.warning(
+                "Conflicting duplicate packet for event number %s. Skipping event.",
+                self.event_number,
+            )
+            return None
+
         # Create an object for CDF attrs
         idex_attrs = self.cdf_attrs
 
@@ -862,37 +970,61 @@ class RawDustEvent:
             # Process the 6 primary data variables
             "TOF_High": xr.DataArray(
                 name="TOF_High",
-                data=[self._parse_high_sample_waveform(self.TOF_High_bits)],
+                data=[
+                    self._parse_high_sample_waveform(
+                        self._assemble_bits(Scitype.TOF_HIGH)
+                    )
+                ],
                 dims=("epoch", "time_high_sample_rate_index"),
                 attrs=idex_attrs.get_variable_attributes("tof_high_attrs"),
             ),
             "TOF_Low": xr.DataArray(
                 name="TOF_Low",
-                data=[self._parse_high_sample_waveform(self.TOF_Low_bits)],
+                data=[
+                    self._parse_high_sample_waveform(
+                        self._assemble_bits(Scitype.TOF_LOW)
+                    )
+                ],
                 dims=("epoch", "time_high_sample_rate_index"),
                 attrs=idex_attrs.get_variable_attributes("tof_low_attrs"),
             ),
             "TOF_Mid": xr.DataArray(
                 name="TOF_Mid",
-                data=[self._parse_high_sample_waveform(self.TOF_Mid_bits)],
+                data=[
+                    self._parse_high_sample_waveform(
+                        self._assemble_bits(Scitype.TOF_MID)
+                    )
+                ],
                 dims=("epoch", "time_high_sample_rate_index"),
                 attrs=idex_attrs.get_variable_attributes("tof_mid_attrs"),
             ),
             "Target_High": xr.DataArray(
                 name="Target_High",
-                data=[self._parse_low_sample_waveform(self.Target_High_bits)],
+                data=[
+                    self._parse_low_sample_waveform(
+                        self._assemble_bits(Scitype.TARGET_HIGH)
+                    )
+                ],
                 dims=("epoch", "time_low_sample_rate_index"),
                 attrs=idex_attrs.get_variable_attributes("target_high_attrs"),
             ),
             "Target_Low": xr.DataArray(
                 name="Target_Low",
-                data=[self._parse_low_sample_waveform(self.Target_Low_bits)],
+                data=[
+                    self._parse_low_sample_waveform(
+                        self._assemble_bits(Scitype.TARGET_LOW)
+                    )
+                ],
                 dims=("epoch", "time_low_sample_rate_index"),
                 attrs=idex_attrs.get_variable_attributes("target_low_attrs"),
             ),
             "Ion_Grid": xr.DataArray(
                 name="Ion_Grid",
-                data=[self._parse_low_sample_waveform(self.Ion_Grid_bits)],
+                data=[
+                    self._parse_low_sample_waveform(
+                        self._assemble_bits(Scitype.ION_GRID)
+                    )
+                ],
                 dims=("epoch", "time_low_sample_rate_index"),
                 attrs=idex_attrs.get_variable_attributes("ion_grid_attrs"),
             ),
