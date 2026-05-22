@@ -5,6 +5,10 @@ min_int: &min_int -9223372036854775808
 max_int: &max_int 9223372036854775807
 
 # ------------------------------- Coordinates -------------------------------
+epoch:
+  DELTA_MINUS_VAR: epoch_delta_minus
+  DELTA_PLUS_VAR: epoch_delta_plus
+
 priority:
   CATDESC: Priority Level
   DICT_KEY: SPASE>Support>SupportQuantity:Other
@@ -38,12 +42,12 @@ epoch_delta_minus:
   DISPLAY_TYPE: 'no_plot'
   FIELDNAM: epoch delta minus
   FILLVAL: -9223372036854775808
-  FORMAT: I18
+  FORMAT: I19
   LABLAXIS: Epoch Delta Minus
   SCALETYP: linear
   UNITS: ns
-  VALIDMAX: *max_int
-  VALIDMIN: *min_int
+  VALIDMAX: 128000000000
+  VALIDMIN: 0
   VAR_TYPE: support_data
 
 epoch_delta_plus:
@@ -53,12 +57,12 @@ epoch_delta_plus:
   DISPLAY_TYPE: 'no_plot'
   FIELDNAM: epoch delta plus
   FILLVAL: -9223372036854775808
-  FORMAT: I18
+  FORMAT: I19
   LABLAXIS: Epoch Delta Plus
   SCALETYP: linear
   UNITS: ns
-  VALIDMAX: *max_int
-  VALIDMIN: *min_int
+  VALIDMAX: 128000000000
+  VALIDMIN: 0
   VAR_TYPE: support_data
 
 # ------------------------------- Data Variables -------------------------------
