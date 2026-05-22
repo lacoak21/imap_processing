@@ -13,7 +13,7 @@ energy_attrs: &energy_default
   DISPLAY_TYPE: time_series
   FIELDNAM: Energy Table
   FILLVAL: *real_fillval
-  FORMAT: F32.1
+  FORMAT: F12.6
   LABLAXIS: Energy
   SCALETYP: log
   UNITS: MeV/nuc
@@ -54,58 +54,80 @@ epoch_delta_plus:
 
 energy_cno:
   <<: *energy_default
+  CATDESC: Geometric mean energy per nucleon for CNO
   DELTA_MINUS_VAR: energy_cno_minus
   DELTA_PLUS_VAR: energy_cno_plus
+  FIELDNAM: CNO Energy
 
 energy_fe:
   <<: *energy_default
+  CATDESC: Geometric mean energy per nucleon for Fe
   DELTA_MINUS_VAR: energy_fe_minus
   DELTA_PLUS_VAR: energy_fe_plus
+  FIELDNAM: Fe Energy
 
 energy_h:
   <<: *energy_default
+  CATDESC: Geometric mean energy per nucleon for H
   DELTA_MINUS_VAR: energy_h_minus
   DELTA_PLUS_VAR: energy_h_plus
+  FIELDNAM: H Energy
 
 energy_he3he4:
   <<: *energy_default
+  CATDESC: Geometric mean energy per nucleon for He3+He4
   DELTA_MINUS_VAR: energy_he3he4_minus
   DELTA_PLUS_VAR: energy_he3he4_plus
+  FIELDNAM: He3+He4 Energy
 
 energy_c:
   <<: *energy_default
+  CATDESC: Geometric mean energy per nucleon for C
   DELTA_MINUS_VAR: energy_c_minus
   DELTA_PLUS_VAR: energy_c_plus
+  FIELDNAM: C Energy
 
 energy_he3:
   <<: *energy_default
+  CATDESC: Geometric mean energy per nucleon for He3
   DELTA_MINUS_VAR: energy_he3_minus
   DELTA_PLUS_VAR: energy_he3_plus
+  FIELDNAM: He3 Energy
 
 energy_he4:
   <<: *energy_default
+  CATDESC: Geometric mean energy per nucleon for He4
   DELTA_MINUS_VAR: energy_he4_minus
   DELTA_PLUS_VAR: energy_he4_plus
+  FIELDNAM: He4 Energy
 
 energy_junk:
   <<: *energy_default
+  CATDESC: Geometric mean energy per nucleon for Junk
   DELTA_MINUS_VAR: energy_junk_minus
   DELTA_PLUS_VAR: energy_junk_plus
+  FIELDNAM: Junk Energy
 
 energy_ne_mg_si:
   <<: *energy_default
+  CATDESC: Geometric mean energy per nucleon for Ne+Mg+Si
   DELTA_MINUS_VAR: energy_ne_mg_si_minus
   DELTA_PLUS_VAR: energy_ne_mg_si_plus
+  FIELDNAM: Ne+Mg+Si Energy
 
 energy_o:
   <<: *energy_default
+  CATDESC: Geometric mean energy per nucleon for O
   DELTA_MINUS_VAR: energy_o_minus
   DELTA_PLUS_VAR: energy_o_plus
+  FIELDNAM: O Energy
 
 energy_uh:
   <<: *energy_default
+  CATDESC: Geometric mean energy per nucleon for UH
   DELTA_MINUS_VAR: energy_uh_minus
   DELTA_PLUS_VAR: energy_uh_plus
+  FIELDNAM: UH Energy
 
 # ------------------------------- Label vars --------------------------------
 epoch_delta_minus_label:
@@ -122,69 +144,69 @@ epoch_delta_plus_label:
 
 # ------------------------------- Labels ------------------------------------
 energy_cno_label:
-  CATDESC: Energy CNO
-  FIELDNAM: Energy CNO
-  FORMAT: A6
+  CATDESC: Energy-channel labels for CNO differential intensity
+  FIELDNAM: CNO Energy Channel Labels
+  FORMAT: A32
   VAR_TYPE: metadata
 
 energy_fe_label:
-  CATDESC: Energy Fe
-  FIELDNAM: Energy Fe
-  FORMAT: A6
+  CATDESC: Energy-channel labels for Fe differential intensity
+  FIELDNAM: Fe Energy Channel Labels
+  FORMAT: A32
   VAR_TYPE: metadata
 
 energy_h_label:
-  CATDESC: Energy H
-  FIELDNAM: Energy H
-  FORMAT: A6
+  CATDESC: Energy-channel labels for H differential intensity
+  FIELDNAM: H Energy Channel Labels
+  FORMAT: A32
   VAR_TYPE: metadata
 
 energy_he3he4_label:
-  CATDESC: Energy He3He4
-  FIELDNAM: Energy He3He4
-  FORMAT: A6
+  CATDESC: Energy-channel labels for He3+He4 differential intensity
+  FIELDNAM: He3+He4 Energy Channel Labels
+  FORMAT: A32
   VAR_TYPE: metadata
 
 energy_c_label:
-  CATDESC: Energy C
-  FIELDNAM: Energy C
-  FORMAT: A6
+  CATDESC: Energy-channel labels for C differential intensity
+  FIELDNAM: C Energy Channel Labels
+  FORMAT: A32
   VAR_TYPE: metadata
 
 energy_he3_label:
-  CATDESC: Energy He3
-  FIELDNAM: Energy He3
-  FORMAT: A6
+  CATDESC: Energy-channel labels for He3 differential intensity
+  FIELDNAM: He3 Energy Channel Labels
+  FORMAT: A32
   VAR_TYPE: metadata
 
 energy_he4_label:
-  CATDESC: Energy He4
-  FIELDNAM: Energy He4
-  FORMAT: A6
+  CATDESC: Energy-channel labels for He4 differential intensity
+  FIELDNAM: He4 Energy Channel Labels
+  FORMAT: A32
   VAR_TYPE: metadata
 
 energy_junk_label:
-  CATDESC: Energy Junk
-  FIELDNAM: Energy Junk
-  FORMAT: A6
+  CATDESC: Energy-channel labels for Junk differential intensity
+  FIELDNAM: Junk Energy Channel Labels
+  FORMAT: A32
   VAR_TYPE: metadata
 
 energy_ne_mg_si_label:
-  CATDESC: Energy NeMgSi
-  FIELDNAM: Energy NeMgSi
-  FORMAT: A6
+  CATDESC: Energy-channel labels for Ne+Mg+Si differential intensity
+  FIELDNAM: Ne+Mg+Si Energy Channel Labels
+  FORMAT: A32
   VAR_TYPE: metadata
 
 energy_o_label:
-  CATDESC: Energy O
-  FIELDNAM: Energy O
-  FORMAT: A6
+  CATDESC: Energy-channel labels for O differential intensity
+  FIELDNAM: O Energy Channel Labels
+  FORMAT: A32
   VAR_TYPE: metadata
 
 energy_uh_label:
-  CATDESC: Energy UH
-  FIELDNAM: Energy UH
-  FORMAT: A6
+  CATDESC: Energy-channel labels for UH differential intensity
+  FIELDNAM: UH Energy Channel Labels
+  FORMAT: A32
   VAR_TYPE: metadata
 
 # --------------------------- Dataset variable attrs ------------------------
@@ -203,144 +225,143 @@ data_quality:
   VALIDMAX: 1
   VALIDMIN: 0
   VAR_TYPE: data
-  VAR_TYPE: support_data
 
 # ----- hi-omni Attributes -----
 # Species plus and minus attrs:
 energy_c_minus:
   <<: *energy_default
-  CATDESC: Energy Table Minus value
+  CATDESC: Lower energy half-width for C
   DEPEND_1: energy_c
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta minus
+  FIELDNAM: C Energy Delta Minus
 
 energy_c_plus:
   <<: *energy_default
-  CATDESC: Energy Table Plus value
+  CATDESC: Upper energy half-width for C
   DEPEND_1: energy_c
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta plus
+  FIELDNAM: C Energy Delta Plus
 
 energy_fe_minus:
   <<: *energy_default
-  CATDESC: Energy Table Minus value
+  CATDESC: Lower energy half-width for Fe
   DEPEND_1: energy_fe
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta minus
+  FIELDNAM: Fe Energy Delta Minus
 
 energy_fe_plus:
   <<: *energy_default
-  CATDESC: Energy Table Plus value
+  CATDESC: Upper energy half-width for Fe
   DEPEND_1: energy_fe
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta plus
+  FIELDNAM: Fe Energy Delta Plus
 
 energy_h_minus:
   <<: *energy_default
-  CATDESC: Energy Table Minus value
+  CATDESC: Lower energy half-width for H
   DEPEND_1: energy_h
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta minus
+  FIELDNAM: H Energy Delta Minus
 
 energy_h_plus:
   <<: *energy_default
-  CATDESC: Energy Table Plus value
+  CATDESC: Upper energy half-width for H
   DEPEND_1: energy_h
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta plus
+  FIELDNAM: H Energy Delta Plus
 
 energy_he3_minus:
   <<: *energy_default
-  CATDESC: Energy Table Minus value
+  CATDESC: Lower energy half-width for He3
   DEPEND_1: energy_he3
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta minus
+  FIELDNAM: He3 Energy Delta Minus
 
 energy_he3_plus:
   <<: *energy_default
-  CATDESC: Energy Table Plus value
+  CATDESC: Upper energy half-width for He3
   DEPEND_1: energy_he3
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta plus
+  FIELDNAM: He3 Energy Delta Plus
 
 energy_he4_minus:
   <<: *energy_default
-  CATDESC: Energy Table Minus value
+  CATDESC: Lower energy half-width for He4
   DEPEND_1: energy_he4
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta minus
+  FIELDNAM: He4 Energy Delta Minus
 
 energy_he4_plus:
   <<: *energy_default
-  CATDESC: Energy Table Plus value
+  CATDESC: Upper energy half-width for He4
   DEPEND_1: energy_he4
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta plus
+  FIELDNAM: He4 Energy Delta Plus
 
 energy_junk_minus:
   <<: *energy_default
-  CATDESC: Energy Table Minus value
+  CATDESC: Lower energy half-width for Junk
   DEPEND_1: energy_junk
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta minus
+  FIELDNAM: Junk Energy Delta Minus
 
 energy_junk_plus:
   <<: *energy_default
-  CATDESC: Energy Table Plus value
+  CATDESC: Upper energy half-width for Junk
   DEPEND_1: energy_junk
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta plus
+  FIELDNAM: Junk Energy Delta Plus
 
 energy_ne_mg_si_minus:
   <<: *energy_default
-  CATDESC: Energy Table Minus value
+  CATDESC: Lower energy half-width for Ne+Mg+Si
   DEPEND_1: energy_ne_mg_si
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta minus
+  FIELDNAM: Ne+Mg+Si Energy Delta Minus
 
 energy_ne_mg_si_plus:
   <<: *energy_default
-  CATDESC: Energy Table Plus value
+  CATDESC: Upper energy half-width for Ne+Mg+Si
   DEPEND_1: energy_ne_mg_si
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta plus
+  FIELDNAM: Ne+Mg+Si Energy Delta Plus
 
 energy_o_minus:
   <<: *energy_default
-  CATDESC: Energy Table Minus value
+  CATDESC: Lower energy half-width for O
   DEPEND_1: energy_o
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta minus
+  FIELDNAM: O Energy Delta Minus
 
 energy_o_plus:
   <<: *energy_default
-  CATDESC: Energy Table Plus value
+  CATDESC: Upper energy half-width for O
   DEPEND_1: energy_o
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta plus
+  FIELDNAM: O Energy Delta Plus
 
 energy_uh_minus:
   <<: *energy_default
-  CATDESC: Energy Table Minus value
+  CATDESC: Lower energy half-width for UH
   DEPEND_1: energy_uh
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta minus
+  FIELDNAM: UH Energy Delta Minus
 
 energy_uh_plus:
   <<: *energy_default
-  CATDESC: Energy Table Plus value
+  CATDESC: Upper energy half-width for UH
   DEPEND_1: energy_uh
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:EnergyPerCharge,Qualifier:Uncertainty
-  FIELDNAM: energy delta plus
+  FIELDNAM: UH Energy Delta Plus
 
 # Uncertainty attrs:
 unc_c:
-  CATDESC: Uncertainties for c (Root 2 spacing)
+  CATDESC: Uncertainty in differential intensity for C at root-2-spaced energy-per-nucleon channels
   COORDINATE_SYSTEM: instrument frame
   DEPEND_0: epoch
   DEPEND_1: energy_c
   DISPLAY_TYPE: time_series
-  FIELDNAM: Uncertainties for c
+  FIELDNAM: Uncertainty - C
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_c_label
@@ -352,12 +373,12 @@ unc_c:
   VAR_TYPE: support_data
 
 unc_fe:
-  CATDESC: Uncertainties for fe (Root 2 spacing)
+  CATDESC: Uncertainty in differential intensity for Fe at root-2-spaced energy-per-nucleon channels
   COORDINATE_SYSTEM: instrument frame
   DEPEND_0: epoch
   DEPEND_1: energy_fe
   DISPLAY_TYPE: time_series
-  FIELDNAM: Uncertainties for fe
+  FIELDNAM: Uncertainty - Fe
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_fe_label
@@ -369,12 +390,12 @@ unc_fe:
   VAR_TYPE: support_data
 
 unc_h:
-  CATDESC: Uncertainties for h (Root 2 spacing)
+  CATDESC: Uncertainty in differential intensity for H at root-2-spaced energy-per-nucleon channels
   COORDINATE_SYSTEM: instrument frame
   DEPEND_0: epoch
   DEPEND_1: energy_h
   DISPLAY_TYPE: time_series
-  FIELDNAM: Uncertainties for h
+  FIELDNAM: Uncertainty - H
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_h_label
@@ -386,12 +407,12 @@ unc_h:
   VAR_TYPE: support_data
 
 unc_he3:
-  CATDESC: Uncertainties for he3 (Root 2 spacing)
+  CATDESC: Uncertainty in differential intensity for He3 at root-2-spaced energy-per-nucleon channels
   COORDINATE_SYSTEM: instrument frame
   DEPEND_0: epoch
   DEPEND_1: energy_he3
   DISPLAY_TYPE: time_series
-  FIELDNAM: Uncertainties for he3
+  FIELDNAM: Uncertainty - He3
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_he3_label
@@ -403,12 +424,12 @@ unc_he3:
   VAR_TYPE: support_data
 
 unc_he4:
-  CATDESC: Uncertainties for he4 (Root 2 spacing)
+  CATDESC: Uncertainty in differential intensity for He4 at root-2-spaced energy-per-nucleon channels
   COORDINATE_SYSTEM: instrument frame
   DEPEND_0: epoch
   DEPEND_1: energy_he4
   DISPLAY_TYPE: time_series
-  FIELDNAM: Uncertainties for he4
+  FIELDNAM: Uncertainty - He4
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_he4_label
@@ -420,12 +441,12 @@ unc_he4:
   VAR_TYPE: support_data
 
 unc_junk:
-  CATDESC: Uncertainties for junk (Root 2 spacing)
+  CATDESC: Uncertainty in differential intensity for Junk at root-2-spaced energy-per-nucleon channels
   COORDINATE_SYSTEM: instrument frame
   DEPEND_0: epoch
   DEPEND_1: energy_junk
   DISPLAY_TYPE: time_series
-  FIELDNAM: Uncertainties for junk
+  FIELDNAM: Uncertainty - Junk
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_junk_label
@@ -437,12 +458,12 @@ unc_junk:
   VAR_TYPE: support_data
 
 unc_ne_mg_si:
-  CATDESC: Uncertainties for ne-mg-si (Root 2 spacing)
+  CATDESC: Uncertainty in differential intensity for Ne+Mg+Si at root-2-spaced energy-per-nucleon channels
   COORDINATE_SYSTEM: instrument frame
   DEPEND_0: epoch
   DEPEND_1: energy_ne_mg_si
   DISPLAY_TYPE: time_series
-  FIELDNAM: Uncertainties for ne-mg-si
+  FIELDNAM: Uncertainty - Ne+Mg+Si
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_ne_mg_si_label
@@ -454,12 +475,12 @@ unc_ne_mg_si:
   VAR_TYPE: support_data
 
 unc_o:
-  CATDESC: Uncertainties for o (Root 2 spacing)
+  CATDESC: Uncertainty in differential intensity for O at root-2-spaced energy-per-nucleon channels
   COORDINATE_SYSTEM: instrument frame
   DEPEND_0: epoch
   DEPEND_1: energy_o
   DISPLAY_TYPE: time_series
-  FIELDNAM: Uncertainties for o
+  FIELDNAM: Uncertainty - O
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_o_label
@@ -471,12 +492,12 @@ unc_o:
   VAR_TYPE: support_data
 
 unc_uh:
-  CATDESC: Uncertainties for uh (Root 2 spacing)
+  CATDESC: Uncertainty in differential intensity for UH at root-2-spaced energy-per-nucleon channels
   COORDINATE_SYSTEM: instrument frame
   DEPEND_0: epoch
   DEPEND_1: energy_uh
   DISPLAY_TYPE: time_series
-  FIELDNAM: Uncertainties for uh
+  FIELDNAM: Uncertainty - UH
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_uh_label
@@ -487,12 +508,14 @@ unc_uh:
   VALIDMIN: 0.0
   VAR_TYPE: support_data
 c:
-  CATDESC: c (Root 2 spacing)
+  CATDESC: Differential intensity for C at root-2-spaced energy-per-nucleon channels
+  DELTA_MINUS_VAR: unc_c
+  DELTA_PLUS_VAR: unc_c
   DEPEND_0: epoch
   DEPEND_1: energy_c
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
   DISPLAY_TYPE: time_series
-  FIELDNAM: Diff. Intensity - c
+  FIELDNAM: Differential Intensity - C
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_c_label
@@ -503,12 +526,14 @@ c:
   VAR_TYPE: data
 
 fe:
-  CATDESC: fe (Root 2 spacing)
+  CATDESC: Differential intensity for Fe at root-2-spaced energy-per-nucleon channels
+  DELTA_MINUS_VAR: unc_fe
+  DELTA_PLUS_VAR: unc_fe
   DEPEND_0: epoch
   DEPEND_1: energy_fe
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
   DISPLAY_TYPE: time_series
-  FIELDNAM: Diff. Intensity - fe
+  FIELDNAM: Differential Intensity - Fe
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_fe_label
@@ -519,12 +544,14 @@ fe:
   VAR_TYPE: data
 
 h:
-  CATDESC: h (Root 2 spacing)
+  CATDESC: Differential intensity for H at root-2-spaced energy-per-nucleon channels
+  DELTA_MINUS_VAR: unc_h
+  DELTA_PLUS_VAR: unc_h
   DEPEND_0: epoch
   DEPEND_1: energy_h
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
   DISPLAY_TYPE: time_series
-  FIELDNAM: Diff. Intensity - h
+  FIELDNAM: Differential Intensity - H
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_h_label
@@ -535,12 +562,14 @@ h:
   VAR_TYPE: data
 
 he3:
-  CATDESC: he3 (Root 2 spacing)
+  CATDESC: Differential intensity for He3 at root-2-spaced energy-per-nucleon channels
+  DELTA_MINUS_VAR: unc_he3
+  DELTA_PLUS_VAR: unc_he3
   DEPEND_0: epoch
   DEPEND_1: energy_he3
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
   DISPLAY_TYPE: time_series
-  FIELDNAM: Diff. Intensity - he3
+  FIELDNAM: Differential Intensity - He3
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_he3_label
@@ -551,12 +580,14 @@ he3:
   VAR_TYPE: data
 
 he4:
-  CATDESC: he4 (Root 2 spacing)
+  CATDESC: Differential intensity for He4 at root-2-spaced energy-per-nucleon channels
+  DELTA_MINUS_VAR: unc_he4
+  DELTA_PLUS_VAR: unc_he4
   DEPEND_0: epoch
   DEPEND_1: energy_he4
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
   DISPLAY_TYPE: time_series
-  FIELDNAM: Diff. Intensity - he4
+  FIELDNAM: Differential Intensity - He4
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_he4_label
@@ -567,12 +598,14 @@ he4:
   VAR_TYPE: data
 
 junk:
-  CATDESC: junk (Root 2 spacing)
+  CATDESC: Differential intensity for Junk at root-2-spaced energy-per-nucleon channels
+  DELTA_MINUS_VAR: unc_junk
+  DELTA_PLUS_VAR: unc_junk
   DEPEND_0: epoch
   DEPEND_1: energy_junk
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
   DISPLAY_TYPE: time_series
-  FIELDNAM: Diff. Intensity - junk
+  FIELDNAM: Differential Intensity - Junk
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_junk_label
@@ -583,12 +616,14 @@ junk:
   VAR_TYPE: data
 
 ne_mg_si:
-  CATDESC: ne-mg-si (Root 2 spacing)
+  CATDESC: Differential intensity for Ne+Mg+Si at root-2-spaced energy-per-nucleon channels
+  DELTA_MINUS_VAR: unc_ne_mg_si
+  DELTA_PLUS_VAR: unc_ne_mg_si
   DEPEND_0: epoch
   DEPEND_1: energy_ne_mg_si
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
   DISPLAY_TYPE: time_series
-  FIELDNAM: Diff. Intensity - ne-mg-si
+  FIELDNAM: Differential Intensity - Ne+Mg+Si
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_ne_mg_si_label
@@ -599,12 +634,14 @@ ne_mg_si:
   VAR_TYPE: data
 
 o:
-  CATDESC: o (Root 2 spacing)
+  CATDESC: Differential intensity for O at root-2-spaced energy-per-nucleon channels
+  DELTA_MINUS_VAR: unc_o
+  DELTA_PLUS_VAR: unc_o
   DEPEND_0: epoch
   DEPEND_1: energy_o
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
   DISPLAY_TYPE: time_series
-  FIELDNAM: Diff. Intensity - o
+  FIELDNAM: Differential Intensity - O
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_o_label
@@ -615,12 +652,14 @@ o:
   VAR_TYPE: data
 
 uh:
-  CATDESC: uh (Root 2 spacing)
+  CATDESC: Differential intensity for UH at root-2-spaced energy-per-nucleon channels
+  DELTA_MINUS_VAR: unc_uh
+  DELTA_PLUS_VAR: unc_uh
   DEPEND_0: epoch
   DEPEND_1: energy_uh
   DICT_KEY: SPASE>Particle>ParticleType:Ion,ParticleQuantity:NumberFlux,Qualifier:Differential
   DISPLAY_TYPE: time_series
-  FIELDNAM: Diff. Intensity - uh
+  FIELDNAM: Differential Intensity - UH
   FILLVAL: *real_fillval
   FORMAT: F32.1
   LABL_PTR_1: energy_uh_label

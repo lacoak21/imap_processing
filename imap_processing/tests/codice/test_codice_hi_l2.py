@@ -12,6 +12,7 @@ from imap_data_access.processing_input import (
 from imap_processing import imap_module_directory
 from imap_processing.cdf.utils import load_cdf, write_cdf
 from imap_processing.codice.codice_l2 import (
+    HI_SPECIES_DISPLAY_NAMES,
     process_codice_l2,
 )
 from imap_processing.tests.codice.conftest import (
@@ -42,6 +43,13 @@ def assert_l2_epoch_delta_cdf_metadata(cdf_file):
             assert attrs["FORMAT"] == "I19"
             assert attrs["VALIDMIN"] == 0
             assert attrs["VALIDMAX"] == EXPECTED_EPOCH_DELTA_VALIDMAX
+
+
+def _expected_hi_energy_labels(species: str, energies: np.ndarray) -> np.ndarray:
+    species_display = HI_SPECIES_DISPLAY_NAMES[species]
+    return np.array(
+        [f"{species_display} int @{energy:.3f} MeV/nuc" for energy in energies]
+    )
 
 
 @pytest.fixture
@@ -84,6 +92,17 @@ def test_l2_hi_omni(mock_get_file_paths):
 
     # Check coordinates
     for variable in val_data.coords:
+        if variable.startswith("energy_") and variable.endswith("_label"):
+            species = variable.removeprefix("energy_").removesuffix("_label")
+            np.testing.assert_array_equal(
+                processed_l2[variable].values,
+                _expected_hi_energy_labels(
+                    species,
+                    processed_l2[f"energy_{species}"].values,
+                ),
+                err_msg=f"Mismatch in coordinate '{variable}'",
+            )
+            continue
         np.testing.assert_allclose(
             processed_l2[variable].values,
             val_data[variable].values,
@@ -101,6 +120,39 @@ def test_l2_hi_omni(mock_get_file_paths):
         omni_cdf_file.name == f"imap_codice_l2_hi-omni_{VALIDATION_FILE_DATE}_v001.cdf"
     )
     assert_l2_epoch_delta_cdf_metadata(omni_cdf_file)
+    with cdflib.CDF(omni_cdf_file) as cdf_file:
+        data_quality_attrs = cdf_file.varattsget("data_quality")
+        assert data_quality_attrs["VAR_TYPE"] == "data"
+        assert cdf_file.varattsget("energy_h")["FORMAT"] == "F12.6"
+        assert cdf_file.varattsget("energy_h_minus")["FORMAT"] == "F12.6"
+        assert cdf_file.varattsget("energy_h_plus")["FORMAT"] == "F12.6"
+        energy_h_label_attrs = cdf_file.varattsget("energy_h_label")
+        assert energy_h_label_attrs["FORMAT"] == "A32"
+        assert (
+            energy_h_label_attrs["CATDESC"]
+            == "Energy-channel labels for H differential intensity"
+        )
+        assert energy_h_label_attrs["FIELDNAM"] == "H Energy Channel Labels"
+        energy_h_attrs = cdf_file.varattsget("energy_h")
+        assert energy_h_attrs["CATDESC"] == "Geometric mean energy per nucleon for H"
+        assert energy_h_attrs["FIELDNAM"] == "H Energy"
+        h_attrs = cdf_file.varattsget("h")
+        assert h_attrs["CATDESC"] == (
+            "Differential intensity for H at root-2-spaced energy-per-nucleon channels"
+        )
+        assert h_attrs["DELTA_MINUS_VAR"] == "unc_h"
+        assert h_attrs["DELTA_PLUS_VAR"] == "unc_h"
+        assert h_attrs["FIELDNAM"] == "Differential Intensity - H"
+        unc_h_attrs = cdf_file.varattsget("unc_h")
+        assert unc_h_attrs["CATDESC"] == (
+            "Uncertainty in differential intensity for H at root-2-spaced "
+            "energy-per-nucleon channels"
+        )
+        assert unc_h_attrs["FIELDNAM"] == "Uncertainty - H"
+        np.testing.assert_array_equal(
+            cdf_file.varget("energy_h_label"),
+            _expected_hi_energy_labels("h", processed_l2["energy_h"].values),
+        )
 
 
 def test_l2_hi_sectored(mock_get_file_paths):
@@ -162,6 +214,17 @@ def test_l2_hi_sectored(mock_get_file_paths):
 
     # Check coordinates
     for variable in val_data.coords:
+        if variable.startswith("energy_") and variable.endswith("_label"):
+            species = variable.removeprefix("energy_").removesuffix("_label")
+            np.testing.assert_array_equal(
+                processed_l2[variable].values,
+                _expected_hi_energy_labels(
+                    species,
+                    processed_l2[f"energy_{species}"].values,
+                ),
+                err_msg=f"Mismatch in coordinate '{variable}'",
+            )
+            continue
         if variable.endswith("_label"):
             assert np.array_equal(
                 processed_l2[variable].values,
@@ -186,3 +249,35 @@ def test_l2_hi_sectored(mock_get_file_paths):
         == f"imap_codice_l2_hi-sectored_{VALIDATION_FILE_DATE}_v001.cdf"
     )
     assert_l2_epoch_delta_cdf_metadata(sectored_cdf_file)
+    with cdflib.CDF(sectored_cdf_file) as cdf_file:
+        data_quality_attrs = cdf_file.varattsget("data_quality")
+        assert data_quality_attrs["VAR_TYPE"] == "data"
+        assert cdf_file.varattsget("energy_h")["FORMAT"] == "F12.6"
+        assert cdf_file.varattsget("energy_h_minus")["FORMAT"] == "F12.6"
+        assert cdf_file.varattsget("energy_h_plus")["FORMAT"] == "F12.6"
+        energy_h_label_attrs = cdf_file.varattsget("energy_h_label")
+        assert energy_h_label_attrs["FORMAT"] == "A32"
+        assert (
+            energy_h_label_attrs["CATDESC"]
+            == "Energy-channel labels for H differential intensity"
+        )
+        assert energy_h_label_attrs["FIELDNAM"] == "H Energy Channel Labels"
+        energy_h_attrs = cdf_file.varattsget("energy_h")
+        assert energy_h_attrs["CATDESC"] == "Geometric mean energy per nucleon for H"
+        assert energy_h_attrs["FIELDNAM"] == "H Energy"
+        h_attrs = cdf_file.varattsget("h")
+        assert h_attrs["CATDESC"] == (
+            "Differential intensity for H by energy, spin sector, and "
+            "elevation at x2-spaced energy-per-nucleon channels"
+        )
+        assert h_attrs["FIELDNAM"] == "Differential Intensity - H"
+        unc_h_attrs = cdf_file.varattsget("unc_h")
+        assert unc_h_attrs["CATDESC"] == (
+            "Uncertainty in differential intensity for H by energy, spin "
+            "sector, and elevation at x2-spaced energy-per-nucleon channels"
+        )
+        assert unc_h_attrs["FIELDNAM"] == "Uncertainty - H"
+        np.testing.assert_array_equal(
+            cdf_file.varget("energy_h_label"),
+            _expected_hi_energy_labels("h", processed_l2["energy_h"].values),
+        )

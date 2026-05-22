@@ -36,6 +36,9 @@ from imap_processing.tests.codice.conftest import (
 
 pytestmark = pytest.mark.external_test_data
 
+# epoch_delta = num_spins * spin_period / 2, with spin_period VALIDMAX = 16 s
+# and num_spins max = 16 in the current CoDICE timing model. That yields a
+# worst-case delta of 128 s = 128000000000 ns.
 EXPECTED_EPOCH_DELTA_VALIDMAX = 128000000000
 
 
@@ -465,9 +468,20 @@ def test_codice_l2_sw_species_intensity(mock_get_file_paths, codice_lut_path):
         )
     processed_2_ds.attrs["Data_version"] = "001"
     assert processed_2_ds.attrs["Logical_source"] == "imap_codice_l2_lo-sw-species"
-    cdf_file_path = write_cdf(processed_2_ds)
-    assert_l2_epoch_delta_cdf_metadata(cdf_file_path)
-    with cdflib.CDF(cdf_file_path) as cdf_file:
+    cdf_path = write_cdf(processed_2_ds)
+    assert_l2_epoch_delta_cdf_metadata(cdf_path)
+    with cdflib.CDF(cdf_path) as cdf_file:
+        hplus_attrs = cdf_file.varattsget("hplus")
+        assert (
+            hplus_attrs["CATDESC"] == "Differential intensity for sunward solar-wind H+"
+        )
+        assert hplus_attrs["FIELDNAM"] == "Sunward Differential Intensity - H+"
+        unc_hplus_attrs = cdf_file.varattsget("unc_hplus")
+        assert (
+            unc_hplus_attrs["CATDESC"]
+            == "Uncertainty in differential intensity for sunward solar-wind H+"
+        )
+        assert unc_hplus_attrs["FIELDNAM"] == "Sunward Uncertainty - H+"
         for var in ["nso_esa_step", "nso_spin_sector"]:
             var_info = cdf_file.varinq(var)
             var_attrs = cdf_file.varattsget(var)

@@ -40,6 +40,64 @@ from imap_processing.codice.utils import apply_replacements_to_attrs
 
 logger = logging.getLogger(__name__)
 
+HI_SPECIES_DISPLAY_NAMES = {
+    "h": "H",
+    "he3": "He3",
+    "he4": "He4",
+    "he3he4": "He3+He4",
+    "c": "C",
+    "cno": "CNO",
+    "o": "O",
+    "fe": "Fe",
+    "ne_mg_si": "Ne+Mg+Si",
+    "uh": "UH",
+    "junk": "Junk",
+}
+
+LO_SW_SPECIES_DISPLAY_NAMES = {
+    "hplus": "H+",
+    "heplus": "He+",
+    "heplusplus": "He++",
+    "cplus4": "C4+",
+    "cplus5": "C5+",
+    "cplus6": "C6+",
+    "oplus5": "O5+",
+    "oplus6": "O6+",
+    "oplus7": "O7+",
+    "oplus8": "O8+",
+    "ne": "Ne",
+    "mg": "Mg",
+    "si": "Si",
+    "fe_loq": "Fe LoQ",
+    "fe_hiq": "Fe HiQ",
+    "cnoplus": "CNO+",
+}
+
+
+def _format_hi_energy_labels(
+    species: str,
+    energies: NDArray[np.floating],
+) -> NDArray[np.str_]:
+    """
+    Return human-readable Hi energy channel labels.
+
+    Parameters
+    ----------
+    species : str
+        The Hi species key used to look up the user-facing label text.
+    energies : NDArray[np.floating]
+        Energy-per-nucleon values for the species channels.
+
+    Returns
+    -------
+    NDArray[np.str_]
+        Human-readable energy-channel labels.
+    """
+    species_display = HI_SPECIES_DISPLAY_NAMES[species]
+    return np.array(
+        [f"{species_display} int @{energy:.3f} MeV/nuc" for energy in energies]
+    )
+
 
 def get_lo_de_energy_luts(
     dependencies: ProcessingInputCollection,
@@ -546,7 +604,17 @@ def process_lo_species_intensity(
     for species in species_list:
         attrs = unc_attrs if "unc" in species else species_attrs
         # Replace {species} and {direction} in attrs
-        attrs = apply_replacements_to_attrs(attrs, {"species": species})
+        base_species = species.removeprefix("unc_")
+        attrs = apply_replacements_to_attrs(
+            attrs,
+            {
+                "species": species,
+                "species_display": LO_SW_SPECIES_DISPLAY_NAMES.get(
+                    base_species,
+                    base_species,
+                ),
+            },
+        )
         dataset[species].attrs.update(attrs)
 
     # Since the RGFO mode is implemented within a half-spin at a given esa step and
@@ -684,7 +752,7 @@ def process_hi_omni(dependencies: ProcessingInputCollection) -> xr.Dataset:
             attrs=cdf_attrs.get_variable_attributes("energy_h", check_schema=False),
         ),
         "energy_h_label": xr.DataArray(
-            l1b_dataset["energy_h"].values.astype(str),
+            _format_hi_energy_labels("h", l1b_dataset["energy_h"].values),
             dims=("energy_h",),
             attrs=cdf_attrs.get_variable_attributes(
                 "energy_h_label", check_schema=False
@@ -696,7 +764,7 @@ def process_hi_omni(dependencies: ProcessingInputCollection) -> xr.Dataset:
             attrs=cdf_attrs.get_variable_attributes("energy_he3", check_schema=False),
         ),
         "energy_he3_label": xr.DataArray(
-            l1b_dataset["energy_he3"].values.astype(str),
+            _format_hi_energy_labels("he3", l1b_dataset["energy_he3"].values),
             dims=("energy_he3",),
             attrs=cdf_attrs.get_variable_attributes(
                 "energy_he3_label", check_schema=False
@@ -708,7 +776,7 @@ def process_hi_omni(dependencies: ProcessingInputCollection) -> xr.Dataset:
             attrs=cdf_attrs.get_variable_attributes("energy_he4", check_schema=False),
         ),
         "energy_he4_label": xr.DataArray(
-            l1b_dataset["energy_he4"].values.astype(str),
+            _format_hi_energy_labels("he4", l1b_dataset["energy_he4"].values),
             dims=("energy_he4",),
             attrs=cdf_attrs.get_variable_attributes(
                 "energy_he4_label", check_schema=False
@@ -720,7 +788,7 @@ def process_hi_omni(dependencies: ProcessingInputCollection) -> xr.Dataset:
             attrs=cdf_attrs.get_variable_attributes("energy_c", check_schema=False),
         ),
         "energy_c_label": xr.DataArray(
-            l1b_dataset["energy_c"].values.astype(str),
+            _format_hi_energy_labels("c", l1b_dataset["energy_c"].values),
             dims=("energy_c",),
             attrs=cdf_attrs.get_variable_attributes(
                 "energy_c_label", check_schema=False
@@ -732,7 +800,7 @@ def process_hi_omni(dependencies: ProcessingInputCollection) -> xr.Dataset:
             attrs=cdf_attrs.get_variable_attributes("energy_o", check_schema=False),
         ),
         "energy_o_label": xr.DataArray(
-            l1b_dataset["energy_o"].values.astype(str),
+            _format_hi_energy_labels("o", l1b_dataset["energy_o"].values),
             dims=("energy_o",),
             attrs=cdf_attrs.get_variable_attributes(
                 "energy_o_label", check_schema=False
@@ -746,7 +814,10 @@ def process_hi_omni(dependencies: ProcessingInputCollection) -> xr.Dataset:
             ),
         ),
         "energy_ne_mg_si_label": xr.DataArray(
-            l1b_dataset["energy_ne_mg_si"].values.astype(str),
+            _format_hi_energy_labels(
+                "ne_mg_si",
+                l1b_dataset["energy_ne_mg_si"].values,
+            ),
             dims=("energy_ne_mg_si",),
             attrs=cdf_attrs.get_variable_attributes(
                 "energy_ne_mg_si_label", check_schema=False
@@ -758,7 +829,7 @@ def process_hi_omni(dependencies: ProcessingInputCollection) -> xr.Dataset:
             attrs=cdf_attrs.get_variable_attributes("energy_fe", check_schema=False),
         ),
         "energy_fe_label": xr.DataArray(
-            l1b_dataset["energy_fe"].values.astype(str),
+            _format_hi_energy_labels("fe", l1b_dataset["energy_fe"].values),
             dims=("energy_fe",),
             attrs=cdf_attrs.get_variable_attributes(
                 "energy_fe_label", check_schema=False
@@ -770,7 +841,7 @@ def process_hi_omni(dependencies: ProcessingInputCollection) -> xr.Dataset:
             attrs=cdf_attrs.get_variable_attributes("energy_uh", check_schema=False),
         ),
         "energy_uh_label": xr.DataArray(
-            l1b_dataset["energy_uh"].values.astype(str),
+            _format_hi_energy_labels("uh", l1b_dataset["energy_uh"].values),
             dims=("energy_uh",),
             attrs=cdf_attrs.get_variable_attributes(
                 "energy_uh_label", check_schema=False
@@ -782,7 +853,7 @@ def process_hi_omni(dependencies: ProcessingInputCollection) -> xr.Dataset:
             attrs=cdf_attrs.get_variable_attributes("energy_junk", check_schema=False),
         ),
         "energy_junk_label": xr.DataArray(
-            l1b_dataset["energy_junk"].values.astype(str),
+            _format_hi_energy_labels("junk", l1b_dataset["energy_junk"].values),
             dims=("energy_junk",),
             attrs=cdf_attrs.get_variable_attributes(
                 "energy_junk_label", check_schema=False
@@ -852,7 +923,7 @@ def process_hi_sectored(dependencies: ProcessingInputCollection) -> xr.Dataset:
                 attrs=cdf_attrs.get_variable_attributes("energy_h", check_schema=False),
             ),
             "energy_h_label": xr.DataArray(
-                l1b_dataset["energy_h"].values.astype(str),
+                _format_hi_energy_labels("h", l1b_dataset["energy_h"].values),
                 dims=("energy_h",),
                 attrs=cdf_attrs.get_variable_attributes(
                     "energy_h_label", check_schema=False
@@ -866,7 +937,10 @@ def process_hi_sectored(dependencies: ProcessingInputCollection) -> xr.Dataset:
                 ),
             ),
             "energy_he3he4_label": xr.DataArray(
-                l1b_dataset["energy_he3he4"].values.astype(str),
+                _format_hi_energy_labels(
+                    "he3he4",
+                    l1b_dataset["energy_he3he4"].values,
+                ),
                 dims=("energy_he3he4",),
                 attrs=cdf_attrs.get_variable_attributes(
                     "energy_he3he4_label", check_schema=False
@@ -880,7 +954,7 @@ def process_hi_sectored(dependencies: ProcessingInputCollection) -> xr.Dataset:
                 ),
             ),
             "energy_cno_label": xr.DataArray(
-                l1b_dataset["energy_cno"].values.astype(str),
+                _format_hi_energy_labels("cno", l1b_dataset["energy_cno"].values),
                 dims=("energy_cno",),
                 attrs=cdf_attrs.get_variable_attributes(
                     "energy_cno_label", check_schema=False
@@ -894,7 +968,7 @@ def process_hi_sectored(dependencies: ProcessingInputCollection) -> xr.Dataset:
                 ),
             ),
             "energy_fe_label": xr.DataArray(
-                l1b_dataset["energy_fe"].values.astype(str),
+                _format_hi_energy_labels("fe", l1b_dataset["energy_fe"].values),
                 dims=("energy_fe",),
                 attrs=cdf_attrs.get_variable_attributes(
                     "energy_fe_label", check_schema=False
