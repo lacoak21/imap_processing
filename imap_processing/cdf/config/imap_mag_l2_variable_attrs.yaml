@@ -50,8 +50,10 @@ vector_attrs: &vectors_default
     DICT_KEY: "SPASE>Field>FieldQuantity:Magnetic,Qualifier:Vector,CoordinateSystemName:DSRF,CoordinateRepresentation:Cartesian"
     FIELDNAM: Magnetic Field Vector
     FILLVAL: -1.0e31
-    FORMAT: F12.5
+    FORMAT: F13.5
     LABL_PTR_1: direction_label
+    VALIDMAX: 1.0e+5
+    VALIDMIN: -1.0e+5
 
 # Frame-specific vector attributes
 vector_attrs_srf:
