@@ -151,6 +151,7 @@ def test_swapi_l2_cdf(
         "corresponding energy in eV/q is provided by esa_energy"
         in esa_step_attrs["CATDESC"]
     )
+
     assert sci_start_time_attrs["FORMAT"] == "A23"
     assert swp_l1a_flags_attrs["VALIDMAX"] == np.uint16(32767)
     assert "SWP_PCEM_COMP" in swp_l1a_flags_attrs["VAR_NOTES"]
