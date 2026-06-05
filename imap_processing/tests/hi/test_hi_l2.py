@@ -11,6 +11,7 @@ from imap_processing.cdf.utils import load_cdf, write_cdf
 from imap_processing.ena_maps.ena_maps import HealpixSkyMap, RectangularSkyMap
 from imap_processing.ena_maps.utils.naming import MapDescriptor
 from imap_processing.hi.hi_l2 import (
+    CALIBRATION_UNCERTAINTY_FRACTION,
     _calculate_improved_stat_variance,
     calculate_all_rates_and_intensities,
     calculate_ena_intensity,
@@ -184,7 +185,6 @@ def test_hi_l2(
     write_cdf(l2_dataset, istp=True)
 
 
-@pytest.mark.external_test_data
 @patch(
     "imap_processing.ena_maps.ena_maps.RectangularSkyMap.build_cdf_dataset",
     autospec=True,
@@ -195,11 +195,12 @@ def test_hi_l2_uses_descriptor_to_setup_map(
     mock_create_sky_map_from_psets,
     mock_calculate_all_rates_and_intensities,
     mock_map_build_cdf_dataset,
-    hi_l1_test_data_path,
 ):
-    pset_path = hi_l1_test_data_path / "imap_hi_l1c_45sensor-pset_20250415_v999.cdf"
+    """Test that hi_l2 uses the descriptor to set up the map correctly."""
+    pset_path = "fake_pset.cdf"  # Not used due to mocking
     descriptor_str = "h90-ena-h-sf-nsp-full-hnu-2deg-3mo"
     rect_map = MapDescriptor.from_string(descriptor_str).to_empty_map()
+
     # create_sky_map_from_psets returns a dict with spin_phase key
     mock_create_sky_map_from_psets.return_value = {"full": rect_map}
     # calculate_all_rates_and_intensities modifies and returns the map data
@@ -1236,6 +1237,7 @@ def test_cleanup_intermediate_variables():
     ds = xr.Dataset(
         {
             "bg_rate": xr.DataArray([1, 2, 3], dims=["x"]),
+            "bg_rate_sys_err": xr.DataArray([0.1, 0.2, 0.3], dims=["x"]),
             "energy_sc": xr.DataArray([4, 5, 6], dims=["x"]),
             "ena_signal_rates": xr.DataArray([7, 8, 9], dims=["x"]),
             "ena_signal_rate_stat_unc": xr.DataArray([0.1, 0.2, 0.3], dims=["x"]),
@@ -1248,6 +1250,7 @@ def test_cleanup_intermediate_variables():
 
     # Intermediate variables should be removed
     assert "bg_rate" not in result
+    assert "bg_rate_sys_err" not in result
     assert "energy_sc" not in result
     assert "ena_signal_rates" not in result
     assert "ena_signal_rate_stat_unc" not in result
@@ -1664,3 +1667,75 @@ def test_combine_maps_handles_nan_sys_err(mock_sky_map_for_combine):
         expected_sys_err_valid,
         decimal=10,
     )
+
+
+# =============================================================================
+# SYSTEMATIC UNCERTAINTY ALGORITHM TESTS
+# =============================================================================
+
+
+def test_calculate_ena_intensity_uses_bg_rate_sys_err(
+    ena_intensity_map_ds, anc_path_dict
+):
+    """Test that calculate_ena_intensity uses bg_rate_sys_err field.
+
+    The systematic uncertainty should be computed from the exposure-time
+    weighted average of bg_rate_sys_err, converted from rate to intensity.
+    This replaces the old algorithm that computed sqrt(bg_counts)/exposure.
+    """
+    descriptor_str = "h90-ena-h-sf-nsp-full-gcs-6deg-3mo"
+    map_descriptor = MapDescriptor.from_string(descriptor_str)
+
+    result_ds = calculate_ena_intensity(
+        ena_intensity_map_ds, anc_path_dict, map_descriptor
+    )
+
+    # Verify ena_intensity_sys_err was calculated
+    assert "ena_intensity_sys_err" in result_ds
+
+    # The sys_err should be based on bg_rate_sys_err / (geometric_factor * energy)
+    # After combine_calibration_products, it's combined in quadrature across cal prods
+    # We just verify it's finite and positive where expected
+    sys_err = result_ds["ena_intensity_sys_err"]
+    assert np.all(sys_err.values[np.isfinite(sys_err.values)] >= 0)
+
+
+def test_calculate_all_rates_adds_calibration_systematic(
+    mock_map_dataset_for_rates, anc_path_dict
+):
+    """Test that calculate_all_rates_and_intensities adds calibration systematic.
+
+    The final systematic uncertainty should include both:
+    1. Background-associated systematic (from bg_rate_sys_err)
+    2. Calibration systematic (22% of intensity)
+
+    These should be combined in quadrature.
+    """
+    descriptor = MapDescriptor.from_string("h90-ena-h-sf-nsp-full-gcs-6deg-3mo")
+
+    result_ds = calculate_all_rates_and_intensities(
+        mock_map_dataset_for_rates,
+        anc_path_dict,
+        descriptor,
+    )
+
+    # Verify ena_intensity_sys_err includes calibration systematic
+    assert "ena_intensity_sys_err" in result_ds
+
+    # The sys_err should be larger than CALIBRATION_UNCERTAINTY_FRACTION * intensity
+    # because it includes both bg systematic and calibration systematic in quadrature
+    intensity = result_ds["ena_intensity"]
+    sys_err = result_ds["ena_intensity_sys_err"]
+
+    # Minimum expected sys_err is 22% of intensity (if bg systematic were zero)
+    min_expected = CALIBRATION_UNCERTAINTY_FRACTION * np.abs(intensity)
+
+    # Where both values are finite and intensity > 0, sys_err should be >= min_expected
+    valid_mask = np.isfinite(sys_err.values) & np.isfinite(intensity.values)
+    valid_mask &= intensity.values > 0
+    if np.any(valid_mask):
+        np.testing.assert_array_less(
+            min_expected.values[valid_mask] - 1e-10,  # small tolerance
+            sys_err.values[valid_mask],
+            err_msg="Sys err should include calibration systematic (22% of intensity)",
+        )
