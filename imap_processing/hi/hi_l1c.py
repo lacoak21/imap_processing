@@ -658,11 +658,12 @@ def pset_backgrounds(
     # scaled_rates: (epoch, calibration_prod, background_index, esa_energy_step)
     scaled_rates = count_rates * scaling_factors_da
 
-    # Compute uncertainties (Poisson + scaling factor, combined in quadrature)
+    # Compute uncertainties: Poisson + scaling factor (combined in quadrature)
     poisson_unc = (
         np.sqrt(background_counts) / total_exposure_time
     ) * scaling_factors_da
     scaling_unc = count_rates * uncertainties_da
+    # combined_unc: (epoch, calibration_prod, background_index, esa_energy_step)
     combined_unc = np.sqrt(poisson_unc**2 + scaling_unc**2)
 
     # Sum over background_index dimension to get final rates
@@ -673,6 +674,23 @@ def pset_backgrounds(
     # Apply outer ESA background offset correction (do not go negative)
     # This corrects for excess counts from the outer ESA during background testing.
     total_rates = np.maximum(total_rates - HiConstants.EXCESS_BACKGROUND_COUNT_RATE, 0)
+
+    # Add uncertainty related to above excess count rate correction
+    # ESAs 7, 8, 9 get an extra 0.0025/s uncertainty to account for possible
+    # unidentified additional background in these ESA steps. The constant
+    # UPPER_ESA_EXTRA_BACKGROUND_UNC is defined as a xr.DataArray with the correct
+    # esa_energy_step coordinate such that it broadcasts appropriately across each
+    # calibration product.
+    # Fill zeros for any esa_energy_steps not in the extra background DataArray
+    upper_esa_unc = HiConstants.UPPER_ESA_EXTRA_BACKGROUND_UNC.reindex(
+        esa_energy_step=pset_coords["esa_energy_step"].values,
+        fill_value=0.0,
+    )
+    total_unc = np.sqrt(
+        total_unc**2
+        + HiConstants.EXCESS_BACKGROUND_COUNT_RATE_UNC**2
+        + upper_esa_unc**2
+    )
 
     # Broadcast to output variable dimensions (e.g., epoch, esa_energy_step,
     # calibration_prod, spin_angle_bin). Backgrounds are isotropic, so we

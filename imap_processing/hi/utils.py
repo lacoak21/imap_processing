@@ -137,6 +137,14 @@ class HiConstants:
     # Constant offset to subtract from combined background rates to correct
     # for excess counts from the outer ESA during background testing.
     EXCESS_BACKGROUND_COUNT_RATE = 0.003  # per second
+    EXCESS_BACKGROUND_COUNT_RATE_UNC = 0.001
+    # ESAs 7, 8, 9 get an extra 0.0025/s uncertainty to account for possible
+    # unidentified additional background in these ESA steps.
+    UPPER_ESA_EXTRA_BACKGROUND_UNC = xr.DataArray(
+        np.array([0.0025, 0.0025, 0.0025]),
+        dims=["esa_energy_step"],
+        coords={"esa_energy_step": np.array([7, 8, 9], dtype=int)},
+    )
 
 
 def parse_sensor_number(full_string: str) -> int:
