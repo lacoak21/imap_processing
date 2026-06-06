@@ -90,6 +90,7 @@ from imap_processing.ultra.l2 import ultra_l2
 from imap_processing.utils import (
     check_epochs_within_day_offsets,
     filter_day_boundary_data,
+    retrieve_mag_l1_inputs_from_l2_offsets,
 )
 
 logger = logging.getLogger(__name__)
@@ -581,7 +582,11 @@ class ProcessInstrument(ABC):
                 if self.repointing is not None:
                     ds.attrs["Repointing"] = self.repointing
                 ds.attrs["Start_date"] = self.start_date
-                ds.attrs["Parents"] = parent_files
+                # Don't overwrite Parents if processing already set it (e.g.
+                # MAG L2 records the L1 file actually used, not the passed-in
+                # dependency).
+                if "Parents" not in ds.attrs:
+                    ds.attrs["Parents"] = parent_files
                 products.append(write_cdf(ds))
             else:
                 # A path to a product that was already written out
@@ -1369,14 +1374,6 @@ class Mag(ProcessInstrument):
             )
 
         if self.data_level == "l2":
-            science_files = dependencies.get_file_paths(source="mag", data_type="l1b")
-            science_files.extend(
-                dependencies.get_file_paths(source="mag", data_type="l1c")
-            )
-            # TODO: Overwrite dependencies with versions from offsets file
-            # TODO: Ensure that parent_files attribute works with that
-            input_data = load_cdf(science_files[0])
-
             descriptor_no_frame = str.split(self.descriptor, "-")[0]
 
             # We expect either a norm or a burst input descriptor.
@@ -1405,8 +1402,31 @@ class Mag(ProcessInstrument):
 
             combined_calibration = MagAncillaryCombiner(calibration[0], day_buffer)
             offset_dataset = load_cdf(offsets[0].imap_file_paths[0].construct_path())
-            # TODO: get input data from offsets file
-            # TODO: Test data missing
+
+            # The L1B (burst) or L1C (norm) input file is retrieved from the
+            # offsets file's Parents attribute, so the L2 vectors always match
+            # the exact L1 versions the offsets were generated against. This
+            # ignores any L1B/L1C dependencies passed in to processing. If the
+            # offsets file has no Parents, fall back to the passed-in
+            # dependencies.
+            input_files = retrieve_mag_l1_inputs_from_l2_offsets(offset_dataset)
+            if input_files:
+                input_data = load_cdf(input_files[0])
+            else:
+                science_files = dependencies.get_file_paths(
+                    source="mag", data_type="l1b"
+                )
+                science_files.extend(
+                    dependencies.get_file_paths(source="mag", data_type="l1c")
+                )
+                logger.warning(
+                    "Offsets file %s has no Parents attribute; falling back "
+                    "to passed-in L1B/L1C dependencies for MAG L2 input.",
+                    offsets[0].imap_file_paths[0].construct_path().name,
+                )
+                input_files = [science_files[0]]
+                input_data = load_cdf(input_files[0])
+
             datasets = mag_l2(
                 combined_calibration.combined_dataset,
                 offset_dataset,
@@ -1414,6 +1434,19 @@ class Mag(ProcessInstrument):
                 current_day,
                 mode=DataMode(descriptor_no_frame.upper()),
             )
+
+            # Record the L1 file actually used (from the offsets file's
+            # Parents) in place of the passed-in L1B/L1C dependencies, so the
+            # product provenance matches the data that went into it.
+            # post_processing leaves an existing Parents attribute untouched.
+            l2_parents = [
+                file_path.name
+                for file_path in dependencies.get_file_paths()
+                if not file_path.name.startswith(("imap_mag_l1b_", "imap_mag_l1c_"))
+            ]
+            l2_parents.append(input_files[0].name)
+            for dataset in datasets:
+                dataset.attrs["Parents"] = l2_parents
 
         for ds in datasets:
             if "raw" not in ds.attrs["Logical_source"] and not np.all(
