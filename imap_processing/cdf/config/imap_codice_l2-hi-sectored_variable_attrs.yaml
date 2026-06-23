@@ -68,7 +68,7 @@ spin_sector:
   CATDESC: Spin Sector Index
   FIELDNAM: Spin Sector Index
   FILLVAL: *uint8_fillval
-  FORMAT: I2
+  FORMAT: I3
   LABLAXIS: " "
   SCALETYP: linear
   UNITS: " "

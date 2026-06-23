@@ -216,26 +216,23 @@ def test_l2_hi_sectored(mock_get_file_paths):
         if variable.startswith("unc_"):
             continue
         if variable == "spin_angle":
-            # The external validation file has outdated spin_angle values, but we
-            # still verify structure and basic numeric sanity to guard against
-            # regressions in the spin angle computation.
-            assert processed_l2[variable].dims == val_data[variable].dims, (
-                f"Dimension mismatch in variable '{variable}'"
+            assert processed_l2[variable].dims == (
+                "spin_sector",
+                "elevation_angle",
             )
             spin_vals = processed_l2[variable].values
-            # All values should be finite and lie within a reasonable angular range.
             assert np.all(np.isfinite(spin_vals)), (
                 "spin_angle contains non-finite values"
             )
             assert np.min(spin_vals) >= 0.0, "spin_angle has values below 0 degrees"
             assert np.max(spin_vals) <= 360.0, "spin_angle has values above 360 degrees"
-            continue
-        np.testing.assert_allclose(
-            processed_l2[variable].values,
-            val_data[variable].values,
-            rtol=1e-5,
-            err_msg=f"Mismatch in variable '{variable}'",
-        )
+        else:
+            np.testing.assert_allclose(
+                processed_l2[variable].values,
+                val_data[variable].values,
+                rtol=1e-5,
+                err_msg=f"Mismatch in variable '{variable}'",
+            )
         # Tests that dimensions match
         if variable in ["epoch_delta_plus", "epoch_delta_minus"]:
             continue
@@ -285,7 +282,9 @@ def test_l2_hi_sectored(mock_get_file_paths):
         assert data_quality_attrs["VAR_TYPE"] == "data"
         assert data_quality_attrs["FORMAT"] == "I3"
         spin_sector_attrs = cdf_file.varattsget("spin_sector")
-        assert spin_sector_attrs["FORMAT"] == "I2"
+        assert spin_sector_attrs["FORMAT"] == "I3"
+        spin_angle_attrs = cdf_file.varattsget("spin_angle")
+        assert spin_angle_attrs["VAR_TYPE"] == "support_data"
         assert cdf_file.varattsget("energy_h")["FORMAT"] == "F12.6"
         assert cdf_file.varattsget("energy_h_minus")["FORMAT"] == "F12.6"
         assert cdf_file.varattsget("energy_h_plus")["FORMAT"] == "F12.6"
