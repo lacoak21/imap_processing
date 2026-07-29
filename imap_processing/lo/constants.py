@@ -1,18 +1,52 @@
 """Constants for IMAP-Lo."""
 
 from dataclasses import dataclass
-from typing import ClassVar
+from typing import ClassVar, NamedTuple
+
+
+class PivotAngleSpec(NamedTuple):
+    """
+    Pivot angle [degrees] and associated settings for a nominal pivot index.
+
+    Attributes
+    ----------
+    pointing_index : int
+        The unique pointing "index" (matching technical documentation for Imap-Lo)
+    nominal : float
+        Nominal pivot angle.
+    min : float
+        Lower bound of the acceptable pivot angle range.
+    max : float
+        Upper bound of the acceptable pivot angle range.
+    bg_rate_ram : float, optional
+        RAM background-rate threshold [counts/s] for this pivot angle. ``None``
+        if no pivot-specific value is known, in which case
+        ``LoConstants.THRESHOLD_BG_RATE_RAM_DEFAULT`` applies.
+    bg_rate_anti_ram : float, optional
+        Anti-RAM background-rate threshold [counts/s] for this pivot angle.
+        ``None`` if no pivot-specific value is known, in which case
+        ``LoConstants.THRESHOLD_BG_RATE_ANTI_RAM_DEFAULT`` applies.
+    """
+
+    pointing_index: int
+    nominal: float
+    min: float
+    max: float
+    bg_rate_ram: float | None = None
+    bg_rate_anti_ram: float | None = None
 
 
 @dataclass(frozen=True)
 class LoConstants:
     """Constants for Lo which can be used across different levels."""
 
-    # Expected pivot angle [degrees] for pointing sets for generating map products.
-    PSET_PIVOT_ANGLE: float = 90.0
-    # Absolute tolerance [degrees] for accepting a pset's pivot angle
-    # as sufficiently close to the required value.
-    PSET_PIVOT_ANGLE_TOLERANCE: float = 45.0
+    # Absolute tolerance [degrees] for accepting an input's pivot angle as
+    # sufficiently close to the pivot angle of the map being made.
+    PSET_PIVOT_ANGLE_TOLERANCE: float = 5.0
+
+    # Empirical offset [degrees] added to the measured pivot angle when
+    # projecting a look direction onto the RAM direction.
+    PIVOT_RAM_OFFSET: float = 4.0
 
     # Ion species tracked. "H" is mandatory (and should be the first element);
     # any others for which we have histrates may be added here.
@@ -45,6 +79,55 @@ class LoConstants:
     RAM_HISTOGRAM_BINS: tuple[slice, ...] = (slice(0, 20), slice(50, 60))
     ANTI_RAM_HISTOGRAM_BINS: tuple[slice, ...] = (slice(20, 50),)
 
+    # The following are indexed by ESA level (0-indexed, ESA level = index + 1).
+    # The 8th entry is the virtual E8 channel, unused by the map.
+    ESA_ENERGY: ClassVar[list[float]] = [
+        0.016,
+        0.030,
+        0.056,
+        0.106,
+        0.200,
+        0.405,
+        0.787,
+        1.821,
+    ]
+    GEO_FACTOR: ClassVar[list[float]] = [
+        7.0e-5,
+        7.9e-5,
+        9.7e-5,
+        11.2e-5,
+        14.0e-5,
+        17.7e-5,
+        22.5e-5,
+        6.721e-5,
+    ]
+    GEO_FACTOR_ERR: ClassVar[list[float]] = [
+        4.9e-5,
+        5.5e-5,
+        6.8e-5,
+        3.0e-5,
+        4.5e-5,
+        2.0e-5,
+        1.4e-5,
+        6.721e-5,
+    ]
+
+    # GEO_FACTOR/GEO_FACTOR_ERR above are the raw, pre-recalibration values; the
+    # map multiplies them by GEO_FACTOR_SCALE, and derives the asymmetric
+    # upper/lower G-factor bounds using the two scale factors below.
+    GEO_FACTOR_SCALE: float = 0.63529412
+    GEO_FACTOR_SCALE_UPPER: float = 1.57407407
+    GEO_FACTOR_SCALE_LOWER: float = 0.36728395
+
+    # Half-widths [keV] of the ESA energy passbands, by ESA level, for the two
+    # ESA modes. NOTE: From an e-mail from Nathan on 2025-09-11 (converted to keV).
+    ESA_ENERGY_DELTA: ClassVar[dict[int, list[float]]] = {
+        # esa_mode 0, HiRes
+        0: [0.00543, 0.01002, 0.01861, 0.03331, 0.06498, 0.13164, 0.26235],
+        # esa_mode 1, HiThr
+        1: [0.00881, 0.01604, 0.02850, 0.05313, 0.10560, 0.21967, 0.41360],
+    }
+
     # Nominal background rates [counts/s] for each species
     BG_RATES: ClassVar[dict[str, float]] = {"H": 0.0014925, "O": 0.000136635}
     # When no exposure is available, scale the nominal rate down as a conservative
@@ -53,19 +136,25 @@ class LoConstants:
     # Minimum non-zero background rate floor = nominal / divisor
     BG_RATE_FLOOR_DIVISOR: ClassVar[dict[str, float]] = {"H": 50.0, "O": 150.0}
 
-    # Background-rate thresholds [counts/s] by pivot-angle range (low, high) [deg].
-    # Each value is (ram_threshold, anti_ram_threshold).
-    # The first matching open interval (low < pivot < high) is used; if none matches,
-    # THRESHOLD_BG_RATE_RAM_DEFAULT / THRESHOLD_BG_RATE_ANTI_RAM_DEFAULT apply.
-    PIVOT_ANGLE_THRESHOLDS: ClassVar[dict[tuple[float, float], tuple[float, float]]] = {
-        (88.0, 92.0): (0.028, 0.014),
-        (73.0, 77.0): (0.035, 0.0175),
-        (103.0, 107.0): (0.0224, 0.0112),
+    # Pivot angle specs keyed by nominal pivot angle. A measured pivot angle is
+    # assigned to the first spec whose [min, max] range contains it; the ranges are
+    # disjoint, so the ordering here does not matter.
+    PIVOT_ANGLES: ClassVar[dict[int, PivotAngleSpec]] = {
+        60: PivotAngleSpec(1, 60.0, 55.0, 65.0, None, None),
+        75: PivotAngleSpec(2, 75.0, 70.0, 80.0, 0.035, 0.0175),
+        90: PivotAngleSpec(3, 90.0, 85.0, 95.0, 0.028, 0.014),
+        105: PivotAngleSpec(4, 105.0, 100.0, 110.0, 0.0224, 0.0112),
+        120: PivotAngleSpec(5, 120.0, 115.0, 125.0, None, None),
+        135: PivotAngleSpec(6, 135.0, 130.0, 140.0, None, None),
+        148: PivotAngleSpec(7, 148.0, 143.0, 153.0, None, None),
+        160: PivotAngleSpec(8, 160.0, 155.0, 165.0, None, None),
     }
 
-    # Default background-rate thresholds [counts/s] when no pivot range matches.
-    THRESHOLD_BG_RATE_RAM_DEFAULT: float = 0.0175
-    THRESHOLD_BG_RATE_ANTI_RAM_DEFAULT: float = 0.00875
+    # Default background-rate thresholds [counts/s] when the pivot angle matches no
+    # spec in PIVOT_ANGLES, or the matching spec has no pivot-specific value.
+    # Currently set to nominal values for the 90-deg pivot angle.
+    THRESHOLD_BG_RATE_RAM_DEFAULT: float = 0.028
+    THRESHOLD_BG_RATE_ANTI_RAM_DEFAULT: float = 0.014
 
     # Maximum time gap [s] between consecutive histogram epochs before treating them as
     # separate intervals.
