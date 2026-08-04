@@ -6,22 +6,31 @@ import numpy as np
 import pytest
 import xarray as xr
 
+from imap_processing import imap_module_directory
 from imap_processing.cdf.utils import load_cdf, write_cdf
 from imap_processing.ena_maps.ena_maps import match_coords_to_indices
 from imap_processing.ena_maps.utils.naming import MapDescriptor
 from imap_processing.lo.constants import LoConstants
 from imap_processing.lo.l2.lo_l2 import (
+    ANCILLARY_DATA_DIR as PACKAGE_ANCILLARY_DIR,
+)
+from imap_processing.lo.l2.lo_l2 import (
     LoSpinAnglePointingSet,
     _complete_pointings,
     _dps_spin_angles,
     _spin_phase_mask,
+    finalize_dataset,
     lo_l2,
+    load_bootstrap_correction_data,
+    load_sputter_correction_data,
 )
 from imap_processing.spice.time import met_to_ttj2000ns
 
+ANCILLARY_DIR = imap_module_directory / "tests/lo/test_anc"
+
 # A full-spin map, so that every spin-angle bin lands on it.
-FULL_DESCRIPTOR = "l090-ena-h-sf-nsp-full-hae-6deg-3mo"
-RAM_DESCRIPTOR = "l090-ena-h-sf-nsp-ram-hae-6deg-3mo"
+FULL_DESCRIPTOR = "l090-enansnbs-h-sf-nsp-full-hae-6deg-3mo"
+RAM_DESCRIPTOR = "l090-enansnbs-h-sf-nsp-ram-hae-6deg-3mo"
 
 N_ESA = LoConstants.N_ESA_LEVELS
 N_SPIN_BINS = LoConstants.N_SPIN_ANGLE_BINS
@@ -32,6 +41,35 @@ GT_START = 511_000_000.0
 GT_END = 511_000_600.0
 IN_METS = [511_000_150.0, 511_000_200.0, 511_000_250.0]
 OUT_METS = [510_990_000.0, 511_010_000.0]
+
+# The ESA level energies [keV] of imap_lo_hydrogen-geometric-factor-small, by
+# ESA mode, which the map takes its energy binning from.
+ESA_ENERGIES = {
+    0: np.array([0.010, 0.020, 0.040, 0.080, 0.160, 0.320, 0.640]),
+    1: np.array([0.011, 0.022, 0.044, 0.088, 0.176, 0.352, 0.704]),
+}
+
+# The hydrogen geometric factors of the same file, by ESA mode.
+GEO_FACTORS = {
+    0: np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]) * 1e-5,
+    1: np.array([1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7]) * 1e-5,
+}
+
+# The ESA passband half-widths of the same file, a tenth of each center energy.
+ESA_ENERGY_DELTAS = {mode: energies / 10 for mode, energies in ESA_ENERGIES.items()}
+
+
+@pytest.fixture(autouse=True)
+def use_test_geometric_factors():
+    """Point the map at the small geometric factor ancillary in ``test_anc``.
+
+    The map reads its geometric factors, and the ESA level energies they were
+    measured at, straight out of the ancillary shipped with the package. The
+    test file stands in for it so the tests do not have to track the flight
+    calibration.
+    """
+    with patch("imap_processing.lo.l2.lo_l2.ANCILLARY_DATA_DIR", ANCILLARY_DIR):
+        yield
 
 
 def product_attrs(repointing, product):
@@ -122,6 +160,7 @@ def identity_pointing(et, az_el, *args, **kwargs):
 
 def make_pointing_set(sky_map, spin_angles, pivot=PIVOT):
     """Build the in-memory pointing set of one pointing, sky pointing mocked."""
+    energy = np.arange(1.0, N_ESA + 1.0)
     values = {
         name: np.ones((N_ESA, spin_angles.size))
         for name in ("ena_count", "exposure_factor", "bg_rate_exposure")
@@ -136,6 +175,7 @@ def make_pointing_set(sky_map, spin_angles, pivot=PIVOT):
             spin_angles,
             values,
             sky_map.spice_reference_frame,
+            energy,
         )
 
 
@@ -146,13 +186,36 @@ def one_pointing():
 
 
 @pytest.fixture
-def full_map(one_pointing):
+def anc_dependencies():
+    """The ancillary files a map takes as a dependency.
+
+    Every map but a raw one is flux corrected, so the ESA eta fit factors are
+    required; without them the map cannot be made.
+    """
+    return [ANCILLARY_DIR / "imap_lo_esa-eta-fit-factors_20240101_v001.csv"]
+
+
+@pytest.fixture
+def shipped_ancillaries():
+    """Read the calibration ancillaries shipped with the package.
+
+    Undoes the autouse ``use_test_geometric_factors`` patch (a more common use-case)
+        for tests that need the shipped ancillaries.
+    """
+    with patch("imap_processing.lo.l2.lo_l2.ANCILLARY_DATA_DIR", PACKAGE_ANCILLARY_DIR):
+        yield
+
+
+@pytest.fixture
+def full_map(one_pointing, anc_dependencies):
     """The full-spin map of one pointing, with the sky pointing mocked."""
     with patch(
         "imap_processing.lo.l1c.lo_l1c.frame_transform_az_el",
         side_effect=identity_pointing,
     ):
-        (dataset,) = lo_l2(as_dependencies(one_pointing), [], FULL_DESCRIPTOR)
+        (dataset,) = lo_l2(
+            as_dependencies(one_pointing), anc_dependencies, FULL_DESCRIPTOR
+        )
     return dataset, one_pointing
 
 
@@ -201,14 +264,16 @@ class TestMapStructure:
             )
 
     def test_energy_coordinate(self, full_map):
-        """The energy coordinate and its widths come from the ESA constants."""
+        """The energy coordinate and its widths both come from the ancillary."""
         dataset, _ = full_map
 
+        # The pointings are all in ESA mode 0.
+        np.testing.assert_allclose(dataset["energy"].values, ESA_ENERGIES[0])
         np.testing.assert_allclose(
-            dataset["energy"].values, LoConstants.ESA_ENERGY[:N_ESA]
+            dataset["energy_delta_minus"].values, ESA_ENERGY_DELTAS[0]
         )
         np.testing.assert_allclose(
-            dataset["energy_delta_plus"].values, LoConstants.ESA_ENERGY_DELTA[0]
+            dataset["energy_delta_plus"].values, ESA_ENERGY_DELTAS[0]
         )
 
     def test_map_writes_to_cdf(self, full_map):
@@ -249,7 +314,7 @@ class TestAccumulation:
         assert per_energy.max() < 999.0 * N_SPIN_BINS
         np.testing.assert_allclose(per_energy, pointing["expected_counts"])
 
-    def test_pointings_accumulate(self, one_pointing):
+    def test_pointings_accumulate(self, one_pointing, anc_dependencies):
         """Two pointings contribute twice the counts of one."""
         other = make_pointing(repointing=101, seed=7)
 
@@ -257,22 +322,30 @@ class TestAccumulation:
             "imap_processing.lo.l1c.lo_l1c.frame_transform_az_el",
             side_effect=identity_pointing,
         ):
-            (one,) = lo_l2(as_dependencies(one_pointing), [], FULL_DESCRIPTOR)
-            (both,) = lo_l2(as_dependencies(one_pointing, other), [], FULL_DESCRIPTOR)
+            (one,) = lo_l2(
+                as_dependencies(one_pointing), anc_dependencies, FULL_DESCRIPTOR
+            )
+            (both,) = lo_l2(
+                as_dependencies(one_pointing, other), anc_dependencies, FULL_DESCRIPTOR
+            )
 
         np.testing.assert_allclose(
             both["ena_count"].values.sum(axis=(0, 2, 3)),
             one["ena_count"].values.sum(axis=(0, 2, 3)) + other["expected_counts"],
         )
 
-    def test_ram_map_keeps_half_the_spin(self, one_pointing):
+    def test_ram_map_keeps_half_the_spin(self, one_pointing, anc_dependencies):
         """A ram map takes fewer counts than the full spin it is cut from."""
         with patch(
             "imap_processing.lo.l1c.lo_l1c.frame_transform_az_el",
             side_effect=identity_pointing,
         ):
-            (full,) = lo_l2(as_dependencies(one_pointing), [], FULL_DESCRIPTOR)
-            (ram,) = lo_l2(as_dependencies(one_pointing), [], RAM_DESCRIPTOR)
+            (full,) = lo_l2(
+                as_dependencies(one_pointing), anc_dependencies, FULL_DESCRIPTOR
+            )
+            (ram,) = lo_l2(
+                as_dependencies(one_pointing), anc_dependencies, RAM_DESCRIPTOR
+            )
 
         full_counts = full["ena_count"].values.sum()
         ram_counts = ram["ena_count"].values.sum()
@@ -298,10 +371,8 @@ class TestRatesAndIntensities:
         )
         assert np.all(dataset["ena_count_rate"].values[~exposed] == 0)
 
-        geometric_factor = (
-            np.array(LoConstants.GEO_FACTOR[:N_ESA]) * LoConstants.GEO_FACTOR_SCALE
-        )
-        energy = np.array(LoConstants.ESA_ENERGY[:N_ESA])
+        geometric_factor = GEO_FACTORS[0]
+        energy = ESA_ENERGIES[0]
         expected = dataset["ena_count_rate"] / xr.DataArray(
             geometric_factor * energy, dims=["energy"]
         )
@@ -451,23 +522,100 @@ class TestPointingSelection:
             _complete_pointings(dependencies)
 
 
+class TestCorrectionFactors:
+    """Reading the sputter and bootstrap correction ancillaries."""
+
+    def test_sputter_factors_are_selected_by_species_pair(
+        self, shipped_ancillaries, tmp_path
+    ):
+        """Only the rows of the requested pair come back, in ESA step order."""
+        factors = load_sputter_correction_data("o", "h")
+
+        assert list(factors.columns) == [
+            "source_species",
+            "target_species",
+            "esa_step",
+            "sputter_factor",
+            "sputter_factor_uncertainty",
+        ]
+        assert not factors.empty
+        assert (factors["source_species"] == "o").all()
+        assert (factors["target_species"] == "h").all()
+
+        with patch("imap_processing.lo.l2.lo_l2.ANCILLARY_DATA_DIR", tmp_path):
+            with pytest.raises(ValueError, match="No sputter correction files"):
+                load_sputter_correction_data("o", "h")
+
+    def test_bootstrap_factors_relate_lower_steps_to_higher(
+        self, shipped_ancillaries, tmp_path
+    ):
+        """Each factor carries a step pair, the source below the target."""
+        factors = load_bootstrap_correction_data()
+
+        assert list(factors.columns) == [
+            "esa_step_i",
+            "esa_step_k",
+            "bootstrap_factor",
+        ]
+        assert not factors.empty
+        assert (factors["esa_step_i"] < factors["esa_step_k"]).all()
+        # Steps are 1-based, and step 8 is the virtual E8 channel.
+        assert factors["esa_step_i"].min() >= 1
+        assert factors["esa_step_k"].max() <= N_ESA + 1
+        assert (factors["bootstrap_factor"] > 0).all()
+
+        with patch("imap_processing.lo.l2.lo_l2.ANCILLARY_DATA_DIR", tmp_path):
+            with pytest.raises(ValueError, match="No bootstrap correction factor"):
+                load_bootstrap_correction_data()
+
+
+class TestFinalizeDataset:
+    """Attaching the CDF attributes to a finished map."""
+
+    def test_attributes_are_filled_in_from_the_descriptor(self):
+        """The map is labelled with its descriptor and its variables described."""
+        dataset = xr.Dataset(
+            {
+                "ena_intensity": (
+                    ["epoch", "energy"],
+                    np.zeros((1, N_ESA)),
+                ),
+                "not_a_map_variable": ("epoch", np.zeros(1)),
+            },
+            coords={"epoch": [0], "energy": ESA_ENERGIES[0]},
+        )
+
+        finalized = finalize_dataset(dataset, FULL_DESCRIPTOR)
+
+        assert finalized.attrs["Logical_source"] == f"imap_lo_l2_{FULL_DESCRIPTOR}"
+        assert FULL_DESCRIPTOR in finalized.attrs["Data_type"]
+
+        # A known map variable picks up its attributes from the enamaps config.
+        assert finalized["ena_intensity"].attrs["FIELDNAM"] == "Intensity"
+        assert finalized["ena_intensity"].attrs["UNITS"] == "cm -2 s -1 sr -1 keV -1"
+
+        # A variable the config says nothing about is left without attributes,
+        # rather than failing the map.
+        assert finalized["not_a_map_variable"].attrs == {}
+
+
 class TestUnsupported:
     """Map flavours the Lo pipeline does not make."""
 
-    def test_oxygen_not_supported(self, one_pointing):
+    def test_oxygen_not_supported(self, one_pointing, anc_dependencies):
         """Only hydrogen geometric factors are defined."""
         with pytest.raises(NotImplementedError, match="species o"):
             lo_l2(
                 as_dependencies(one_pointing),
-                [],
+                anc_dependencies,
                 "l090-ena-o-sf-nsp-full-hae-6deg-3mo",
             )
 
-    def test_healpix_not_supported(self, one_pointing):
+    def test_healpix_not_supported(self, one_pointing, anc_dependencies):
         """Lo makes rectangular maps only."""
         with pytest.raises(NotImplementedError, match="HEALPix"):
             lo_l2(
                 as_dependencies(one_pointing),
-                [],
-                "l090-ena-h-sf-nsp-full-hae-nside8-3mo",
+                anc_dependencies,
+                "l090-enansnbs-h-sf-nsp-full-hae-nside8-3mo",
             )
