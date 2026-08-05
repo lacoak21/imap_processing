@@ -97,6 +97,11 @@ from imap_processing.utils import (
 
 logger = logging.getLogger(__name__)
 
+RETRY_EXIT_CODE = (
+    75  # Exit code that indicates the job should be retried. E.g. if there was an
+)
+# imap-data-access 503 SlowDown error.
+
 
 def _parse_args() -> argparse.Namespace:
     """
@@ -510,6 +515,12 @@ class ProcessInstrument(ABC):
                                 )
                                 sleep(5)
                                 continue
+
+                            logger.error(
+                                f"Upload Failed after {max_retries} retries. Exiting "
+                                f"with code {RETRY_EXIT_CODE}."
+                            )
+                            sys.exit(RETRY_EXIT_CODE)
 
                         logger.error(f"Upload failed with error: {message}")
                         raise
