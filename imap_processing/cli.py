@@ -515,7 +515,7 @@ class ProcessInstrument(ABC):
                                 continue
 
                             logger.error(
-                                f"Upload Failed after {max_retries} retries. Exiting "
+                                f"Upload failed after {max_retries} attempts. Exiting "
                                 f"with code {RETRY_EXIT_CODE}."
                             )
                             sys.exit(RETRY_EXIT_CODE)

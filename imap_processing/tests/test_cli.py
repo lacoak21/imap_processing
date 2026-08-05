@@ -1063,7 +1063,7 @@ def test_post_processing_upload_503_error(
 
     # Checks the upload failure was logged
     assert any(
-        "Upload Failed after 3 retries" in str(call)
+        "Upload failed after 3 attempts" in str(call)
         for call in mock_error.call_args_list
     )
 
