@@ -97,10 +97,8 @@ from imap_processing.utils import (
 
 logger = logging.getLogger(__name__)
 
-RETRY_EXIT_CODE = (
-    75  # Exit code that indicates the job should be retried. E.g. if there was an
-)
-# imap-data-access 503 SlowDown error.
+RETRY_EXIT_CODE = 75  # Exit code indicating the job should be retried
+# (e.g., imap-data-access 503 SlowDown).
 
 
 def _parse_args() -> argparse.Namespace:

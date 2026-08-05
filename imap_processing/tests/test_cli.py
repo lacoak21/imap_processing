@@ -1049,7 +1049,7 @@ def test_post_processing_upload_503_error(
     )
     instrument = Swe("l1a", "raw", dependency_str, "20100105", None, "v001", True)
 
-    # Checks that the upload failed and logs an error and raises an exception
+    # Checks that the upload failed, logs an error, and exits with the retry exit code
     with mock.patch("logging.Logger.error") as mock_error:
         with pytest.raises(SystemExit) as exc_info:
             instrument.process()
