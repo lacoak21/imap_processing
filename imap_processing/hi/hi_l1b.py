@@ -14,6 +14,7 @@ from imap_processing.cdf.utils import parse_filename_like
 from imap_processing.hi.hi_l1a import MILLISECOND_TO_S
 from imap_processing.hi.utils import (
     HIAPID,
+    CalibrationProductConfig,
     CoincidenceBitmap,
     EsaEnergyStepLookupTable,
     GoodMetRangeLookupTable,
@@ -116,11 +117,11 @@ def annotate_direct_events(
     Returns
     -------
     l1b_datasets : list[xarray.Dataset]
-        List containing exactly one L1B direct event dataset. Its
-        "gain_match_{field}" global attributes (see
-        `CalibrationProductConfig.GAIN_MATCH_FIELDS`) record the pointing's
-        reference detector voltage deltas (see `de_gain_test_filter`); these
-        are NaN if they could not be determined.
+        List containing exactly one L1B direct event dataset. Its global
+        attributes (one per `CalibrationProductConfig.GAIN_MATCH_FIELDS`,
+        named directly by field) record the pointing's reference detector
+        voltage deltas (see `de_gain_test_filter`); these are NaN if they
+        could not be determined.
     """
     logger.info(
         f"Running Hi L1B processing on dataset: "
@@ -141,7 +142,7 @@ def annotate_direct_events(
     # flight data and can spill a packet across a good/bad segment boundary.
     l1b_de_dataset.update(de_esa_step_met(l1b_de_dataset))
     # Modifies "esa_energy_step" and "ccsds_qf" in place, and sets the
-    # "gain_match_{field}" global attributes.
+    # pointing's HV delta global attributes.
     l1b_de_dataset = de_gain_test_filter(l1b_de_dataset, l1b_hk_dataset)
     l1b_de_dataset.update(compute_coincidence_type_and_tofs(l1b_de_dataset))
     l1b_de_dataset.update(de_nominal_bin_and_spin_phase(l1b_de_dataset))
@@ -500,37 +501,6 @@ def compute_reference_hv_values(hk_segment_ds: xr.Dataset) -> dict[str, float]:
     }
 
 
-def compute_gain_match_values(raw_hv_values: dict[str, float]) -> dict[str, float]:
-    """
-    Derive the back/front voltage differences used for geometric factor lookup.
-
-    Computed as back minus front (rather than front minus back) so that the
-    resulting deltas are positive, consistent with real flight detector
-    voltages (front voltages are more negative than back voltages -- see
-    imap_processing/hi/gain_test_analysis.ipynb).
-
-    Parameters
-    ----------
-    raw_hv_values : dict[str, float]
-        Raw detector high voltage values keyed by field name, e.g. as
-        returned by compute_reference_hv_values() (must contain "mcp_f",
-        "mcp_b", "cem_f", "cem_bk_a", "cem_bk_b", and "tof").
-
-    Returns
-    -------
-    dict[str, float]
-        Dictionary with keys "mcp_delta_v", "cem_a_delta_v", "cem_b_delta_v",
-        and "tof_v", matching CalibrationProductConfig.GAIN_MATCH_FIELDS, for
-        use with CalibrationProductConfig.match_gain_config_id().
-    """
-    return {
-        "mcp_delta_v": raw_hv_values["mcp_b"] - raw_hv_values["mcp_f"],
-        "cem_a_delta_v": raw_hv_values["cem_bk_a"] - raw_hv_values["cem_f"],
-        "cem_b_delta_v": raw_hv_values["cem_bk_b"] - raw_hv_values["cem_f"],
-        "tof_v": raw_hv_values["tof"],
-    }
-
-
 def de_gain_test_filter(
     l1b_de_ds: xr.Dataset,
     l1b_hk_ds: xr.Dataset,
@@ -560,14 +530,14 @@ def de_gain_test_filter(
         de_esa_step_met()). Modified in place: FILLVAL is forced into
         "esa_energy_step" for events falling outside a matching
         HVSCI segment, ImapHiL1bDeFlags.BAD_DETECTOR_VOLTAGE is set in
-        "ccsds_qf" for the same events, and new "gain_match_{field}" global
-        attributes (one per CalibrationProductConfig.GAIN_MATCH_FIELDS) are
-        set to the pointing's reference voltage deltas (NaN if they could
-        not be determined). The geometric factor itself is not computed
-        here -- downstream processing (L1C) looks up the geometric factor
-        per esa_energy_step from the cal-prod ancillary file's matching
-        gain_config_id, using these recorded "gain_match_{field}" attributes
-        (see hi_l1c.pset_geometric_factor()).
+        "ccsds_qf" for the same events, and new global attributes (one per
+        CalibrationProductConfig.GAIN_MATCH_FIELDS, named directly by
+        field) are set to the pointing's reference voltage deltas (NaN if
+        they could not be determined). The geometric factor itself is not
+        computed here -- downstream processing (L1C) looks up the
+        geometric factor per esa_energy_step from the cal-prod ancillary
+        file's matching gain_config_id, using these recorded global
+        attributes (see hi_l1c.add_pset_geometric_factor()).
     l1b_hk_ds : xarray.Dataset
         L1B housekeeping data coincident with the L1A DE data.
 
@@ -576,19 +546,16 @@ def de_gain_test_filter(
     l1b_de_ds : xarray.Dataset
         The same dataset passed in, modified in place as described above.
     """
-    nan_gain_match_attrs = {
-        f"gain_match_{field}": value
-        for field, value in compute_gain_match_values(
-            {field: np.nan for field in HiConstants.GAIN_TEST_HV_DELTA_V}
-        ).items()
-    }
+    nan_hv_deltas = CalibrationProductConfig.compute_gain_match_values(
+        {field: np.nan for field in HiConstants.GAIN_TEST_HV_DELTA_V}
+    )
 
     # Check for no valid direct events.
     if not any_good_direct_events(l1b_de_ds):
         logger.critical(
             "No good direct events in dataset; skipping gain test filtering."
         )
-        l1b_de_ds.attrs.update(nan_gain_match_attrs)
+        l1b_de_ds.attrs.update(nan_hv_deltas)
         return l1b_de_ds
 
     segments = _get_hvsci_segments(l1b_hk_ds)
@@ -603,7 +570,7 @@ def de_gain_test_filter(
         l1b_de_ds["ccsds_qf"].values[:] |= np.uint8(
             ImapHiL1bDeFlags.BAD_DETECTOR_VOLTAGE
         )
-        l1b_de_ds.attrs.update(nan_gain_match_attrs)
+        l1b_de_ds.attrs.update(nan_hv_deltas)
         return l1b_de_ds
 
     # Use the first ~3 housekeeping packets of the first HVSCI segment as
@@ -670,11 +637,9 @@ def de_gain_test_filter(
         ImapHiL1bDeFlags.BAD_DETECTOR_VOLTAGE
     )
 
-    gain_match_values = compute_gain_match_values(reference_hv)
-    l1b_de_ds.attrs.update(
-        {f"gain_match_{field}": value for field, value in gain_match_values.items()}
-    )
-    logger.info(f"Pointing reference gain match values set: {gain_match_values}.")
+    hv_deltas = CalibrationProductConfig.compute_gain_match_values(reference_hv)
+    l1b_de_ds.attrs.update(hv_deltas)
+    logger.info(f"Pointing reference HV deltas set: {hv_deltas}.")
     return l1b_de_ds
 
 

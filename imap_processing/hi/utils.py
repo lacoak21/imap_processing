@@ -152,8 +152,8 @@ class HiConstants:
     # mnemonic name for the U-Can voltage monitor (see IMAP-Hi Algorithm
     # Document Section 8, Level 0 Packet Definitions).
     GAIN_TEST_HV_DELTA_V: ClassVar[dict[str, float]] = {
-        "pos_defl": 50.0,
-        "neg_defl": 50.0,
+        "pos_defl": 1500.0,
+        "neg_defl": 1500.0,
         "tof": 50.0,
         "mcp_f": 10.0,
         "mcp_b": 50.0,
@@ -660,8 +660,30 @@ class CalibrationProductConfig(_BaseConfigAccessor):
     """Register custom accessor for calibration product configuration DataFrames."""
 
     index_columns = (
+        "gain_config_id",
         "calibration_prod",
         "esa_energy_step",
+    )
+    # Detector voltage difference (and U-Can voltage) fields used to match a
+    # pointing's gain state to a gain_config_id row. See
+    # compute_gain_match_values() for how a pointing's own values are
+    # derived, and match_gain_config_id() below for the matching logic.
+    # hi_l1b.de_gain_test_filter() sets these directly as L1B DE global
+    # attributes and hi_l1c.add_pset_geometric_factor() reads them back
+    # the same way.
+    GAIN_MATCH_FIELDS = (
+        "mcp_delta_v",
+        "cem_a_delta_v",
+        "cem_b_delta_v",
+        "tof_v",
+    )
+    # Columns holding the nominal value and tolerance for each gain match
+    # field. These are constant across (calibration_prod, esa_energy_step)
+    # within a gain_config_id, so the CSV only needs to specify them once per
+    # gain_config_id group -- placed as the final columns of the file, after
+    # the full calibration product definition.
+    gain_match_columns = tuple(
+        f"{field}{suffix}" for field in GAIN_MATCH_FIELDS for suffix in ("", "_tol")
     )
     required_columns = (
         "coincidence_type_list",
@@ -670,7 +692,49 @@ class CalibrationProductConfig(_BaseConfigAccessor):
             for det_pair in _BaseConfigAccessor.tof_detector_pairs
             for limit in ["low", "high"]
         ],
+        *gain_match_columns,
     )
+
+    def _validate(self, df: pd.DataFrame) -> None:
+        """
+        Validate the calibration product configuration.
+
+        Extends base validation to verify the gain match columns are
+        non-null and consistent across (calibration_prod, esa_energy_step)
+        for each gain_config_id.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame to validate.
+
+        Raises
+        ------
+        AttributeError
+            If required columns or index levels are missing.
+        ValueError
+            If gain match values are missing or inconsistent within a
+            gain_config_id group.
+        """
+        super()._validate(df)
+
+        for gain_config_id, group in df.groupby(level="gain_config_id"):
+            for col in self.gain_match_columns:
+                if group[col].isna().any():
+                    raise ValueError(
+                        f"Missing {col} value(s) for gain_config_id="
+                        f"{gain_config_id}. The first row for each "
+                        f"gain_config_id must specify a value for every "
+                        f"gain match field."
+                    )
+                if group[col].nunique() > 1:
+                    raise ValueError(
+                        f"Inconsistent {col} values across rows for "
+                        f"gain_config_id={gain_config_id}: "
+                        f"{group[col].unique().tolist()}. Gain match values "
+                        f"must be identical across all calibration_prod/"
+                        f"esa_energy_step rows for a gain_config_id."
+                    )
 
     @classmethod
     def from_csv(cls, path: str | Path | IO[str]) -> pd.DataFrame:
@@ -694,6 +758,11 @@ class CalibrationProductConfig(_BaseConfigAccessor):
             converters={"coincidence_type_list": lambda s: tuple(s.split("|"))},
             comment="#",
         )
+        # Forward-fill gain match columns within each gain_config_id group.
+        # This allows the CSV to specify these values only on the group's
+        # first row.
+        gain_cols = list(cls.gain_match_columns)
+        df[gain_cols] = df.groupby(level="gain_config_id")[gain_cols].ffill()
         # Trigger the accessor to run validation and add coincidence_type_values
         _ = df.cal_prod_config.number_of_products
         return df
@@ -710,6 +779,100 @@ class CalibrationProductConfig(_BaseConfigAccessor):
             calibration product definitions.
         """
         return len(self._obj.index.unique(level="calibration_prod"))
+
+    @classmethod
+    def compute_gain_match_values(
+        cls, raw_hv_values: dict[str, float]
+    ) -> dict[str, float]:
+        """
+        Derive the back/front voltage differences used for geometric factor lookup.
+
+        Computed as back minus front (rather than front minus back) so that
+        the resulting deltas are positive, consistent with real flight
+        detector voltages (front voltages are more negative than back
+        voltages -- see imap_processing/hi/gain_test_analysis.ipynb).
+
+        Parameters
+        ----------
+        raw_hv_values : dict[str, float]
+            Raw detector high voltage values keyed by field name, e.g. as
+            returned by hi_l1b.compute_reference_hv_values() (must contain
+            "mcp_f", "mcp_b", "cem_f", "cem_bk_a", "cem_bk_b", and "tof").
+
+        Returns
+        -------
+        dict[str, float]
+            Dictionary with keys matching GAIN_MATCH_FIELDS, for use with
+            match_gain_config_id().
+        """
+        delta_formulas = {
+            "mcp_delta_v": raw_hv_values["mcp_b"] - raw_hv_values["mcp_f"],
+            "cem_a_delta_v": raw_hv_values["cem_bk_a"] - raw_hv_values["cem_f"],
+            "cem_b_delta_v": raw_hv_values["cem_bk_b"] - raw_hv_values["cem_f"],
+            "tof_v": raw_hv_values["tof"],
+        }
+        return {field: delta_formulas[field] for field in cls.GAIN_MATCH_FIELDS}
+
+    def match_gain_config_id(self, hv_deltas: dict[str, float]) -> int | None:
+        """
+        Find the gain_config_id whose reference values match the given deltas.
+
+        Parameters
+        ----------
+        hv_deltas : dict[str, float]
+            Mapping of CalibrationProductConfig.GAIN_MATCH_FIELDS field names
+            to a pointing's derived values (see compute_gain_match_values()).
+
+        Returns
+        -------
+        int or None
+            The matching gain_config_id, or None if any input value is NaN
+            (e.g. because a pointing's reference detector voltages could
+            not be determined) or if zero or multiple gain_config_id rows
+            match.
+        """
+        if any(np.isnan(value) for value in hv_deltas.values()):
+            return None
+        gain_config_ids = self._obj.index.get_level_values("gain_config_id").unique()
+        matches = []
+        for gain_config_id in gain_config_ids:
+            row = self._obj.loc[gain_config_id].iloc[0]
+            if all(
+                abs(hv_deltas[field] - row[field]) <= row[f"{field}_tol"]
+                for field in self.GAIN_MATCH_FIELDS
+            ):
+                matches.append(int(gain_config_id))
+        if len(matches) != 1:
+            return None
+        return matches[0]
+
+    def select_gain_config(self, hv_deltas: dict[str, float]) -> pd.DataFrame | None:
+        """
+        Select this configuration's rows for a pointing's matched gain state.
+
+        A pointing's gain state is constant for the whole pointing (see
+        hi_l1b.de_gain_test_filter()), so this only needs to be done once
+        per pointing and the result shared by every consumer of the
+        calibration product configuration (geometric factor lookup, counts
+        binning, etc.) rather than each matching hv_deltas independently.
+
+        Parameters
+        ----------
+        hv_deltas : dict[str, float]
+            Mapping of CalibrationProductConfig.GAIN_MATCH_FIELDS field names
+            to a pointing's derived values (see compute_gain_match_values()).
+
+        Returns
+        -------
+        pandas.DataFrame or None
+            The subset of rows for the matched gain_config_id, indexed by
+            (calibration_prod, esa_energy_step), or None if hv_deltas don't
+            match exactly one gain_config_id (see match_gain_config_id()).
+        """
+        gain_config_id = self.match_gain_config_id(hv_deltas)
+        if gain_config_id is None:
+            return None
+        return self._obj.loc[gain_config_id]
 
 
 @pd.api.extensions.register_dataframe_accessor("background_config")
