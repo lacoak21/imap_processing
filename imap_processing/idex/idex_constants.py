@@ -87,6 +87,13 @@ class ConversionFactors(float, Enum):
     Ion_Grid = 7.46e-4
 
 
+# Constants for the ion-grid V(R) relation, where R is the ion-grid to target
+# charge ratio and velocity is returned in km/s.
+ION_GRID_VELOCITY_SCALE = 55.0
+ION_GRID_VELOCITY_EXPONENT = -3.2
+ION_GRID_VELOCITY_OFFSET = 1.5
+
+
 SPICE_ARRAYS = [
     "ephemeris_position_x",
     "ephemeris_position_y",
