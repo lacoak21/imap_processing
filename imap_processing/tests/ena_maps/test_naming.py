@@ -610,3 +610,114 @@ class TestMapDescriptor:
             duration="5day",
         )
         assert md._get_duration_str(full=True) == "5 day"
+
+    @pytest.mark.parametrize(
+        "principal_data, expected_extras",
+        [
+            ("ena", ""),
+            ("enas", "s"),
+            ("enans", "ns"),
+            ("enanbs", "nbs"),
+            ("enansnbs", "nsnbs"),
+            ("isnnbkgnd", "nbkgnd"),
+            # The digits of a spx stem belong to the stem, not the modifiers
+            ("spx0305", ""),
+        ],
+    )
+    def test_principal_data_extras(self, principal_data, expected_extras):
+        md = MapDescriptor.from_string(
+            f"l090-{principal_data}-h-sf-nsp-ram-hae-6deg-1yr"
+        )
+        assert md.principal_data_extras == expected_extras
+
+    @pytest.mark.parametrize(
+        "principal_data, expected",
+        [
+            # "s" and "ns" after the stem say whether the correction was made,
+            # ahead of the "bs" or "nbs" of the bootstrap correction
+            ("enasbs", True),
+            ("enasnbs", True),
+            ("enansbs", False),
+            ("enansnbs", False),
+            # A raw map asks for none of the corrections
+            ("enaraw", False),
+            # Only ENA maps are sputter corrected
+            ("spx0305", False),
+            ("isn", False),
+            ("drt", False),
+        ],
+    )
+    def test_sputter_corrected(self, principal_data, expected):
+        md = MapDescriptor.from_string(
+            f"l090-{principal_data}-h-sf-nsp-ram-hae-6deg-1yr"
+        )
+        assert md.sputter_corrected is expected
+
+    @pytest.mark.parametrize(
+        "principal_data, expected",
+        [
+            # "bs" and "nbs" say whether the correction was made, following the
+            # "s" or "ns" of the sputter correction
+            ("enasbs", True),
+            ("enasnbs", False),
+            ("enansbs", True),
+            ("enansnbs", False),
+            # A raw map asks for none of the corrections
+            ("enaraw", False),
+            # Only ENA maps are bootstrap corrected
+            ("spx0305", False),
+            ("isn", False),
+            ("drt", False),
+        ],
+    )
+    def test_bootstrap_corrected(self, principal_data, expected):
+        md = MapDescriptor.from_string(
+            f"l090-{principal_data}-h-sf-nsp-ram-hae-6deg-1yr"
+        )
+        assert md.bootstrap_corrected is expected
+
+    @pytest.mark.parametrize(
+        "frame, expected",
+        [
+            # The heliospheric frame is the one the correction moves a map into
+            ("hf", True),
+            # A map left in the frame it was observed in is not corrected
+            ("sf", False),
+            ("hk", False),
+        ],
+    )
+    def test_cg_corrected(self, frame, expected):
+        md = MapDescriptor.from_string(f"l090-enasbs-h-{frame}-nsp-ram-hae-6deg-1yr")
+        assert md.cg_corrected is expected
+
+    @pytest.mark.parametrize(
+        "principal_data, expected",
+        [
+            # "msk" follows the "bs" or "nbs" of the bootstrap correction,
+            # whichever of the two the map asks for
+            ("enasbsmsk", True),
+            ("enasnbsmsk", True),
+            ("enansbsmsk", True),
+            ("enansnbsmsk", True),
+            ("enabsmsk", True),
+            # The SOC writes the code capitalized; both spellings are accepted
+            ("enasbsMsk", True),
+            # Without the code the ISN band is left in the map
+            ("enasbs", False),
+            ("enansnbs", False),
+            # The code has to follow the bootstrap one to be a mask code
+            ("enamsk", False),
+            ("enamsksbs", False),
+            # A raw map asks for none of the corrections
+            ("enaraw", False),
+            # Only ENA maps are ISN masked
+            ("spx0305", False),
+            ("isn", False),
+            ("drt", False),
+        ],
+    )
+    def test_isn_masked(self, principal_data, expected):
+        md = MapDescriptor.from_string(
+            f"l090-{principal_data}-h-sf-nsp-ram-hae-6deg-1yr"
+        )
+        assert md.isn_masked is expected

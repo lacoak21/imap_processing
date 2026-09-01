@@ -42,6 +42,12 @@ INERTIAL_FRAME_LONG_NAMES = {
     "hk": "heliocentric kinetic",
 }
 
+# The principal data part of a descriptor is a stem naming the quantity mapped,
+# optionally followed by modifier codes saying which corrections were made.
+PRINCIPAL_DATA_PATTERN = re.compile(
+    r"^(drt|ena|int|isn|spx)(?:(?<=spx)\d+)?([^-_\s]*)$"
+)
+
 
 @dataclass
 class MapDescriptor:
@@ -244,9 +250,7 @@ class MapDescriptor:
             extras is any extension on the principal data portion of the descriptor
             string. For example, "isnnbkgnd" would return ("isn", "nbkgnd").
         """
-        m = re.match(
-            r"^(drt|ena|int|isn|spx)(?:(?<=spx)\d+)?([^-_\s]*)$", self.principal_data
-        )
+        m = PRINCIPAL_DATA_PATTERN.match(self.principal_data)
         if not m:
             raise ValueError(
                 "Invalid principal_data format: "
@@ -469,6 +473,96 @@ class MapDescriptor:
             "isn": "isn_rate_bg_subtracted",
             "spx": "ena_spectral_index",
         }[self.principal_data[:3]]
+
+    @property
+    def principal_data_extras(self) -> str:
+        """
+        The modifier codes following the principal data stem.
+
+        These say which corrections a map was made with, e.g. the "nbs" of
+        "enanbs". Empty if the principal data is a bare stem, or if it does not
+        parse as a stem followed by modifiers at all.
+
+        Returns
+        -------
+        principal_data_extras : str
+            The modifier codes, run together in the order they appear.
+        """
+        m = PRINCIPAL_DATA_PATTERN.match(self.principal_data)
+        return m.group(2) if m else ""
+
+    @property
+    def raw(self) -> bool:
+        """
+        Whether the map is of the raw data, made with none of the corrections.
+
+        Returns
+        -------
+        raw : bool
+            True if this map asks for no corrections at all.
+        """
+        return "raw" in self.principal_data
+
+    @property
+    def sputter_corrected(self) -> bool:
+        """
+        Whether the map has the counts sputtered in from a heavier species removed.
+
+        Returns
+        -------
+        sputter_corrected : bool
+            True if this map is sputter corrected.
+        """
+        if not self.principal_data.startswith("ena") or self.raw:
+            return False
+        # The stem is followed by the correction codes, in order: "s" or "ns"
+        # for the sputter correction, then "bs" or "nbs" for the bootstrap one.
+        return self.principal_data_extras.startswith("s")
+
+    @property
+    def bootstrap_corrected(self) -> bool:
+        """
+        Whether the map has the intensity bled in from higher ESA levels removed.
+
+        Returns
+        -------
+        bootstrap_corrected : bool
+            True if this map is bootstrap corrected.
+        """
+        if not self.principal_data.startswith("ena") or self.raw:
+            return False
+        # The bootstrap code follows the sputter one, see sputter_corrected.
+        return re.match(r"(?:n?s)?bs", self.principal_data_extras) is not None
+
+    @property
+    def cg_corrected(self) -> bool:
+        """
+        Whether the map's intensities were moved into the heliospheric frame.
+
+        Returns
+        -------
+        cg_corrected : bool
+            True if this map is Compton-Getting corrected.
+        """
+        return self.frame_descriptor == "hf"
+
+    @property
+    def isn_masked(self) -> bool:
+        """
+        Whether the map has the interstellar neutral band masked out.
+
+        Returns
+        -------
+        isn_masked : bool
+            True if this map is ISN masked.
+        """
+        if not self.principal_data.startswith("ena") or self.raw:
+            return False
+        # The mask code follows the bootstrap one, see bootstrap_corrected.
+        return (
+            re.match(r"(?:n?s)?n?bsmsk", self.principal_data_extras, re.IGNORECASE)
+            is not None
+        )
 
     # Methods for parsing and building parts of the map descriptor string
     @staticmethod
