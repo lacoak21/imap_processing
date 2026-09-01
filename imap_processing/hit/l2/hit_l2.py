@@ -142,6 +142,10 @@ def add_cdf_attributes(
                 ),
             )
             dataset.coords[f"{dim}_label"] = label_array
+        elif "macropixel" in logical_source:
+            dataset["epoch"].attrs.update(
+                attr_mgr.get_variable_attributes("epoch_macropixel", check_schema=False)
+            )
 
     return dataset
 
@@ -782,4 +786,69 @@ def process_macropixel_intensity(
                 {var: f"{var}_macropixel_intensity"}
             )
 
-    return macropixel_intensity_dataset
+    return transform_to_10_minute_chunks(macropixel_intensity_dataset)
+
+
+def transform_to_10_minute_chunks(macropixel_dataset: xr.Dataset) -> xr.Dataset:
+    """Transform macropixel records into 10-minute integration chunks.
+
+    Parameters
+    ----------
+    macropixel_dataset : xarray.Dataset
+        Macropixel data containing one species and energy combination per
+        one-minute epoch.
+
+    Returns
+    -------
+    xarray.Dataset
+        Macropixel data combined into one record per 10-minute integration.
+    """
+    species_energy = [
+        ("h", 3),
+        ("he4", 2),
+        ("cno", 2),
+        ("nemgsi", 2),
+        ("fe", 1),
+    ]
+
+    # Use the first record in each 10-record group as the output template.
+    transformed_dataset = macropixel_dataset.isel(
+        epoch=slice(None, None, 10),
+    ).copy(deep=True)
+
+    # Each minute in a 10-record group contains one species/energy combination,
+    # ordered as described by species_energy. Track that minute's packet offset.
+    species_i = 0
+    for species, num_energy_levels in species_energy:
+        energy_dim = f"{species}_energy_mean"
+        # Gather the intensity and uncertainty variables that share this
+        # species' energy dimension.
+        species_variables = [
+            var
+            for var in macropixel_dataset.data_vars
+            if macropixel_dataset[var].dims[:2] == ("epoch", energy_dim)
+        ]
+
+        for energy_i in range(num_energy_levels):
+            for var in species_variables:
+                # Select this species/energy packet from every 10-record group
+                # and place it in the corresponding output energy plane.
+                data_i = macropixel_dataset[var].values[species_i::10, energy_i]
+                transformed_dataset[var].values[:, energy_i] = data_i
+            species_i += 1
+
+    minute_cadence_epochs = macropixel_dataset["epoch"].values
+    ten_minute_cadence_epochs = minute_cadence_epochs.reshape(-1, 10)
+    nanoseconds_per_10_min = SECONDS_PER_10_MIN * 1_000_000_000
+    nanoseconds_per_5_min = nanoseconds_per_10_min // 2
+    start_times = ten_minute_cadence_epochs[:, 0]
+    end_times = ten_minute_cadence_epochs[:, -1]
+    new_epochs = start_times + (end_times - start_times) // 2 - nanoseconds_per_10_min
+
+    transformed_dataset = transformed_dataset.assign_coords(epoch=np.array(new_epochs))
+    transformed_dataset["epoch_delta"] = xr.DataArray(
+        np.full(len(new_epochs), nanoseconds_per_5_min, dtype=np.int64),
+        dims=["epoch"],
+    )
+
+    return transformed_dataset
