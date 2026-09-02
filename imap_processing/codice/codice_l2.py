@@ -1176,12 +1176,12 @@ def process_lo_direct_events(dependencies: ProcessingInputCollection) -> xr.Data
     pos_to_els = (
         LO_POSITION_TO_ELEVATION_ANGLE["sw"] | LO_POSITION_TO_ELEVATION_ANGLE["nsw"]
     )
-    elevation_angle_shape = l2_dataset["position"].shape
+    elevation_angle_shape = l2_dataset["apd_id"].shape
     elevation_angle = np.array(
-        [pos_to_els.get(pos, np.nan) for pos in l2_dataset["position"].values.flat]
+        [pos_to_els.get(pos, np.nan) for pos in l2_dataset["apd_id"].values.flat]
     ).reshape(elevation_angle_shape)
     l2_dataset["elevation_angle"] = (
-        l2_dataset["position"].dims,
+        l2_dataset["apd_id"].dims,
         elevation_angle.astype(np.float32),
     )
     spin_sector_attrs = cdf_attrs.get_variable_attributes(
