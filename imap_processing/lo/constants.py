@@ -3,40 +3,6 @@
 from dataclasses import dataclass
 from typing import ClassVar, NamedTuple
 
-import numpy as np
-
-
-class EsaCalibration(NamedTuple):
-    """
-    The instrument's calibration settings for each ESA level.
-
-    Every field holds one value per ESA level, in ascending level order, read
-    from the ancillary of one species and ESA mode.
-
-    Attributes
-    ----------
-    energy : np.ndarray
-        The energy [keV] of each level, the passband center its geometric
-        factor was measured at.
-    energy_delta_minus : np.ndarray
-        The half-width [keV] of each passband below its center.
-    energy_delta_plus : np.ndarray
-        The half-width [keV] of each passband above its center.
-    geometric_factor : np.ndarray
-        The recalibrated geometric factor [cm^2 sr keV/keV] of each level.
-    geometric_factor_low : np.ndarray
-        The lower calibration bound of each geometric factor.
-    geometric_factor_high : np.ndarray
-        The upper calibration bound of each geometric factor.
-    """
-
-    energy: np.ndarray
-    energy_delta_minus: np.ndarray
-    energy_delta_plus: np.ndarray
-    geometric_factor: np.ndarray
-    geometric_factor_low: np.ndarray
-    geometric_factor_high: np.ndarray
-
 
 class PivotAngleSpec(NamedTuple):
     """
@@ -95,6 +61,36 @@ class LoConstants:
     N_ESA_LEVELS: int = 7  # Total number of ESA levels
     N_SPINS_PER_ESA_LEVEL: int = 4  # Spins per ESA step within one histogram cycle
     N_SPIN_ANGLE_BINS: int = 60  # Number of angular bins within a spin
+
+    # Bootstrap correction settings. The nominal coefficients of the ancillary
+    # are scaled by BOOTSTRAP_SCALE before they are applied; the low and high
+    # scalings bracket that choice and become the systematic error on the
+    # corrected intensity.
+    BOOTSTRAP_SCALE: float = 0.5
+    BOOTSTRAP_SCALE_INTENSITY_HIGH: float = 0.25
+    BOOTSTRAP_SCALE_INTENSITY_LOW: float = 1.0
+
+    # The bootstrap correction of the highest ESA levels needs an ESA level
+    # above them to subtract. That virtual "ESA 8" channel has no geometric
+    # factor of its own; its intensity is extrapolated from the top two levels
+    # with a power law, at this multiple of the top level's center energy.
+    ESA_8_ENERGY_RATIO: float = 2.1
+    # Width [pixels] of the neighborhood the spectral index of a pixel that has
+    # no measurable one is taken from.
+    BOOTSTRAP_SPECTRAL_INDEX_FILTER_SIZE: int = 3
+    # The spectral index to extrapolate with when the map has none to offer.
+    BOOTSTRAP_DEFAULT_SPECTRAL_INDEX: float = 1.6
+
+    # Compton-Getting correction settings. The energy [eV] a hydrogen ENA has
+    # in the spacecraft frame purely from the spacecraft's own motion, i.e.
+    # 1/2 m_H U^2 at the nominal spacecraft speed of ~30 km/s. The kinematics
+    # of the correction are scaled by it.
+    CG_ENA_ENERGY_AT_SPACECRAFT_SPEED_EV: float = 4.661
+    # The predictor-corrector that estimates the source spectrum behind the
+    # observed one runs until the RMS change in the intensities falls below the
+    # tolerance, or the iterations run out.
+    CG_MAX_ITERATIONS: int = 20
+    CG_CONVERGENCE_TOLERANCE: float = 0.005
 
     # Nominal spin period [s]. True spin duration is NOT 15 seconds.
     NOMINAL_SPIN_PERIOD_SEC: float = 15.0

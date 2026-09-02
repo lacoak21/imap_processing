@@ -42,6 +42,12 @@ INERTIAL_FRAME_LONG_NAMES = {
     "hk": "heliocentric kinetic",
 }
 
+# The principal data part of a descriptor is a stem naming the quantity mapped,
+# optionally followed by modifier codes saying which corrections were made.
+PRINCIPAL_DATA_PATTERN = re.compile(
+    r"^(drt|ena|int|isn|spx)(?:(?<=spx)\d+)?([^-_\s]*)$"
+)
+
 
 @dataclass
 class MapDescriptor:
@@ -195,6 +201,7 @@ class MapDescriptor:
             "ena_intensity_sys_err": "Inten Sys. Err.",
             "ena_intensity_sys_err_minus": "Inten Sys. Err. Lower",
             "ena_intensity_sys_err_plus": "Inten Sys. Err. Upper",
+            "ena_intensity_calibration_sys_err": "Inten Calibration Sys. Err.",
             "ena_spectral_index": "Spectral Index",
             "ena_spectral_index_stat_uncert": "Spectral Stat. Unc.",
             "ena_spectral_scalar": "Spectral Scalar",
@@ -231,6 +238,87 @@ class MapDescriptor:
         else:
             return None
 
+    def _parse_principal_data(self) -> tuple[str, str]:
+        """
+        Parse principal_data and return (data_type, extras) tuple.
+
+        Returns
+        -------
+        tuple[str, str]
+            A tuple of (data_type, extras) parsed from principal_data.
+            data_type is one of ["drt", "ena", "int", "isn", "spx"],
+            extras is any extension on the principal data portion of the descriptor
+            string. For example, "isnnbkgnd" would return ("isn", "nbkgnd").
+        """
+        m = PRINCIPAL_DATA_PATTERN.match(self.principal_data)
+        if not m:
+            raise ValueError(
+                "Invalid principal_data format: "
+                f"{self.principal_data}. Expected one of 'drt', 'ena', 'int', "
+                "'isn', or 'spx' optionally followed by digits and trailing "
+                "non-separator text."
+            )
+        return m.group(1), m.group(2)
+
+    def _get_resolution_str(self, full: bool = False) -> str:
+        """
+        Get formatted resolution string.
+
+        Parameters
+        ----------
+        full : bool, optional
+            If True, return full format (e.g., "rectangular 2 degree").
+            If False, return short format (e.g., "2 deg"). Default is False.
+
+        Returns
+        -------
+        str
+            Formatted resolution string.
+        """
+        m = re.match(r"^(\d+)deg|nside(\d+)", self.resolution_str)
+        if not m:
+            raise ValueError(
+                f"Invalid resolution_str format: {self.resolution_str}. "
+                "Expected format like '2deg' or 'nside32'."
+            )
+        if full:
+            if m.group(1):
+                return f"rectangular {m.group(1)} degree"
+            return f"HEALPix nside {m.group(2)}"
+        return f"{m.group(1)} deg" if m.group(1) else f"NSide {m.group(2)}"
+
+    def _get_duration_str(self, full: bool = False) -> str:
+        """
+        Get formatted duration string.
+
+        Parameters
+        ----------
+        full : bool, optional
+            If True, return full format (e.g., "6 months").
+            If False, return short format (e.g., "6 Mon"). Default is False.
+
+        Returns
+        -------
+        str
+            Formatted duration string.
+        """
+        if isinstance(self.duration, int):
+            return f"{self.duration} days" if full else f"{self.duration} Day"
+
+        m = re.match(r"^(\d+)(.*)$", self.duration)
+        num = int(m.group(1))
+        unit = m.group(2).lower()
+
+        if full:
+            if unit == "yr":
+                return f"{num} year" if num == 1 else f"{num} years"
+            elif unit == "mo":
+                return f"{num} month" if num == 1 else f"{num} months"
+            return f"{num} {unit}"
+
+        duration = f"{num} {m.group(2).title()}"
+        return duration + "n" if duration.endswith("Mo") else duration
+
     def build_catdesc(self, quantity_text: str) -> str:
         """
         Convert the MapDescriptor instance to a human-readable CATDESC string.
@@ -251,31 +339,21 @@ class MapDescriptor:
             instrument = instrument.title()
         sensor = " Combined" if self.sensor == "combined" else self.sensor
         species = "UV" if self.species == "uv" else self.species.title()
-        m = re.match(
-            r"^(drt|ena|int|isn|spx)(?:(?<=spx)\d+)?([^-_\s]*)$", self.principal_data
-        )
-        if m.group(1) == "isn":
+
+        data_type, extras = self._parse_principal_data()
+
+        if data_type == "isn":
             species = "ISN " + species
-        extras = m.group(2)
+
         coord = self.coordinate_system.upper()
-        frame = {
-            "hf": "Helio",
-            "hk": "Helio Kin",
-            "sf": "SC",
-        }[self.frame_descriptor]
+        frame = {"hf": "Helio", "hk": "Helio Kin", "sf": "SC"}[self.frame_descriptor]
         survival = "Surv Corr" if self.survival_corrected == "sp" else "No Surv Corr"
         spin_phase = self.spin_phase.title()
-        if spin_phase == "Full":
-            spin_phase = "Full Spin"
-        m = re.match(r"^(\d+)deg|nside(\d+)", self.resolution_str)
-        resolution = f"{m.group(1)} deg" if m.group(1) else f"NSide {m.group(2)}"
-        if isinstance(self.duration, int):
-            duration = f"{self.duration} Day"
-        else:
-            m = re.match(r"^(\d+)(.*)$", self.duration)
-            duration = f"{m.group(1)} {m.group(2).title()}"
-            if duration.endswith("Mo"):
-                duration += "n"
+        spin_phase = "Full Spin" if spin_phase == "Full" else spin_phase
+
+        resolution = self._get_resolution_str(full=False)
+        duration = self._get_duration_str(full=False)
+
         catdesc = (
             f"IMAP {instrument}{sensor} {species} {quantity_text}, {coord} "
             f"{frame} Frame, {survival}, {spin_phase}, {resolution}, {duration}"
@@ -289,6 +367,92 @@ class MapDescriptor:
                 catdesc += f", {long_description}"
                 break
         return catdesc
+
+    def to_logical_source_description(self) -> str:
+        """
+        Convert the MapDescriptor instance to a Logical_source_description string.
+
+        Returns
+        -------
+        str
+            A full description suitable for the Logical_source_description
+            global CDF attribute.
+        """
+        # Instrument name (e.g., "IMAP-Hi", "IMAP-Ultra", "IMAP-GLOWS")
+        instrument_base = self.instrument.name.split("_")[0]
+        instrument = (
+            f"{instrument_base}"
+            if instrument_base in ("IDEX", "GLOWS")
+            else f"IMAP-{instrument_base.title()}"
+        )
+
+        # Sensor (e.g., "45 degree sensor", "combined sensor", "")
+        if self.sensor == "combined":
+            sensor = "combined sensor"
+        elif self.sensor in ("45", "90"):
+            sensor = f"{self.sensor} degree sensor"
+        elif self.sensor:
+            sensor = f"sensor {self.sensor}"
+        else:
+            sensor = ""
+
+        # Species (e.g., "Hydrogen", "Helium", "UV")
+        species_names = {"h": "Hydrogen", "he": "Helium", "o": "Oxygen", "uv": "UV"}
+        species = species_names.get(self.species.lower(), self.species.title())
+
+        data_type, _ = self._parse_principal_data()
+
+        # Quantity (e.g., "ENA Intensity", "Rate", "Dust Rate")
+        quantity = {
+            "drt": "Dust Rate",
+            "ena": "ENA Intensity",
+            "int": "Intensity",
+            "isn": "Rate",
+            "spx": "Spectral Index",
+        }[data_type]
+
+        # Handle special species cases
+        if data_type == "isn":
+            species = f"Interstellar Neutral {species}"
+        elif data_type == "drt":
+            # Dust rate maps don't have a species
+            species = ""
+
+        # Frame (e.g., "heliospheric", "spacecraft", "heliocentric kinetic")
+        frame = INERTIAL_FRAME_LONG_NAMES[self.frame_descriptor]
+
+        # Coordinate system (e.g., "HAE", "GCS")
+        coord = self.coordinate_system.upper()
+
+        # Survival correction
+        if self.survival_corrected == "sp":
+            survival = "with survival probability correction"
+        else:
+            survival = "with no survival correction"
+
+        # Spin phase (e.g., "full spin", "ram", "anti-ram")
+        spin_phase = {
+            "full": "full spin",
+            "ram": "ram",
+            "anti": "anti-ram",
+        }.get(self.spin_phase.lower(), self.spin_phase)
+
+        duration = self._get_duration_str(full=True)
+        resolution = self._get_resolution_str(full=True)
+
+        # Build the full description
+        # Order matches descriptor: instrument-sensor, quantity, species, frame,
+        # survival, spin_phase, coord, resolution, duration
+        sensor_part = f" {sensor}" if sensor else ""
+        species_part = f"{species} " if species else ""
+        description = (
+            f"{instrument} Instrument Level-2{sensor_part} map of {species_part}"
+            f"{quantity} in the {frame} frame {survival} in the "
+            f"{spin_phase} direction in {coord} coordinates on {resolution} "
+            f"tiling over {duration}."
+        )
+
+        return description
 
     @property
     def principal_data_var(self) -> str:
@@ -309,6 +473,96 @@ class MapDescriptor:
             "isn": "isn_rate_bg_subtracted",
             "spx": "ena_spectral_index",
         }[self.principal_data[:3]]
+
+    @property
+    def principal_data_extras(self) -> str:
+        """
+        The modifier codes following the principal data stem.
+
+        These say which corrections a map was made with, e.g. the "nbs" of
+        "enanbs". Empty if the principal data is a bare stem, or if it does not
+        parse as a stem followed by modifiers at all.
+
+        Returns
+        -------
+        principal_data_extras : str
+            The modifier codes, run together in the order they appear.
+        """
+        m = PRINCIPAL_DATA_PATTERN.match(self.principal_data)
+        return m.group(2) if m else ""
+
+    @property
+    def raw(self) -> bool:
+        """
+        Whether the map is of the raw data, made with none of the corrections.
+
+        Returns
+        -------
+        raw : bool
+            True if this map asks for no corrections at all.
+        """
+        return "raw" in self.principal_data
+
+    @property
+    def sputter_corrected(self) -> bool:
+        """
+        Whether the map has the counts sputtered in from a heavier species removed.
+
+        Returns
+        -------
+        sputter_corrected : bool
+            True if this map is sputter corrected.
+        """
+        if not self.principal_data.startswith("ena") or self.raw:
+            return False
+        # The stem is followed by the correction codes, in order: "s" or "ns"
+        # for the sputter correction, then "bs" or "nbs" for the bootstrap one.
+        return self.principal_data_extras.startswith("s")
+
+    @property
+    def bootstrap_corrected(self) -> bool:
+        """
+        Whether the map has the intensity bled in from higher ESA levels removed.
+
+        Returns
+        -------
+        bootstrap_corrected : bool
+            True if this map is bootstrap corrected.
+        """
+        if not self.principal_data.startswith("ena") or self.raw:
+            return False
+        # The bootstrap code follows the sputter one, see sputter_corrected.
+        return re.match(r"(?:n?s)?bs", self.principal_data_extras) is not None
+
+    @property
+    def cg_corrected(self) -> bool:
+        """
+        Whether the map's intensities were moved into the heliospheric frame.
+
+        Returns
+        -------
+        cg_corrected : bool
+            True if this map is Compton-Getting corrected.
+        """
+        return self.frame_descriptor == "hf"
+
+    @property
+    def isn_masked(self) -> bool:
+        """
+        Whether the map has the interstellar neutral band masked out.
+
+        Returns
+        -------
+        isn_masked : bool
+            True if this map is ISN masked.
+        """
+        if not self.principal_data.startswith("ena") or self.raw:
+            return False
+        # The mask code follows the bootstrap one, see bootstrap_corrected.
+        return (
+            re.match(r"(?:n?s)?n?bsmsk", self.principal_data_extras, re.IGNORECASE)
+            is not None
+        )
 
     # Methods for parsing and building parts of the map descriptor string
     @staticmethod
@@ -394,7 +648,6 @@ class MapDescriptor:
         if instrument_descriptor.endswith("c"):
             sensor = "combined"
             instrument_short_name = instrument_descriptor[:-2]
-            instrument = MappableInstrumentShortName(instrument_short_name)
         else:
             # Do regex to get the instrument and sensor:
             # The first 1 or 3 characters are the instrument short name
@@ -411,7 +664,6 @@ class MapDescriptor:
                 # If sensor is 3 digits, convert to int
                 elif sensor_match and len(sensor_match) == 3:
                     sensor = int(sensor_match)
-                instrument = MappableInstrumentShortName(instrument_short_name)
         instrument = MappableInstrumentShortName(instrument_short_name)
         return instrument, sensor
 

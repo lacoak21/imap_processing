@@ -28,6 +28,7 @@ from imap_processing.cli import (
     Hit,
     Idex,
     Lo,
+    Mag,
     Spacecraft,
     Swe,
     Ultra,
@@ -332,7 +333,6 @@ def test_post_processing_returns_empty_list_if_invoked_with_no_data(
             ],
             [
                 "imap_hi_90sensor-esa-energies_20240101_v001.csv",
-                "imap_hi_90sensor-gain-configuration_20240101_v001.csv",
             ],
             1,
         ),
@@ -348,7 +348,6 @@ def test_post_processing_returns_empty_list_if_invoked_with_no_data(
             [
                 "imap_hi_45sensor-cal-prod_20240101_v001.csv",
                 "imap_hi_45sensor-backgrounds_20240101_v001.csv",
-                "imap_hi_45sensor-gain-configuration_20240101_v001.csv",
             ],
             1,
         ),
@@ -579,6 +578,54 @@ def test_lo_pre_processing_pivot_angle_filter(mock_super_pre_processing, mock_lo
     ] == [[goodtimes[0]], [histrates[0]], [bgrates[0]], [ancillary]]
     # Only the goodtimes files are loaded, to read their pivot angle
     assert mock_load_cdf.call_count == 2
+
+
+@mock.patch("imap_processing.cli.load_cdf")
+@mock.patch("imap_processing.cli.ProcessInstrument.pre_processing")
+def test_lo_pre_processing_combined_map_keeps_every_pivot_angle(
+    mock_super_pre_processing, mock_load_cdf
+):
+    """Test that a combined map takes the pointings of every pivot angle."""
+    first = "-repoint00217_v001.cdf"
+    second = "-repoint00218_v001.cdf"
+    goodtimes = [
+        f"imap_lo_l1b_goodtimes_20250415{first}",
+        f"imap_lo_l1b_goodtimes_20250416{second}",
+    ]
+    histrates = [
+        f"imap_lo_l1b_histrates_20250415{first}",
+        f"imap_lo_l1b_histrates_20250416{second}",
+    ]
+    bgrates = [f"imap_lo_l1b_bgrates_20250415{first}"]
+    ancillary = "imap_lo_efficiency-factors_20250415_v001.csv"
+
+    base_collection = ProcessingInputCollection(
+        ScienceInput(*goodtimes),
+        ScienceInput(*histrates),
+        ScienceInput(*bgrates),
+        AncillaryInput(ancillary),
+    )
+    mock_super_pre_processing.return_value = base_collection
+
+    instrument = Lo(
+        "l2",
+        # "ilo" rather than "l090": a map of no particular pivot angle
+        "ilo-ena-h-sf-nsp-ram-hae-6deg-3mo",
+        base_collection.serialize(),
+        "20250415",
+        "20250715",
+        "v001",
+        False,
+    )
+    result = instrument.pre_processing()
+
+    # The two pointings are at different pivot angles, and both are kept.
+    assert [
+        [str(file_path.filename) for file_path in processing_input.imap_file_paths]
+        for processing_input in result.get_processing_inputs()
+    ] == [goodtimes, histrates, bgrates, [ancillary]]
+    # No goodtimes are read, there being no pivot angle to select them by
+    assert mock_load_cdf.call_count == 0
 
 
 @mock.patch("imap_processing.cli.load_cdf")
@@ -1049,10 +1096,11 @@ def test_post_processing_upload_503_error(
     )
     instrument = Swe("l1a", "raw", dependency_str, "20100105", None, "v001", True)
 
-    # Checks that the upload failed and logs an error and raises an exception
+    # Checks that the upload failed, logs an error, and exits with the retry exit code
     with mock.patch("logging.Logger.error") as mock_error:
-        with pytest.raises(imap_data_access.io.IMAPDataAccessError):
+        with pytest.raises(SystemExit) as exc_info:
             instrument.process()
+    assert exc_info.value.code == 75  # The code should be the retry exit code
 
     # Upload should attempt 3 times
     assert mocks["mock_upload"].call_count == 3
@@ -1062,7 +1110,8 @@ def test_post_processing_upload_503_error(
 
     # Checks the upload failure was logged
     assert any(
-        "Upload failed with error" in str(call) for call in mock_error.call_args_list
+        "Upload failed after 3 attempts" in str(call)
+        for call in mock_error.call_args_list
     )
 
 
@@ -1112,3 +1161,80 @@ def test_post_processing_upload_unknown_error(
     assert any(
         "Upload failed unknown error" in str(call) for call in mock_error.call_args_list
     )
+
+
+@mock.patch("imap_processing.cli.check_epochs_within_day_offsets")
+@mock.patch("imap_processing.cli.mag_l1c", autospec=True)
+def test_mag_l1c_previous_day_routing(
+    mock_mag_l1c, mock_check_epochs, mock_instrument_dependencies
+):
+    """A previous-day L1C dependency routes to mag_l1c's previous_day_dataset."""
+    mocks = mock_instrument_dependencies
+
+    norm_file = "imap_mag_l1b_norm-mago_20251215_v001.cdf"
+    burst_file = "imap_mag_l1b_burst-mago_20251215_v001.cdf"
+    previous_file = "imap_mag_l1c_norm-mago_20251214_v001.cdf"
+    input_collection = ProcessingInputCollection(
+        ScienceInput(norm_file), ScienceInput(burst_file), ScienceInput(previous_file)
+    )
+    mocks["mock_pre_processing"].return_value = input_collection
+
+    datasets_by_name = {
+        norm_file: xr.Dataset({}, attrs={"cdf_filename": norm_file}),
+        burst_file: xr.Dataset({}, attrs={"cdf_filename": burst_file}),
+        previous_file: xr.Dataset({}, attrs={"cdf_filename": previous_file}),
+    }
+    mocks["mock_load_cdf"].side_effect = lambda path: datasets_by_name[Path(path).name]
+    mock_mag_l1c.return_value = xr.Dataset(
+        {"epoch": ("epoch", np.array([0, 1], dtype=np.int64))},
+        attrs={"cdf_filename": "l1c_out", "Logical_source": "imap_mag_l1c_norm-mago"},
+    )
+    mocks["mock_write_cdf"].side_effect = ["/path/to/l1c_out"]
+
+    dependency_str = json.dumps(
+        [{"type": "science", "files": [norm_file, burst_file, previous_file]}]
+    )
+    instrument = Mag(
+        "l1c", "norm-mago", dependency_str, "20251215", None, "v001", False
+    )
+    instrument.process()
+
+    assert mock_mag_l1c.call_count == 1
+    call_args, call_kwargs = mock_mag_l1c.call_args
+    # Current-day files are the positional inputs; the previous day's L1C file is
+    # passed separately and never treated as a current-day input.
+    assert call_args[0] is datasets_by_name[norm_file]
+    assert call_args[2] is datasets_by_name[burst_file]
+    assert call_kwargs["previous_day_dataset"] is datasets_by_name[previous_file]
+
+
+@mock.patch("imap_processing.cli.check_epochs_within_day_offsets")
+@mock.patch("imap_processing.cli.mag_l1c", autospec=True)
+def test_mag_l1c_without_previous_day(
+    mock_mag_l1c, mock_check_epochs, mock_instrument_dependencies
+):
+    """With only current-day dependencies, previous_day_dataset is None."""
+    mocks = mock_instrument_dependencies
+
+    norm_file = "imap_mag_l1b_norm-mago_20251215_v001.cdf"
+    input_collection = ProcessingInputCollection(ScienceInput(norm_file))
+    mocks["mock_pre_processing"].return_value = input_collection
+
+    norm_dataset = xr.Dataset({}, attrs={"cdf_filename": norm_file})
+    mocks["mock_load_cdf"].side_effect = lambda path: norm_dataset
+    mock_mag_l1c.return_value = xr.Dataset(
+        {"epoch": ("epoch", np.array([0, 1], dtype=np.int64))},
+        attrs={"cdf_filename": "l1c_out", "Logical_source": "imap_mag_l1c_norm-mago"},
+    )
+    mocks["mock_write_cdf"].side_effect = ["/path/to/l1c_out"]
+
+    dependency_str = json.dumps([{"type": "science", "files": [norm_file]}])
+    instrument = Mag(
+        "l1c", "norm-mago", dependency_str, "20251215", None, "v001", False
+    )
+    instrument.process()
+
+    assert mock_mag_l1c.call_count == 1
+    call_args, call_kwargs = mock_mag_l1c.call_args
+    assert call_args[0] is norm_dataset
+    assert call_kwargs["previous_day_dataset"] is None

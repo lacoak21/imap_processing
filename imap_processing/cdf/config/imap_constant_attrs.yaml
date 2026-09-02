@@ -21,6 +21,18 @@ epoch:
   VALIDMIN: 315576066184000000   # 2010-01-01T00:00:00 mission start (APL 0 epoch)
   VAR_TYPE: support_data
 
+epoch_delta:
+  CATDESC: Epoch delta
+  DEPEND_0: epoch
+  FIELDNAM: Epoch Delta
+  FILLVAL: -9223372036854775808
+  FORMAT: I19
+  LABLAXIS: Epoch delta
+  SCALETYP: linear
+  UNITS: ns
+  VALIDMAX: 86000000000000
+  VALIDMIN: 0
+  VAR_TYPE: support_data
 
 # <=== Data Variables ===>
 # Default Attrs for all metadata variables unless overridden
