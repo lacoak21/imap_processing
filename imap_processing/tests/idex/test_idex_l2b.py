@@ -19,7 +19,9 @@ from imap_processing.idex.idex_l2b import (
     SKY_GRID,
     SPIN_PHASE_BIN_EDGES,
     bin_spin_phases,
+    compute_counts_agnostic,
     compute_counts_by_charge_and_mass,
+    compute_rates_agnostic,
     compute_rates_by_charge_and_mass,
     get_science_acquisition_on_percentage,
     idex_l2b,
@@ -168,6 +170,8 @@ def test_l2b_cdf_variables(l2b_and_l2c_datasets: list[xr.Dataset]):
         "counts_by_mass",
         "rate_by_charge",
         "rate_by_mass",
+        "counts",
+        "rate",
     ]
     l2b_dataset = l2b_and_l2c_datasets[0]
     cdf_vars = l2b_dataset.variables
@@ -197,6 +201,11 @@ def test_l2b_cdf_variables(l2b_and_l2c_datasets: list[xr.Dataset]):
         assert np.isnan(l2b_dataset[var].data).all(), (
             f"Variable {var} should be fully NaN for the temporary L2B patch."
         )
+
+    # The agnostic products are independently computed and remain publishable. Rates
+    # are fill values here because the fixture has no matching uptime percentages.
+    assert l2b_dataset["counts"].data.sum() > 0
+    assert np.isnan(l2b_dataset["rate"].data).all()
 
 
 def test_bin_spin_phases():
@@ -266,6 +275,41 @@ def test_get_science_acquisition_on_percentage_no_acquisition(caplog):
     assert "No science acquisition events found" in caplog.text
 
 
+def test_compute_counts_agnostic_filters_non_dust():
+    """Agnostic products count only records classified as dust hits."""
+    dataset = xr.Dataset(
+        {
+            "epoch": ("epoch", np.zeros(4, dtype=np.int64)),
+            "dust_hit_flag": ("epoch", [1, 0, 1, 0]),
+            "spin_phase": ("epoch", [0, 90, 180, 270]),
+            "longitude": ("epoch", [0.0, 1.0, 2.0, 3.0]),
+            "latitude": ("epoch", [0.0, 1.0, 2.0, 3.0]),
+        }
+    )
+
+    counts, counts_map = compute_counts_agnostic(dataset, np.array([1]))
+
+    assert counts.sum() == 2
+    assert counts_map.sum() == 2
+
+
+def test_compute_counts_agnostic_excludes_events_without_dust_flag():
+    """A missing dust-hit flag must not classify events as dust impacts."""
+    dataset = xr.Dataset(
+        {
+            "epoch": ("epoch", np.zeros(2, dtype=np.int64)),
+            "spin_phase": ("epoch", [0, 90]),
+            "longitude": ("epoch", [0.0, 1.0]),
+            "latitude": ("epoch", [0.0, 1.0]),
+        }
+    )
+
+    counts, counts_map = compute_counts_agnostic(dataset, np.array([1]))
+
+    assert counts.sum() == 0
+    assert counts_map.sum() == 0
+
+
 def test_compute_counts_by_charge_and_mass():
     """Test the compute_counts_by_charge_and_mass function."""
 
@@ -286,6 +330,7 @@ def test_compute_counts_by_charge_and_mass():
             "spin_phase": np.full((6,), 0),
             "longitude": np.full(6, 5),
             "latitude": np.full(6, 0),
+            "dust_hit_flag": np.ones(6, dtype=np.int8),
         }
     )
 
@@ -357,6 +402,7 @@ def test_compute_counts_by_charge_and_mass_out_of_bounds():
             "spin_phase": np.full((6,), 0),
             "longitude": np.array([0, 365]),
             "latitude": np.array([-90, 90]),
+            "dust_hit_flag": np.ones(2, dtype=np.int8),
         }
     )
 
@@ -444,8 +490,8 @@ def test_compute_rates_by_charge_and_mass():
     np.testing.assert_equal(charge_map.shape, expected_map_shape)
     np.testing.assert_equal(mass_map.shape, expected_map_shape)
 
-    # Assert all quality flags are 1.
-    np.testing.assert_array_equal(quality_flags, np.ones_like(quality_flags))
+    # Zero uptime makes the rate invalid.
+    np.testing.assert_array_equal(quality_flags, [1, 1, 1, 0])
     # assert day 1 rates are as expected
     np.testing.assert_equal(rate_by_charge[0], 1 / (SECONDS_IN_DAY / 2))
     np.testing.assert_equal(rate_by_mass[0], 1 / (SECONDS_IN_DAY / 2))
@@ -466,6 +512,22 @@ def test_compute_rates_by_charge_and_mass():
     np.testing.assert_equal(rate_by_mass[3], -1.0)
     np.testing.assert_equal(charge_map[3], -1.0)
     np.testing.assert_equal(mass_map[3], -1.0)
+
+
+def test_compute_rates_agnostic_uses_nan_for_invalid_uptime():
+    """Test that agnostic rates use NaN when uptime is missing or zero."""
+    counts = np.ones((2, 4))
+    counts_map = np.ones((2, 2, 2))
+    epoch_doy = np.array([1, 2])
+
+    rate, rate_map = compute_rates_agnostic(
+        counts, counts_map, epoch_doy, {1: 100.0, 2: 0.0}
+    )
+
+    np.testing.assert_array_equal(rate[0], counts[0] / SECONDS_IN_DAY)
+    np.testing.assert_array_equal(rate_map[0], counts_map[0] / SECONDS_IN_DAY)
+    assert np.all(np.isnan(rate[1]))
+    assert np.all(np.isnan(rate_map[1]))
 
 
 def test_compute_rates_by_charge_and_mass_missing_acquisition_time(caplog):
